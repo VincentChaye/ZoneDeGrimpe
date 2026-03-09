@@ -169,10 +169,7 @@ async function onEditLevel() {
   fill(await r.json());
 }
 
-async function onLogout() {
-  try {
-    await fetch(apiUrl("/auth/logout"), { method: "POST", headers: { "Authorization": `Bearer ${getToken()}` } });
-  } catch {}
+function onLogout() {
   setAuth(null);
   location.href = "./login.html";
 }

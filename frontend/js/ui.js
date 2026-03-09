@@ -91,23 +91,15 @@ function applyTheme(mode) {
   // On laisse le CSS faire le travail basé sur l'attribut data-theme
 }
 
-// Export ES6
 export { initCommonUI, applyTheme };
 
-// Export CommonJS pour compatibilité
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { initCommonUI, applyTheme };
-}
+// Expose globally (utilisé par parametres.js chargé séparément)
+window.initCommonUI = initCommonUI;
+window.applyTheme   = applyTheme;
 
-// Expose globally for non-module scripts
-if (typeof window !== 'undefined') {
-  window.initCommonUI = initCommonUI;
-  window.applyTheme = applyTheme;
-}
-
-// Auto-initialize if not in module context
-if (typeof document !== 'undefined' && document.readyState === 'loading') {
+// Auto-init quand ui.js est chargé directement (ex: parametres.html)
+if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => initCommonUI());
-} else if (typeof document !== 'undefined') {
+} else {
   initCommonUI();
 }
