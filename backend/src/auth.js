@@ -8,13 +8,21 @@ export function requireAuth(req, res, next) {
 
     const payload = jwt.verify(token, process.env.JWT_SECRET || "dev_secret");
 
-    // IMPORTANT: login signe { uid: user._id }, on lit EXACTEMENT 'uid'
     const uid = payload?.uid;
     if (!uid) return res.status(401).json({ error: "unauthorized" });
 
-    req.auth = { uid }; // ex: "68f932097630f767845262a2"
+    req.auth = { uid, roles: Array.isArray(payload.roles) ? payload.roles : ["user"] };
     next();
   } catch (e) {
     return res.status(401).json({ error: "unauthorized" });
   }
+}
+
+export function requireAdmin(req, res, next) {
+  requireAuth(req, res, () => {
+    if (!req.auth?.roles?.includes("admin")) {
+      return res.status(403).json({ error: "forbidden", detail: "admin_required" });
+    }
+    next();
+  });
 }

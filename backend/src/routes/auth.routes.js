@@ -13,8 +13,8 @@ export function authRouter(db) {
 		security: 0,
 	};
 
-	function sign(uid) {
-		return jwt.sign({ uid }, process.env.JWT_SECRET || "dev_secret", { expiresIn: "7d" });
+	function sign(uid, roles = ["user"]) {
+		return jwt.sign({ uid, roles }, process.env.JWT_SECRET || "dev_secret", { expiresIn: "7d" });
 	}
 
 // --- REGISTER (conforme au validator users) ---
@@ -60,7 +60,7 @@ r.post("/register", async (req, res) => {
           }
         }
       );
-      const token = sign(existing._id.toString());
+      const token = sign(existing._id.toString(), existing.roles || ["user"]);
       const user = await users.findOne({ _id: existing._id }, { projection: PUBLIC_PROJECTION });
       return res.status(200).json({ token, user });
     }
@@ -94,7 +94,7 @@ r.post("/register", async (req, res) => {
     };
 
     const { insertedId } = await users.insertOne(doc);
-    const token = sign(insertedId.toString());
+    const token = sign(insertedId.toString(), ["user"]);
     const user = await users.findOne({ _id: insertedId }, { projection: PUBLIC_PROJECTION });
     return res.status(201).json({ token, user });
 
@@ -120,7 +120,7 @@ r.post("/login", async (req, res) => {
     const ok = bcrypt.compareSync(password, user.passwordHash); // ✅ sync
     if (!ok) return res.status(401).json({ error: "invalid_credentials" });
 
-    const token = sign(user._id.toString());
+    const token = sign(user._id.toString(), user.roles || ["user"]);
     const pub = await users.findOne({ _id: user._id }, { projection: PUBLIC_PROJECTION });
     return res.json({ token, user: pub });
   } catch (e) {

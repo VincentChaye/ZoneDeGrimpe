@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { createSpotSchema, updateSpotSchema } from "../validators.js";
+import { requireAuth, requireAdmin } from "../auth.js";
 
 export function spotsRouter(db) {
   const r = Router();
@@ -25,8 +26,8 @@ export function spotsRouter(db) {
   description: 1 // description du spot
 };
 
-  // --- Créer un spot ---
-  r.post("/", async (req, res) => {
+  // --- Créer un spot (admin uniquement) ---
+  r.post("/", requireAdmin, async (req, res) => {
     try {
       const parsed = createSpotSchema.parse(req.body); // doit inclure location valide (GeoJSON Point)
       const doc = { ...parsed, createdAt: new Date() };
@@ -204,8 +205,8 @@ export function spotsRouter(db) {
     }
   });
 
-  // --- Mettre à jour un spot (PATCH) ---
-  r.patch("/:id", async (req, res) => {
+  // --- Mettre à jour un spot (utilisateur connecté) ---
+  r.patch("/:id", requireAuth, async (req, res) => {
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: "bad_id", detail: "ID invalide" });
     }
@@ -246,8 +247,8 @@ export function spotsRouter(db) {
     }
   });
 
-  // --- Supprimer un spot ---
-  r.delete("/:id", async (req, res) => {
+  // --- Supprimer un spot (admin uniquement) ---
+  r.delete("/:id", requireAdmin, async (req, res) => {
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: "bad_id" });
     }
