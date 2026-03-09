@@ -1,5 +1,5 @@
 // frontend/config.js
-const PROD_API = "https://zonedegrimpe-api-f8fehxc0hhcmdfh5.francecentral-01.azurewebsites.net";
+const PROD_API = "https://zonedegrimpe.onrender.com";
 
 function isLocalHost(host) {
   return /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/i.test(host);

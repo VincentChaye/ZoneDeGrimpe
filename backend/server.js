@@ -31,17 +31,17 @@ const envAllowed = (process.env.ALLOWED_ORIGIN || "")
 
 const allowedList = [...new Set([...devDefaults, ...envAllowed])];
 
-// Autoriser aussi *.azurewebsites.net et *.github.io (https) via check souple
+// Autoriser aussi *.onrender.com et *.github.io (https) via check souple
 // + réseau local (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
 function isAllowedOrigin(origin) {
   if (!origin) return true; // curl/postman
   if (allowedList.includes(origin)) return true;
   try {
     const u = new URL(origin);
-    // Autoriser HTTPS Azure et GitHub
+    // Autoriser HTTPS Render et GitHub
     if (
       u.protocol === "https:" &&
-      (u.hostname.endsWith(".azurewebsites.net") ||
+      (u.hostname.endsWith(".onrender.com") ||
         u.hostname.endsWith(".github.io"))
     ) {
       return true;
