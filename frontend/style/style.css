@@ -60,6 +60,9 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 
+/* Fix zoom iOS/Safari : les inputs < 16px déclenchent un zoom automatique */
+input, select, textarea { font-size: max(16px, 1rem); }
+
 body.theme {
   margin: 0;
   font-family: var(--font-body);
@@ -295,23 +298,6 @@ p, input, select, textarea, .card p, label, .footer { font-family: var(--font-bo
 .map-layout{position:relative; height:calc(100dvh - 56px)}
 .map{position:absolute; inset:0}
 
-/* Barre de recherche (Glassmorphism) */
-.search-bar{
-  position:absolute; top:.75rem; left:.75rem; right:.75rem;
-  max-width: 400px;
-  z-index:2001;
-}
-
-.search-bar input{
-  width:100%; padding:.8rem 1rem;
-  border:1px solid var(--border-light); border-radius:1rem;
-  background:var(--surface); color:var(--text);
-  font-family:var(--font-body);
-  box-shadow:var(--shadow);
-  backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
-}
-
 /* Barre de filtres flottante (Glassmorphism) */
 .filter-bar{
   position:absolute; top:.75rem; right:.75rem;
@@ -324,6 +310,23 @@ p, input, select, textarea, .card p, label, .footer { font-family: var(--font-bo
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-light);
 }
+
+/* Barre de recherche (apparaît sous la filter-bar) */
+.search-bar{
+  position:absolute; top:4.5rem; right:.75rem;
+  width: min(320px, calc(100vw - 1.5rem));
+  z-index:2001;
+}
+.search-bar input{
+  width:100%; padding:.75rem 1rem;
+  border:1px solid var(--border-light); border-radius:1rem;
+  background:var(--surface); color:var(--text);
+  font-family:var(--font-body); font-size:16px;
+  box-shadow:var(--shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+:root[data-theme="dark"] .search-bar input { background: rgba(15,15,19,0.85); border-color: var(--color-glow-light); }
 
 /* Panneau de filtres avancés (Glassmorphism) */
 .advanced-filters{

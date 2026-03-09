@@ -31,25 +31,26 @@
   <main class="map-layout">
     <div id="map" class="map"></div>
 
-    <!-- Barre de recherche -->
-    <div class="search-bar" id="searchBar">
-      <input type="text" id="searchInput" placeholder="🔍 Rechercher un spot..." aria-label="Rechercher un spot">
-      <div id="searchResults" class="search-results" aria-live="polite"></div>
-    </div>
-
     <!-- Barre de filtres flottante -->
     <div class="filter-bar" id="filterBar" role="region" aria-label="Filtres carte">
+      <button id="searchToggleBtn" class="btn btn--ghost btn--compact" title="Rechercher un spot" aria-expanded="false" aria-controls="searchBar">🔍</button>
       <button id="locateBtn" class="btn btn--compact" title="Me localiser">📍</button>
-      
+
       <select id="filterType" class="filter-select" aria-label="Filtrer par type">
         <option value="">Tous les types</option>
         <option value="crag">🧗 Falaise</option>
         <option value="boulder">🪨 Bloc</option>
         <option value="indoor">🏢 Salle</option>
       </select>
-      
+
       <button id="toggleFilters" class="btn btn--ghost btn--compact" title="Plus de filtres">⚙️</button>
       <button id="resetFilters" class="btn btn--ghost btn--compact" title="Réinitialiser les filtres" style="display:none;">🔄</button>
+    </div>
+
+    <!-- Barre de recherche (masquée par défaut) -->
+    <div class="search-bar" id="searchBar" hidden>
+      <input type="text" id="searchInput" placeholder="Rechercher un spot..." aria-label="Rechercher un spot" autocomplete="off">
+      <div id="searchResults" class="search-results" aria-live="polite"></div>
     </div>
 
     <!-- Panneau de filtres avancés (masqué par défaut) -->

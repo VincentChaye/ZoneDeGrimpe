@@ -73,7 +73,10 @@ window.closeSheet = closeSheet;
 sheetClose?.addEventListener("click", closeSheet);
 // Fermer avec la touche Échap ou en cliquant sur l'overlay
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && sheet?.getAttribute("aria-hidden") === "false") closeSheet();
+  if (e.key === "Escape") {
+    if (sheet?.getAttribute("aria-hidden") === "false") closeSheet();
+    else if (!searchBar?.hasAttribute('hidden')) closeSearchBar();
+  }
 });
 document.addEventListener("click", (e) => {
   if (sheet?.getAttribute("aria-hidden") === "false" && !sheet.contains(e.target) && !e.target.closest(".leaflet-marker-icon")) {
@@ -534,6 +537,29 @@ function updateMapMarkers(spotsToShow) {
   console.log(`[map] Affichage de ${spotsToShow.length} / ${allSpots.length} spots`);
 }
 
+/* ---------- Toggle barre de recherche ---------- */
+const searchBar = document.getElementById('searchBar');
+const searchToggleBtn = document.getElementById('searchToggleBtn');
+
+function openSearchBar() {
+  searchBar?.removeAttribute('hidden');
+  searchToggleBtn?.setAttribute('aria-expanded', 'true');
+  document.getElementById('searchInput')?.focus();
+}
+function closeSearchBar() {
+  searchBar?.setAttribute('hidden', '');
+  searchToggleBtn?.setAttribute('aria-expanded', 'false');
+  if (searchResults) searchResults.style.display = 'none';
+  if (searchInput) searchInput.value = '';
+  currentFilters.searchQuery = '';
+  filterSpots();
+}
+
+searchToggleBtn?.addEventListener('click', () => {
+  const isOpen = !searchBar?.hasAttribute('hidden');
+  isOpen ? closeSearchBar() : openSearchBar();
+});
+
 /* ---------- Recherche ---------- */
 const searchInput = document.getElementById('searchInput');
 const searchResults = document.getElementById('searchResults');
@@ -587,9 +613,7 @@ function displaySearchResults(results) {
     el.addEventListener('click', () => {
       const spotId = el.dataset.spotId;
       focusSpot(spotId);
-      searchResults.style.display = 'none';
-      searchInput.value = '';
-      currentFilters.searchQuery = '';
+      closeSearchBar();
     });
   });
 }
@@ -602,10 +626,14 @@ function focusSpot(spotId) {
   openSheet(spotCardHTML(spot));
 }
 
-// Fermer les résultats de recherche si on clique ailleurs
+// Fermer la search bar si on clique en dehors
 document.addEventListener('click', (e) => {
-  if (!searchInput?.contains(e.target) && !searchResults?.contains(e.target)) {
-    searchResults.style.display = 'none';
+  if (
+    !searchBar?.hasAttribute('hidden') &&
+    !searchBar?.contains(e.target) &&
+    e.target !== searchToggleBtn
+  ) {
+    closeSearchBar();
   }
 });
 
@@ -635,8 +663,7 @@ resetFilters?.addEventListener('click', () => {
   currentFilters = { type: '', niveauMin: '', searchQuery: '', distance: 500 };
   filterType.value = '';
   filterNiveauMin.value = '';
-  searchInput.value = '';
-  searchResults.style.display = 'none';
+  closeSearchBar();
   const filterDistance = document.getElementById('filterDistance');
   const distanceValue = document.getElementById('distanceValue');
   if (filterDistance) {
