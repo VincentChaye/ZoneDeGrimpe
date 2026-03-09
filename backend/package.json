@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "update-spots": "node scripts/update-spot-data.js",
-    "test-extraction": "node scripts/test-extraction.js"
+    "test-extraction": "node scripts/test-extraction.js",
+    "import-osm": "node scripts/import-osm.js",
+    "import-osm:dry": "node scripts/import-osm.js --dry-run"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
