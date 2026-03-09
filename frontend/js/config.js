@@ -1,7 +1,7 @@
 // config.js
 
 // URL du backend en production
-const PROD_API = "https://zonedegrimpe-api-f8fehxc0hhcmdfh5.francecentral-01.azurewebsites.net";
+const PROD_API = "https://zonedegrimpe.onrender.com";
 
 // Détection locale
 function isLocalHost(hostname) {

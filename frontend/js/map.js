@@ -1,5 +1,6 @@
 import { initCommonUI } from "./ui.js";
 import { fetchSpots } from "./api.js";
+import { API_BASE_URL } from "./config.js";
 
 initCommonUI();
 
@@ -17,6 +18,18 @@ const cluster = L.markerClusterGroup({
   chunkInterval: 200,
 });
 cluster.addTo(map);
+
+/* ---------- Toast ---------- */
+const mapToast = document.getElementById("mapToast");
+let toastTimer;
+function showToast(msg, isError = false) {
+  if (!mapToast) return;
+  clearTimeout(toastTimer);
+  mapToast.textContent = msg;
+  mapToast.className = "map-toast" + (isError ? " map-toast--error" : "");
+  mapToast.style.display = "block";
+  toastTimer = setTimeout(() => { mapToast.style.display = "none"; }, 4000);
+}
 
 /* ---------- Bottom Sheet ---------- */
 const sheet = document.getElementById("bottomSheet");
@@ -55,11 +68,17 @@ function closeSheet() {
   document.body.classList.remove("sheet-open");
   enableMapInteractions();
 }
+window.closeSheet = closeSheet;
 
 sheetClose?.addEventListener("click", closeSheet);
-// Fermer avec la touche Échap
+// Fermer avec la touche Échap ou en cliquant sur l'overlay
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && sheet?.getAttribute("aria-hidden") === "false") closeSheet();
+});
+document.addEventListener("click", (e) => {
+  if (sheet?.getAttribute("aria-hidden") === "false" && !sheet.contains(e.target) && !e.target.closest(".leaflet-marker-icon")) {
+    closeSheet();
+  }
 });
 
 /* ---------- Carte : fiche spot enrichie ---------- */
@@ -130,7 +149,7 @@ function warnIfInsecureContext() {
   // La géoloc ne marche que sur HTTPS ou http://localhost
   const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
   if (location.protocol !== "https:" && !isLocalhost) {
-    alert("La géolocalisation nécessite HTTPS (ou http://localhost en développement).");
+    showToast("La géolocalisation nécessite HTTPS.", true);
     return true;
   }
   return false;
@@ -186,12 +205,13 @@ map.on("locationfound", (e) => {
 
 map.on("locationerror", (err) => {
   console.error("[map] locationerror:", err);
-  alert("Impossible de récupérer votre position.\n" + (err.message || ""));
+  showToast("Impossible de récupérer votre position : " + (err.message || "erreur inconnue"), true);
 });
 
 locateBtn?.addEventListener("click", requestLocation);
 
 /* ---------- Icônes des spots selon le type ---------- */
+
 function makeCliffIcon(spot, size = 38) {
   const s = size;
   // Icônes différentes selon le type
@@ -236,9 +256,6 @@ function parseGradeToNumber(grade) {
   if (letter.includes('+')) offset += 0.16;
   return base + offset;
 }
-
-
-requestLocation();
 
 
 /* ---------- Variables globales pour filtrage et recherche ---------- */
@@ -387,13 +404,14 @@ window.submitSpotEdit = async function(spotId) {
   
   // Si aucune modification
   if (Object.keys(updates).length === 0) {
-    alert('Aucune modification à enregistrer.');
+    showToast('Aucune modification à enregistrer.');
     return;
   }
   
   try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`/api/spots/${spotId}`, {
+    const auth = JSON.parse(localStorage.getItem('auth') || '{}');
+    const token = auth.token || localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/api/spots/${spotId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -427,7 +445,7 @@ window.submitSpotEdit = async function(spotId) {
       allSpots[spotIndex] = { ...allSpots[spotIndex], ...updates };
     }
     
-    alert('Modifications enregistrées avec succès !');
+    showToast('Modifications enregistrées !');
     closeSheet();
     
     // Recharger les spots pour avoir les données à jour
@@ -437,7 +455,7 @@ window.submitSpotEdit = async function(spotId) {
     
   } catch (error) {
     console.error('Erreur lors de la modification:', error);
-    alert(`Erreur: ${error.message}`);
+    showToast(`Erreur : ${error.message}`, true);
   }
 };
 
@@ -647,6 +665,8 @@ filterDistance?.addEventListener('input', (e) => {
 });
 
 /* ---------- Chargement et affichage des spots ---------- */
+const mapLoading = document.getElementById("mapLoading");
+
 (async () => {
   try {
     allSpots = await fetchSpots({
@@ -657,14 +677,15 @@ filterDistance?.addEventListener('input', (e) => {
     console.log(`[map] Spots normalisés reçus: ${allSpots.length}`, allSpots[0]);
 
     if (!allSpots.length) {
-      console.warn("[map] 0 spot après normalisation. Regarde le log ci-dessus (spots[0]).");
+      console.warn("[map] 0 spot après normalisation.");
+      showToast("Aucun spot trouvé.", true);
       return;
     }
 
     // Création de tous les markers
     allSpots.forEach((s) => {
       const m = L.marker([s.lat, s.lng], {
-        icon: makeCliffIcon(s, 38), // Passe le spot complet pour l'icône
+        icon: makeCliffIcon(s, 38),
         title: s.name,
       });
       m.spotId = s.id;
@@ -674,13 +695,9 @@ filterDistance?.addEventListener('input', (e) => {
     });
 
     // Zoom initial sur tous les spots
-    if (allSpots.length) {
-      const bounds = L.latLngBounds(allSpots.map((s) => [s.lat, s.lng]));
-      if (!userCentered) {
-        map.fitBounds(bounds.pad(0.2));
-      }
-    } else {
-      L.marker([46.5, 2.5]).addTo(map).bindPopup("Debug: carte OK, zéro spot normalisé.");
+    const bounds = L.latLngBounds(allSpots.map((s) => [s.lat, s.lng]));
+    if (!userCentered) {
+      map.fitBounds(bounds.pad(0.2));
     }
 
     // Gestion du spot dans l'URL (partage)
@@ -691,6 +708,8 @@ filterDistance?.addEventListener('input', (e) => {
     }
   } catch (e) {
     console.error("[map] fetchSpots failed:", e);
-    alert(`Impossible de charger les spots.\n${e.message || e}`);
+    showToast("Impossible de charger les spots : " + (e.message || e), true);
+  } finally {
+    if (mapLoading) mapLoading.style.display = "none";
   }
 })();
