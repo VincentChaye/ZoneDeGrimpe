@@ -98,8 +98,7 @@ function osmToSpot(el) {
     description: tags.description || null,
     id_voix    : [],
     info_complementaires: {
-      rock   : tags["climbing:rock"] || null,
-      routes : tags["climbing:routes"] ? parseInt(tags["climbing:routes"], 10) : null,
+      rock: tags["climbing:rock"] || null,
     },
     source     : "osm",
     osm_id     : `${el.type}/${el.id}`,
