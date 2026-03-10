@@ -1,15 +1,17 @@
-/**
- * Script pour mettre à jour les données des spots d'escalade
- * - Extrait l'orientation et les niveaux depuis ClimbingAway
- * - Normalise le champ orientation
- */
-
 import { MongoClient } from 'mongodb';
 import * as cheerio from 'cheerio';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const DB_NAME = process.env.DB_NAME || 'grimpe';
+// --- AJOUT DE LA CONFIGURATION DOTENV ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, "../.env") });
+// ----------------------------------------
 
+const MONGODB_URI = process.env.MONGODB_URI;
+const DB_NAME = process.env.DB_NAME || 'ZoneDeGrimpe';
 // Fonction pour récupérer et parser une page ClimbingAway
 async function fetchClimbingAwayData(url) {
   try {
