@@ -828,6 +828,10 @@ function resetWizard() {
   const cp = document.getElementById("coordsText");
   if (cp) cp.textContent = "Position non définie";
   ["errStep1","errStep2","errStep4"].forEach(id => setErr(id, ""));
+  // Nettoyer le bouton "Fermer" ajouté après succès
+  if (wizardNextBtn) { wizardNextBtn.style.display = ""; wizardNextBtn.disabled = false; wizardNextBtn.textContent = "Suivant →"; }
+  const footer = document.querySelector(".wizard__footer");
+  footer?.querySelectorAll("button:not(#wizardNextBtn):not(#wizardBackBtn)").forEach(b => b.remove());
   updateWizardUI();
 }
 
@@ -902,36 +906,84 @@ wizardNextBtn?.addEventListener("click", async () => {
   wizardNextBtn.textContent = "Envoi…";
   setErr("errStep4", "");
 
+  const token = getMapToken();
+  if (!token) {
+    setErr("errStep4", "Tu n'es pas connecté. Reconnecte-toi et réessaie.");
+    wizardNextBtn.disabled = false;
+    wizardNextBtn.textContent = "Envoyer la demande";
+    return;
+  }
+
+  const payload = {
+    name: wizardData.name,
+    type: wizardData.type,
+    location: { type: "Point", coordinates: [wizardData.lng, wizardData.lat] },
+  };
+  if (wizardData.orientation) payload.orientation = wizardData.orientation;
+  if (wizardData.niveau_min) payload.niveau_min = wizardData.niveau_min;
+  if (wizardData.niveau_max) payload.niveau_max = wizardData.niveau_max;
+  if (wizardData.description) payload.description = wizardData.description;
+
+  console.log("[wizard] Envoi spot →", JSON.stringify(payload));
+
   try {
     const res = await fetch(`${API_BASE_URL}/api/spots`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${getMapToken()}`,
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        name: wizardData.name,
-        type: wizardData.type,
-        location: { type: "Point", coordinates: [wizardData.lng, wizardData.lat] },
-        orientation: wizardData.orientation || undefined,
-        niveau_min: wizardData.niveau_min || undefined,
-        niveau_max: wizardData.niveau_max || undefined,
-        description: wizardData.description || undefined,
-      }),
+      body: JSON.stringify(payload),
     });
 
-    const json = await res.json();
-    if (!res.ok) throw new Error(json?.detail || json?.error || "Erreur serveur");
+    const text = await res.text();
+    console.log("[wizard] Réponse", res.status, text);
 
-    proposeModal?.close();
-    showToast(isMapAdmin()
-      ? "Spot ajouté et approuvé ✅"
-      : "Demande envoyée ! Un admin va la valider 🙏"
-    );
+    let json;
+    try { json = JSON.parse(text); } catch { json = {}; }
+
+    if (!res.ok) throw new Error(json?.detail || json?.error || `Erreur ${res.status}`);
+
+    // Afficher un écran de succès dans le wizard
+    const isAdmin = isMapAdmin();
+    const recapCard = document.getElementById("recapCard");
+    if (recapCard) {
+      recapCard.innerHTML = `
+        <div style="text-align:center;padding:1.5rem 0">
+          <div style="font-size:3rem;margin-bottom:.75rem">${isAdmin ? "✅" : "⏳"}</div>
+          <p style="font-weight:700;font-size:1.05rem;margin:0 0 .4rem">
+            ${isAdmin ? "Spot ajouté !" : "Demande envoyée !"}
+          </p>
+          <p style="font-size:.88rem;color:var(--text-2);margin:0">
+            ${isAdmin
+              ? "Le spot est maintenant visible sur la carte."
+              : "Un admin va valider ta demande. Tu peux suivre son statut dans Paramètres → Mes demandes."
+            }
+          </p>
+        </div>`;
+    }
+    wizardNextBtn.style.display = "none";
+    if (wizardBackBtn) wizardBackBtn.style.display = "none";
+
+    // Bouton fermer dans le footer
+    const footer = document.querySelector(".wizard__footer");
+    if (footer) {
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "btn";
+      closeBtn.textContent = "Fermer";
+      closeBtn.style.flex = "1";
+      closeBtn.addEventListener("click", () => {
+        proposeModal?.close();
+        // Recharger les spots si admin (approuvé immédiatement)
+        if (isAdmin) window.location.reload();
+      });
+      footer.appendChild(closeBtn);
+    }
   } catch (err) {
+    console.error("[wizard] Erreur soumission:", err);
     setErr("errStep4", "Erreur : " + err.message);
     wizardNextBtn.disabled = false;
-    wizardNextBtn.textContent = "Envoyer la demande";
+    wizardNextBtn.textContent = "Réessayer";
   }
 });
 
