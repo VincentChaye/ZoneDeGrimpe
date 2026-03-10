@@ -751,23 +751,34 @@ function updateWizardUI() {
 }
 
 // Validation par étape
+function setErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg || "";
+}
+
 function validateStep(step) {
   if (step === 1) {
     const name = document.getElementById("pName")?.value.trim() || "";
-    const err = document.getElementById("errStep1");
-    if (!name) { if (err) err.textContent = "Le nom du spot est obligatoire."; return false; }
-    if (err) err.textContent = "";
+    if (!name) { setErr("errStep1", "Le nom du spot est obligatoire."); return false; }
+    setErr("errStep1", "");
     wizardData.name = name;
     wizardData.type = document.querySelector(".type-card.active")?.dataset.type || "crag";
     return true;
   }
   if (step === 2) {
-    const lat = parseFloat(document.getElementById("pLat")?.value);
-    const lng = parseFloat(document.getElementById("pLng")?.value);
-    const err = document.getElementById("errStep2");
-    if (isNaN(lat) || isNaN(lng)) { if (err) err.textContent = "La position est obligatoire."; return false; }
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { if (err) err.textContent = "Coordonnées invalides."; return false; }
-    if (err) err.textContent = "";
+    const latVal = document.getElementById("pLat")?.value;
+    const lngVal = document.getElementById("pLng")?.value;
+    const lat = parseFloat(latVal);
+    const lng = parseFloat(lngVal);
+    if (!latVal || !lngVal || isNaN(lat) || isNaN(lng)) {
+      setErr("errStep2", "La position est obligatoire. Utilise le bouton de géolocalisation ou saisis les coordonnées.");
+      return false;
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      setErr("errStep2", "Coordonnées invalides (lat: -90/+90, lng: -180/+180).");
+      return false;
+    }
+    setErr("errStep2", "");
     wizardData.lat = lat;
     wizardData.lng = lng;
     return true;
@@ -816,7 +827,7 @@ function resetWizard() {
   document.querySelectorAll(".compass-btn").forEach(b => b.classList.remove("active"));
   const cp = document.getElementById("coordsText");
   if (cp) cp.textContent = "Position non définie";
-  ["errStep1","errStep2","errStep4"].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ""; });
+  ["errStep1","errStep2","errStep4"].forEach(id => setErr(id, ""));
   updateWizardUI();
 }
 
@@ -868,8 +879,7 @@ document.getElementById("pLocateBtn")?.addEventListener("click", () => {
       (pos) => setCoords(pos.coords.latitude, pos.coords.longitude),
       () => {
         if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Utiliser ma position`; }
-        const errEl = document.getElementById("errStep2");
-        if (errEl) errEl.textContent = "Impossible d'obtenir la position.";
+        setErr("errStep2", "Impossible d'obtenir la position.");
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
@@ -890,8 +900,7 @@ wizardNextBtn?.addEventListener("click", async () => {
   // Étape 4 → Soumettre
   wizardNextBtn.disabled = true;
   wizardNextBtn.textContent = "Envoi…";
-  const errEl = document.getElementById("errStep4");
-  if (errEl) errEl.textContent = "";
+  setErr("errStep4", "");
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/spots`, {
@@ -920,7 +929,7 @@ wizardNextBtn?.addEventListener("click", async () => {
       : "Demande envoyée ! Un admin va la valider 🙏"
     );
   } catch (err) {
-    if (errEl) errEl.textContent = "Erreur : " + err.message;
+    setErr("errStep4", "Erreur : " + err.message);
     wizardNextBtn.disabled = false;
     wizardNextBtn.textContent = "Envoyer la demande";
   }

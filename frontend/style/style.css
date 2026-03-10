@@ -574,20 +574,22 @@ body.page-auth .row    { display: flex; gap: .75rem; flex-wrap: wrap; justify-co
    === Wizard "Proposer un spot" (multi-step)
    ================================================================ */
 .propose-modal {
-  border: 0; padding: 0; margin: 0;
-  width: 100%; max-width: 480px;
+  border: 0; padding: 0;
+  width: calc(100% - 2rem); max-width: 480px;
   background: transparent;
-  /* Centre vertical + horizontal */
-  position: fixed;
-  inset: 0;
-  max-height: 100dvh;
+  max-height: 90dvh;
+  /* Le navigateur centre le dialog par défaut (margin: auto) */
 }
-.propose-modal::backdrop { background: rgba(0,0,0,.45); }
+.propose-modal::backdrop { background: rgba(0,0,0,.5); }
 
-@media (max-width: 480px) {
+@media (max-width: 540px) {
   .propose-modal {
     width: 100%; max-width: 100%;
-    margin: 0; align-self: flex-end;
+    /* Ancré en bas comme une bottom-sheet */
+    position: fixed;
+    bottom: 0; left: 0; right: 0; top: auto;
+    margin: 0;
+    max-height: 92dvh;
   }
 }
 
@@ -596,12 +598,12 @@ body.page-auth .row    { display: flex; gap: .75rem; flex-wrap: wrap; justify-co
   border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex; flex-direction: column;
-  max-height: 92dvh;
+  height: min(90dvh, 600px);
 }
-@media (max-width: 480px) {
+@media (max-width: 540px) {
   .wizard {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    max-height: 96dvh;
+    height: 92dvh;
   }
 }
 
@@ -821,8 +823,9 @@ body.page-auth .row    { display: flex; gap: .75rem; flex-wrap: wrap; justify-co
   color: #dc2626; font-size: .83rem;
   padding: .5rem .75rem; border-radius: var(--radius-sm);
   background: rgba(220,38,38,.07);
-  display: none;
+  min-height: 0;
 }
+.wizard-error:empty { display: none; }
 
 /* Mobile : masquer nav open sidebar (plus utilisée) */
 @media (max-width: 767px) {
