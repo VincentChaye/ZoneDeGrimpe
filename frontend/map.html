@@ -75,71 +75,157 @@
       + Proposer un spot
     </button>
 
-    <!-- Modal proposition de spot -->
-    <dialog id="proposeModal" class="modal">
-      <div class="modal__content">
-        <h2 style="margin:0 0 1rem;font-family:var(--font-heading)">Proposer un spot</h2>
-        <form id="proposeForm">
-          <div style="margin-bottom:.75rem">
-            <label style="display:block;margin-bottom:.35rem;font-size:.88rem;color:var(--text-2)">Nom du spot *</label>
-            <input class="input" type="text" id="pName" required maxlength="120" placeholder="Ex: Rocher des Deux Sœurs" />
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-            <div>
-              <label style="display:block;margin-bottom:.35rem;font-size:.88rem;color:var(--text-2)">Type *</label>
-              <select class="input" id="pType" required>
-                <option value="crag">Falaise</option>
-                <option value="boulder">Bloc</option>
-                <option value="indoor">Salle</option>
-              </select>
+    <!-- Wizard : Proposer un spot -->
+    <dialog id="proposeModal" class="propose-modal">
+      <div class="wizard">
+
+        <!-- Header -->
+        <div class="wizard__header">
+          <p class="wizard__title">Proposer un spot</p>
+          <button class="wizard__close" id="wizardCloseBtn" aria-label="Fermer">✕</button>
+        </div>
+
+        <!-- Barre de progression -->
+        <div class="wizard__progress">
+          <div class="wizard__progress-fill" id="wizardProgressFill" style="width:25%"></div>
+        </div>
+
+        <!-- Indicateur étapes -->
+        <div class="wizard__steps">
+          <div class="wizard__dot active" id="dot1"></div>
+          <div class="wizard__dot" id="dot2"></div>
+          <div class="wizard__dot" id="dot3"></div>
+          <div class="wizard__dot" id="dot4"></div>
+        </div>
+
+        <!-- Slides -->
+        <div class="wizard__slides">
+          <div class="wizard__track" id="wizardTrack">
+
+            <!-- Étape 1 : Nom + Type -->
+            <div class="wizard__slide">
+              <p class="wizard__step-label">Étape 1 · 4</p>
+              <h2 class="wizard__slide-title">Quel spot ?</h2>
+              <p class="wizard__slide-sub">Commençons par l'essentiel</p>
+
+              <input class="wizard-input wizard-input--lg" type="text" id="pName"
+                maxlength="120" placeholder="Nom du spot…" autocomplete="off" />
+
+              <div class="type-cards">
+                <button class="type-card active" data-type="crag" type="button">
+                  <span class="type-card__icon">🧗</span>
+                  <span class="type-card__label">Falaise</span>
+                </button>
+                <button class="type-card" data-type="boulder" type="button">
+                  <span class="type-card__icon">🪨</span>
+                  <span class="type-card__label">Bloc</span>
+                </button>
+                <button class="type-card" data-type="indoor" type="button">
+                  <span class="type-card__icon">🏢</span>
+                  <span class="type-card__label">Salle</span>
+                </button>
+              </div>
+              <p class="wizard-error" id="errStep1"></p>
             </div>
-            <div>
-              <label style="display:block;margin-bottom:.35rem;font-size:.88rem;color:var(--text-2)">Orientation</label>
-              <select class="input" id="pOrientation">
-                <option value="">—</option>
-                <option value="N">Nord</option>
-                <option value="NE">Nord-Est</option>
-                <option value="E">Est</option>
-                <option value="SE">Sud-Est</option>
-                <option value="S">Sud</option>
-                <option value="SO">Sud-Ouest</option>
-                <option value="O">Ouest</option>
-                <option value="NO">Nord-Ouest</option>
-              </select>
+
+            <!-- Étape 2 : Localisation -->
+            <div class="wizard__slide">
+              <p class="wizard__step-label">Étape 2 · 4</p>
+              <h2 class="wizard__slide-title">Où est-il ?</h2>
+              <p class="wizard__slide-sub">Utilise ta position ou saisis les coordonnées</p>
+
+              <button class="locate-btn" id="pLocateBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                </svg>
+                Utiliser ma position
+              </button>
+
+              <div class="coords-preview" id="coordsPreview">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+                <span id="coordsText">Position non définie</span>
+              </div>
+
+              <div class="divider-or">ou saisir manuellement</div>
+
+              <div class="coords-grid">
+                <div>
+                  <label style="display:block;margin-bottom:.3rem;font-size:.8rem;color:var(--text-2)">Latitude</label>
+                  <input class="wizard-input" type="number" id="pLat" step="any" placeholder="46.5182" />
+                </div>
+                <div>
+                  <label style="display:block;margin-bottom:.3rem;font-size:.8rem;color:var(--text-2)">Longitude</label>
+                  <input class="wizard-input" type="number" id="pLng" step="any" placeholder="6.6327" />
+                </div>
+              </div>
+              <p class="wizard-error" id="errStep2"></p>
             </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-            <div>
-              <label style="display:block;margin-bottom:.35rem;font-size:.88rem;color:var(--text-2)">Latitude *</label>
-              <input class="input" type="number" id="pLat" step="any" required placeholder="46.5" />
+
+            <!-- Étape 3 : Détails -->
+            <div class="wizard__slide">
+              <p class="wizard__step-label">Étape 3 · 4</p>
+              <h2 class="wizard__slide-title">Les détails</h2>
+              <p class="wizard__slide-sub">Tout est optionnel — remplis ce que tu sais</p>
+
+              <!-- Niveaux -->
+              <div>
+                <label class="wizard-label">Niveaux</label>
+                <div class="levels-grid">
+                  <select class="wizard-input" id="pNiveauMin">
+                    <option value="">Min</option>
+                  </select>
+                  <span>→</span>
+                  <select class="wizard-input" id="pNiveauMax">
+                    <option value="">Max</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Orientation boussole -->
+              <div>
+                <label class="wizard-label">Orientation</label>
+                <div class="compass">
+                  <button class="compass-btn" data-dir="NO" type="button">NO</button>
+                  <button class="compass-btn" data-dir="N"  type="button">N</button>
+                  <button class="compass-btn" data-dir="NE" type="button">NE</button>
+                  <button class="compass-btn" data-dir="O"  type="button">O</button>
+                  <div class="compass-center">⊕</div>
+                  <button class="compass-btn" data-dir="E"  type="button">E</button>
+                  <button class="compass-btn" data-dir="SO" type="button">SO</button>
+                  <button class="compass-btn" data-dir="S"  type="button">S</button>
+                  <button class="compass-btn" data-dir="SE" type="button">SE</button>
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div>
+                <label class="wizard-label">Description</label>
+                <textarea class="wizard-input" id="pDescription" rows="3" maxlength="2000"
+                  placeholder="Rocher calcaire ensoleillé, idéal pour les 6a…"></textarea>
+              </div>
             </div>
-            <div>
-              <label style="display:block;margin-bottom:.35rem;font-size:.88rem;color:var(--text-2)">Longitude *</label>
-              <input class="input" type="number" id="pLng" step="any" required placeholder="2.5" />
+
+            <!-- Étape 4 : Récapitulatif -->
+            <div class="wizard__slide">
+              <p class="wizard__step-label">Étape 4 · 4</p>
+              <h2 class="wizard__slide-title">Récapitulatif</h2>
+              <p class="wizard__slide-sub">Vérifie avant d'envoyer</p>
+              <div class="recap-card" id="recapCard">
+                <!-- Rempli dynamiquement -->
+              </div>
+              <p class="wizard-error" id="errStep4"></p>
             </div>
-          </div>
-          <button type="button" id="pLocateBtn" class="btn btn--ghost btn--compact" style="margin-bottom:.75rem">📍 Utiliser ma position</button>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-            <div>
-              <label style="display:block;margin-bottom:.35rem;font-size:.88rem;color:var(--text-2)">Niveau min</label>
-              <input class="input" type="text" id="pNiveauMin" placeholder="Ex: 4a" maxlength="10" />
-            </div>
-            <div>
-              <label style="display:block;margin-bottom:.35rem;font-size:.88rem;color:var(--text-2)">Niveau max</label>
-              <input class="input" type="number" id="pNiveauMax" placeholder="Ex: 7b" maxlength="10" />
-            </div>
-          </div>
-          <div style="margin-bottom:1rem">
-            <label style="display:block;margin-bottom:.35rem;font-size:.88rem;color:var(--text-2)">Description</label>
-            <textarea class="input" id="pDescription" rows="3" maxlength="2000" placeholder="Décris le spot…"></textarea>
-          </div>
-          <p id="proposeErr" style="color:#dc2626;font-size:.85rem;display:none;margin:.5rem 0"></p>
-          <div class="modal__actions">
-            <button type="button" class="btn btn--ghost" id="proposeCancelBtn">Annuler</button>
-            <button type="submit" class="btn" id="proposeSubmitBtn">Envoyer la demande</button>
-          </div>
-        </form>
-      </div>
+
+          </div><!-- /wizard__track -->
+        </div><!-- /wizard__slides -->
+
+        <!-- Footer navigation -->
+        <div class="wizard__footer">
+          <button class="btn btn--ghost btn--back" id="wizardBackBtn" type="button" style="display:none">← Retour</button>
+          <button class="btn" id="wizardNextBtn" type="button">Suivant →</button>
+        </div>
+
+      </div><!-- /wizard -->
     </dialog>
 
     <!-- Loading -->
