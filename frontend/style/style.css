@@ -325,6 +325,21 @@ h1, h2, h3, h4, h5, h6 {
 
 /* === Map === */
 .map-layout { position: relative; height: calc(100dvh - var(--header-h)); }
+
+.map-propose-btn {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%; transform: translateX(-50%);
+  z-index: 2000;
+  gap: .4rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+@media (max-width: 767px) {
+  .map-propose-btn {
+    bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+}
 .map        { position: absolute; inset: 0; }
 
 /* === Barre de filtres flottante === */
