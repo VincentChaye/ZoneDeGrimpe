@@ -94,45 +94,81 @@ function isMapAdmin() { return getMapAuth()?.user?.roles?.includes("admin") ?? f
 /* ---------- Carte : fiche spot enrichie ---------- */
 function spotCardHTML(s) {
   const dir = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
-  const url = s.url ? `<a class="btn btn--ghost" href="${s.url}" target="_blank" rel="noopener">📄 Fiche</a>` : "";
+  const isLoggedIn = !!getMapToken();
 
-  const typeIcons = { crag: "🧗", boulder: "🪨", indoor: "🏢" };
-  const type = `<div class="spot-info-item"><strong>Type :</strong> ${typeIcons[s.type] || "📍"} ${s.type || "inconnu"}</div>`;
-  const soustype = s.soustype ? `<div class="spot-info-item"><strong>Sous-type :</strong> ${s.soustype}</div>` : "";
-  const orient = s.orientation ? `<div class="spot-info-item"><strong>Orientation :</strong> ${s.orientation}</div>` : "";
-  const niveau = (s.niveau_min || s.niveau_max)
-    ? `<div class="spot-info-item"><strong>Niveau :</strong> ${s.niveau_min || "?"} → ${s.niveau_max || "?"}</div>` : "";
-  const voies = (s.id_voix?.length)
-    ? `<div class="spot-info-item"><strong>Voies :</strong> ${s.id_voix.length}</div>` : "";
-  const desc = s.description ? `<p class="spot-description">${s.description}</p>` : "";
-  const info = s.info_complementaires
-    ? `<p class="spot-info-extra"><em>${s.info_complementaires}</em></p>` : "";
+  // Type
+  const typeIcons  = { crag: "🧗", boulder: "🪨", indoor: "🏢" };
+  const typeLabels = { crag: "Falaise", boulder: "Bloc", indoor: "Salle" };
+  const typeKey    = s.type || "crag";
+  const typeIcon   = typeIcons[typeKey]  || "📍";
+  const typeLabel  = typeLabels[typeKey] || s.type || "Inconnu";
 
-  // Audit log
+  // Grade + difficulté
+  const hasGrade = s.niveau_min || s.niveau_max;
+  const gradeText = hasGrade ? `${s.niveau_min || "?"}  →  ${s.niveau_max || "?"}` : null;
+  let gradeLevel = "medium";
+  if (s.niveau_max) {
+    const n = parseGradeToNumber(s.niveau_max);
+    if (n < 5)       gradeLevel = "easy";
+    else if (n < 6.5) gradeLevel = "medium";
+    else if (n < 7.5) gradeLevel = "hard";
+    else if (n < 8.5) gradeLevel = "expert";
+    else               gradeLevel = "elite";
+  }
+
+  // Orientation avec flèche CSS
+  const orientDeg  = { N:0, NE:45, E:90, SE:135, S:180, SO:225, O:270, NO:315 };
+  const orientFull = { N:"Nord", NE:"Nord-Est", E:"Est", SE:"Sud-Est", S:"Sud", SO:"Sud-Ouest", O:"Ouest", NO:"Nord-Ouest" };
+  const orientStat = s.orientation
+    ? `<span class="sc-stat">
+        <span class="sc-compass" style="--rot:${orientDeg[s.orientation] ?? 0}deg">↑</span>
+        ${orientFull[s.orientation] || s.orientation}
+       </span>`
+    : "";
+
+  const gradeStat = gradeText
+    ? `<span class="sc-stat sc-stat--grade" data-level="${gradeLevel}">⚡ ${gradeText}</span>` : "";
+  const voiesStat = s.id_voix?.length
+    ? `<span class="sc-stat">🪢 ${s.id_voix.length} voie${s.id_voix.length > 1 ? "s" : ""}</span>` : "";
+  const soustypeStat = s.soustype
+    ? `<span class="sc-stat">🔖 ${s.soustype}</span>` : "";
+
+  const desc = s.description
+    ? `<p class="sc-desc">${s.description}</p>` : "";
+
+  // Audit
   const createdBy = s.createdBy?.displayName || s.submittedBy?.displayName;
   const updatedBy = s.updatedBy?.displayName;
   const createdAt = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : null;
   const updatedAt = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("fr-FR") : null;
   const audit = (createdBy || updatedBy) ? `
-    <p class="spot-info-extra" style="margin-top:.5rem;font-size:.8rem;opacity:.7">
-      ${createdBy ? `✏️ Ajouté par <strong>${createdBy}</strong>${createdAt ? ` le ${createdAt}` : ""}` : ""}
-      ${updatedBy ? `<br>🔄 Modifié par <strong>${updatedBy}</strong>${updatedAt ? ` le ${updatedAt}` : ""}` : ""}
+    <p class="sc-audit">
+      ${createdBy ? `✏️ ${createdBy}${createdAt ? ` · ${createdAt}` : ""}` : ""}
+      ${updatedBy ? ` &nbsp;·&nbsp; 🔄 ${updatedBy}${updatedAt ? ` · ${updatedAt}` : ""}` : ""}
     </p>` : "";
-
-  const isLoggedIn = !!getMapToken();
 
   return `
     <div class="spot-card">
-      <h3 class="spot-title">${s.name}</h3>
-      <div class="spot-info-grid">
-        ${type}${soustype}${niveau}${voies}${orient}
+      <div class="sc-header" data-type="${typeKey}">
+        <div class="sc-shine"></div>
+        <span class="sc-type-icon">${typeIcon}</span>
+        ${gradeText ? `<span class="sc-grade-badge" data-level="${gradeLevel}">Niv. ${gradeText}</span>` : ""}
+        <div class="sc-header-bottom">
+          <h3 class="sc-name">${s.name}</h3>
+          <span class="sc-type-label">${typeLabel}</span>
+        </div>
       </div>
-      ${desc}${info}${audit}
-      <div class="spot-actions">
-        ${url}
-        <a class="btn" href="${dir}" target="_blank" rel="noopener">🚗 Itinéraire</a>
-        <button class="btn btn--ghost" onclick="window.shareSpot && shareSpot('${s.id}')">Partager</button>
-        ${isLoggedIn ? `<button class="btn btn--primary" onclick="window.editSpot && editSpot('${s.id}')">Modifier</button>` : ""}
+      <div class="sc-body">
+        <div class="sc-stats">
+          ${gradeStat}${orientStat}${voiesStat}${soustypeStat}
+        </div>
+        ${desc}${audit}
+        <div class="sc-actions">
+          <a class="btn" href="${dir}" target="_blank" rel="noopener">🚗 Itinéraire</a>
+          ${s.url ? `<a class="btn btn--ghost" href="${s.url}" target="_blank" rel="noopener">📄 Fiche</a>` : ""}
+          <button class="btn btn--ghost" onclick="window.shareSpot && shareSpot('${s.id}')">Partager</button>
+          ${isLoggedIn ? `<button class="btn btn--primary" onclick="window.editSpot && editSpot('${s.id}')">Modifier</button>` : ""}
+        </div>
       </div>
     </div>
   `;

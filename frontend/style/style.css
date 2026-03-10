@@ -410,29 +410,149 @@ body.sheet-open::after {
   background: rgba(0,0,0,.35); z-index: 9998;
 }
 
-/* === Fiche spot === */
-.spot-card { font-family: var(--font-body); }
-.spot-title { margin: 0 0 .75rem; font-family: var(--font-heading); font-size: 1.4rem; color: var(--accent); }
-
-.spot-info-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: .5rem;
-  margin-bottom: .75rem; padding: .75rem;
-  background: var(--surface-2); border-radius: var(--radius-sm);
-}
-@media (max-width: 480px) { .spot-info-grid { grid-template-columns: 1fr; } }
-
-.spot-info-item { font-size: .88rem; line-height: 1.5; }
-.spot-info-item strong { color: var(--accent); font-weight: 600; }
-.spot-description { margin: .75rem 0; line-height: 1.6; }
-
-.spot-info-extra {
-  margin: .5rem 0; padding: .5rem;
-  background: var(--surface-2); border-radius: var(--radius-sm);
-  font-size: .88rem; font-style: italic; opacity: .85;
+/* === Fiche spot — Pokemon Card Style === */
+.spot-card {
+  font-family: var(--font-body);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  box-shadow: 0 4px 24px rgba(0,0,0,.1);
 }
 
-.spot-actions { display: flex; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
-.spot-actions .btn { flex: 1; min-width: 100px; text-align: center; }
+/* ---- Header ---- */
+.sc-header {
+  position: relative;
+  padding: 3rem 1.25rem 1.1rem;
+  overflow: hidden;
+  min-height: 148px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  /* Négatif pour coller aux bords du bottom-sheet */
+  margin: -1.5rem -1.5rem 0;
+}
+
+.sc-header[data-type="crag"]    { background: linear-gradient(140deg, #E85120 0%, #A8290A 50%, #6B1204 100%); }
+.sc-header[data-type="boulder"] { background: linear-gradient(140deg, #A07850 0%, #6B3D1A 50%, #3D1F08 100%); }
+.sc-header[data-type="indoor"]  { background: linear-gradient(140deg, #0D9A8C 0%, #0A6B7A 50%, #053A4A 100%); }
+
+/* Effet brillance animée */
+.sc-shine {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.13) 45%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.13) 55%, transparent 70%);
+  animation: scShine 4s ease-in-out infinite;
+}
+@keyframes scShine {
+  0%, 100% { transform: translateX(-120%) skewX(-8deg); opacity: 0; }
+  30%       { opacity: 1; }
+  60%       { transform: translateX(160%) skewX(-8deg); opacity: 0; }
+}
+
+/* Texture grain */
+.sc-header::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  opacity: .5;
+}
+
+.sc-type-icon {
+  position: absolute; top: .9rem; right: 1.1rem;
+  font-size: 2.6rem; line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+  z-index: 1;
+}
+
+.sc-grade-badge {
+  position: absolute; top: .85rem; left: 1.1rem;
+  padding: .25rem .75rem;
+  border-radius: 999px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.25);
+  z-index: 1;
+}
+.sc-grade-badge[data-level="easy"]   { background: rgba(34,197,94,.25);  color: #d1fae5; }
+.sc-grade-badge[data-level="medium"] { background: rgba(234,179,8,.25);  color: #fef9c3; }
+.sc-grade-badge[data-level="hard"]   { background: rgba(249,115,22,.25); color: #ffedd5; }
+.sc-grade-badge[data-level="expert"] { background: rgba(239,68,68,.25);  color: #fee2e2; }
+.sc-grade-badge[data-level="elite"]  { background: rgba(168,85,247,.25); color: #ede9fe; }
+
+.sc-header-bottom { position: relative; z-index: 1; }
+
+.sc-name {
+  margin: 0 0 .35rem;
+  font-family: var(--font-heading);
+  font-size: 1.45rem; font-weight: 700; line-height: 1.15;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,.45);
+}
+
+.sc-type-label {
+  display: inline-block;
+  padding: .18rem .6rem;
+  border-radius: 999px;
+  font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(255,255,255,.85);
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.22);
+}
+
+/* ---- Body ---- */
+.sc-body { padding: 1rem 1.25rem 1.25rem; }
+
+/* Stats pills */
+.sc-stats { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .9rem; }
+
+.sc-stat {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .3rem .75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: .78rem; font-weight: 600; color: var(--text);
+  white-space: nowrap;
+}
+.sc-stat--grade { border-color: transparent; }
+.sc-stat--grade[data-level="easy"]   { background: rgba(34,197,94,.12);  color: #16a34a; border-color: rgba(34,197,94,.3); }
+.sc-stat--grade[data-level="medium"] { background: rgba(234,179,8,.12);  color: #a16207; border-color: rgba(234,179,8,.3); }
+.sc-stat--grade[data-level="hard"]   { background: rgba(249,115,22,.12); color: #c2410c; border-color: rgba(249,115,22,.3); }
+.sc-stat--grade[data-level="expert"] { background: rgba(239,68,68,.12);  color: #b91c1c; border-color: rgba(239,68,68,.3); }
+.sc-stat--grade[data-level="elite"]  { background: rgba(168,85,247,.12); color: #7c3aed; border-color: rgba(168,85,247,.3); }
+
+/* dark mode stats grade */
+:root[data-theme="dark"] .sc-stat--grade[data-level="easy"]   { color: #86efac; }
+:root[data-theme="dark"] .sc-stat--grade[data-level="medium"] { color: #fde047; }
+:root[data-theme="dark"] .sc-stat--grade[data-level="hard"]   { color: #fdba74; }
+:root[data-theme="dark"] .sc-stat--grade[data-level="expert"] { color: #fca5a5; }
+:root[data-theme="dark"] .sc-stat--grade[data-level="elite"]  { color: #c4b5fd; }
+
+/* Flèche boussole */
+.sc-compass {
+  display: inline-block;
+  transform: rotate(var(--rot, 0deg));
+  font-size: 1rem; line-height: 1;
+}
+
+/* Description */
+.sc-desc {
+  margin: 0 0 .9rem;
+  padding: .65rem .85rem;
+  font-size: .84rem; line-height: 1.7; color: var(--text-2);
+  font-style: italic;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent);
+}
+
+/* Audit */
+.sc-audit {
+  margin: 0 0 .9rem;
+  font-size: .72rem; color: var(--text-2); opacity: .7;
+}
+
+/* Boutons */
+.sc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.sc-actions .btn { text-align: center; font-size: .84rem; justify-content: center; }
 
 /* === Formulaire édition spot === */
 .spot-edit-form .form-group { margin-bottom: 1rem; }
