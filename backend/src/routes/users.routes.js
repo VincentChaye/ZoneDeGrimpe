@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
-import { requireAuth } from "../auth.js";
+import { requireAuth, requireAdmin } from "../auth.js";
 
 export function usersRouter(db) {
   const r = Router();
@@ -96,8 +96,8 @@ export function usersRouter(db) {
     }
   });
 
-  // --- GET /api/users ---
-  r.get("/", requireAuth, async (req, res) => {
+  // --- GET /api/users (admin uniquement) ---
+  r.get("/", requireAdmin, async (req, res) => {
     try {
       const { search = "", limit = 20, skip = 0 } = req.query;
       const lim = Math.max(1, Math.min(parseInt(limit, 10) || 20, 200));

@@ -84,59 +84,55 @@ document.addEventListener("click", (e) => {
   }
 });
 
+/* ---------- Helpers auth ---------- */
+function getMapAuth() {
+  try { return JSON.parse(localStorage.getItem("auth") || "null"); } catch { return null; }
+}
+function getMapToken() { return getMapAuth()?.token || ""; }
+function isMapAdmin() { return getMapAuth()?.user?.roles?.includes("admin") ?? false; }
+
 /* ---------- Carte : fiche spot enrichie ---------- */
 function spotCardHTML(s) {
   const dir = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
-  const url = s.url ? `<a class="btn btn--ghost" href="${s.url}" target="_blank" rel="noopener">📄 Fiche détaillée</a>` : "";
-  
-  // Type avec icône
-  const typeIcons = { 'crag': '🧗', 'boulder': '🪨', 'indoor': '🏢' };
-  const typeIcon = typeIcons[s.type] || '📍';
-  const typeLabel = s.type || 'inconnu';
-  const type = `<div class="spot-info-item"><strong>Type :</strong> ${typeIcon} ${typeLabel}</div>`;
-  
-  // Sous-type si disponible
+  const url = s.url ? `<a class="btn btn--ghost" href="${s.url}" target="_blank" rel="noopener">📄 Fiche</a>` : "";
+
+  const typeIcons = { crag: "🧗", boulder: "🪨", indoor: "🏢" };
+  const type = `<div class="spot-info-item"><strong>Type :</strong> ${typeIcons[s.type] || "📍"} ${s.type || "inconnu"}</div>`;
   const soustype = s.soustype ? `<div class="spot-info-item"><strong>Sous-type :</strong> ${s.soustype}</div>` : "";
-  
-  // Orientation
   const orient = s.orientation ? `<div class="spot-info-item"><strong>Orientation :</strong> ${s.orientation}</div>` : "";
-  
-  // Niveau de difficulté
-  const niveau = (s.niveau_min || s.niveau_max) 
-    ? `<div class="spot-info-item"><strong>Niveau :</strong> ${s.niveau_min || '?'} à ${s.niveau_max || '?'}</div>` 
-    : "";
-  
-  // Nombre de voies
-  const voies = (s.id_voix && Array.isArray(s.id_voix) && s.id_voix.length > 0) 
-    ? `<div class="spot-info-item"><strong>Voies :</strong> ${s.id_voix.length}</div>` 
-    : "";
-  
-  // Description
+  const niveau = (s.niveau_min || s.niveau_max)
+    ? `<div class="spot-info-item"><strong>Niveau :</strong> ${s.niveau_min || "?"} → ${s.niveau_max || "?"}</div>` : "";
+  const voies = (s.id_voix?.length)
+    ? `<div class="spot-info-item"><strong>Voies :</strong> ${s.id_voix.length}</div>` : "";
   const desc = s.description ? `<p class="spot-description">${s.description}</p>` : "";
-  
-  // Infos complémentaires
-  const info = s.info_complementaires 
-    ? `<p class="spot-info-extra"><em>${s.info_complementaires}</em></p>` 
-    : "";
-  
+  const info = s.info_complementaires
+    ? `<p class="spot-info-extra"><em>${s.info_complementaires}</em></p>` : "";
+
+  // Audit log
+  const createdBy = s.createdBy?.displayName || s.submittedBy?.displayName;
+  const updatedBy = s.updatedBy?.displayName;
+  const createdAt = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : null;
+  const updatedAt = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("fr-FR") : null;
+  const audit = (createdBy || updatedBy) ? `
+    <p class="spot-info-extra" style="margin-top:.5rem;font-size:.8rem;opacity:.7">
+      ${createdBy ? `✏️ Ajouté par <strong>${createdBy}</strong>${createdAt ? ` le ${createdAt}` : ""}` : ""}
+      ${updatedBy ? `<br>🔄 Modifié par <strong>${updatedBy}</strong>${updatedAt ? ` le ${updatedAt}` : ""}` : ""}
+    </p>` : "";
+
+  const isLoggedIn = !!getMapToken();
+
   return `
     <div class="spot-card">
       <h3 class="spot-title">${s.name}</h3>
       <div class="spot-info-grid">
-        ${type}
-        ${soustype}
-        ${niveau}
-        ${voies}
-        ${orient}
+        ${type}${soustype}${niveau}${voies}${orient}
       </div>
-      ${desc}
-      ${info}
+      ${desc}${info}${audit}
       <div class="spot-actions">
         ${url}
         <a class="btn" href="${dir}" target="_blank" rel="noopener">🚗 Itinéraire</a>
         <button class="btn btn--ghost" onclick="window.shareSpot && shareSpot('${s.id}')">Partager</button>
-        <button class="btn btn--primary" onclick="window.editSpot && editSpot('${s.id}')">Modifier</button>
-        <button class="btn btn--ghost" onclick="window.viewSpotDetails && viewSpotDetails('${s.id}')">Voir détails</button>
+        ${isLoggedIn ? `<button class="btn btn--primary" onclick="window.editSpot && editSpot('${s.id}')">Modifier</button>` : ""}
       </div>
     </div>
   `;
@@ -689,6 +685,93 @@ filterDistance?.addEventListener('input', (e) => {
   }
   
   filterSpots();
+});
+
+/* ---------- Bouton "Proposer un spot" ---------- */
+const proposeSpotBtn = document.getElementById("proposeSpotBtn");
+const proposeModal = document.getElementById("proposeModal");
+const proposeForm = document.getElementById("proposeForm");
+const proposeCancelBtn = document.getElementById("proposeCancelBtn");
+const proposeErr = document.getElementById("proposeErr");
+
+// Afficher le bouton si connecté
+if (getMapToken() && proposeSpotBtn) proposeSpotBtn.style.display = "flex";
+
+proposeSpotBtn?.addEventListener("click", () => proposeModal?.showModal());
+proposeCancelBtn?.addEventListener("click", () => { proposeModal?.close(); proposeErr && (proposeErr.style.display = "none"); });
+
+// Remplir lat/lng depuis la position utilisateur
+document.getElementById("pLocateBtn")?.addEventListener("click", () => {
+  if (userPosition) {
+    document.getElementById("pLat").value = userPosition.lat.toFixed(6);
+    document.getElementById("pLng").value = userPosition.lng.toFixed(6);
+  } else {
+    map.locate({ enableHighAccuracy: true, timeout: 8000 });
+    map.once("locationfound", (e) => {
+      document.getElementById("pLat").value = e.latlng.lat.toFixed(6);
+      document.getElementById("pLng").value = e.latlng.lng.toFixed(6);
+    });
+  }
+});
+
+proposeForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  proposeErr && (proposeErr.style.display = "none");
+
+  const name = document.getElementById("pName").value.trim();
+  const type = document.getElementById("pType").value;
+  const lat = parseFloat(document.getElementById("pLat").value);
+  const lng = parseFloat(document.getElementById("pLng").value);
+  const orientation = document.getElementById("pOrientation").value || null;
+  const niveau_min = document.getElementById("pNiveauMin").value.trim() || null;
+  const niveau_max = document.getElementById("pNiveauMax").value.trim() || null;
+  const description = document.getElementById("pDescription").value.trim() || null;
+
+  if (!name || isNaN(lat) || isNaN(lng)) {
+    proposeErr.textContent = "Nom, latitude et longitude sont obligatoires.";
+    proposeErr.style.display = "block";
+    return;
+  }
+
+  const btn = document.getElementById("proposeSubmitBtn");
+  btn.disabled = true;
+  btn.textContent = "Envoi…";
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/spots`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getMapToken()}`,
+      },
+      body: JSON.stringify({
+        name,
+        type,
+        location: { type: "Point", coordinates: [lng, lat] },
+        orientation,
+        niveau_min,
+        niveau_max,
+        description,
+      }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json?.detail || json?.error || "Erreur serveur");
+
+    proposeModal?.close();
+    proposeForm?.reset();
+    const isAdmin = isMapAdmin();
+    showToast(isAdmin
+      ? "Spot ajouté et approuvé ✅"
+      : "Demande envoyée ! Un admin va la valider 🙏"
+    );
+  } catch (err) {
+    proposeErr.textContent = "Erreur : " + err.message;
+    proposeErr.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Envoyer la demande";
+  }
 });
 
 /* ---------- Chargement et affichage des spots ---------- */

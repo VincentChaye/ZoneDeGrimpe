@@ -75,11 +75,20 @@ async function main() {
   fill(me);
   root.hidden = false;
 
+  // Liens admin si admin
+  const adminCard = document.getElementById("adminLinksCard");
+  if (adminCard && Array.isArray(me.roles) && me.roles.includes("admin")) {
+    adminCard.style.display = "";
+  }
+
   el.editPhoneBtn.addEventListener("click", onEditPhone);
   el.editAvatarBtn.addEventListener("click", onEditAvatar);
   el.editLevelBtn.addEventListener("click", onEditLevel);
   el.logoutBtn.addEventListener("click", onLogout);
   el.deleteBtn.addEventListener("click", onDeleteAccount);
+
+  // Charger les demandes de spots
+  loadMySubmissions();
 }
 
 function fill(me) {
@@ -172,6 +181,56 @@ async function onEditLevel() {
 function onLogout() {
   setAuth(null);
   location.href = "./login.html";
+}
+
+/* ---------- Mes demandes de spots ---------- */
+async function loadMySubmissions() {
+  const container = document.getElementById("mySubmissionsContent");
+  if (!container) return;
+  try {
+    const r = await fetch(apiUrl("/spots/my-submissions"), {
+      headers: { "Authorization": `Bearer ${getToken()}` },
+      cache: "no-store",
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const items = await r.json();
+
+    if (!items.length) {
+      container.innerHTML = `<p>Aucune demande de spot pour l'instant. <a href="./map.html">Proposer un spot</a></p>`;
+      return;
+    }
+
+    const STATUS_LABELS = { pending: "En attente", approved: "Approuvé", rejected: "Rejeté" };
+    const STATUS_COLORS = { pending: "#92400e", approved: "#065f46", rejected: "#991b1b" };
+    const STATUS_BG = { pending: "#fef3c7", approved: "#d1fae5", rejected: "#fee2e2" };
+
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${items.map((s) => {
+          const st = s.status || "approved";
+          const date = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : "—";
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.5rem 0;border-bottom:1px solid var(--border)">
+              <div>
+                <strong>${escHtml(s.name)}</strong>
+                <span style="font-size:.78rem;color:var(--text-2);margin-left:.5rem">${s.type || "—"} · ${date}</span>
+                ${s.rejectedReason ? `<p style="font-size:.78rem;color:#991b1b;margin:.2rem 0 0">Raison : ${escHtml(s.rejectedReason)}</p>` : ""}
+              </div>
+              <span style="padding:.15rem .55rem;border-radius:99px;font-size:.72rem;font-weight:700;background:${STATUS_BG[st]};color:${STATUS_COLORS[st]};white-space:nowrap">
+                ${STATUS_LABELS[st] || st}
+              </span>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  } catch (e) {
+    container.innerHTML = `<p style="color:#dc2626">Impossible de charger les demandes.</p>`;
+  }
+}
+
+function escHtml(str) {
+  return String(str ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 async function onDeleteAccount() {
