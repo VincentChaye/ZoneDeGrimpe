@@ -687,55 +687,211 @@ filterDistance?.addEventListener('input', (e) => {
   filterSpots();
 });
 
-/* ---------- Bouton "Proposer un spot" ---------- */
+/* ---------- Wizard "Proposer un spot" ---------- */
 const proposeSpotBtn = document.getElementById("proposeSpotBtn");
 const proposeModal = document.getElementById("proposeModal");
-const proposeForm = document.getElementById("proposeForm");
-const proposeCancelBtn = document.getElementById("proposeCancelBtn");
-const proposeErr = document.getElementById("proposeErr");
 
 // Afficher le bouton si connecté
 if (getMapToken() && proposeSpotBtn) proposeSpotBtn.style.display = "flex";
 
-proposeSpotBtn?.addEventListener("click", () => proposeModal?.showModal());
-proposeCancelBtn?.addEventListener("click", () => { proposeModal?.close(); proposeErr && (proposeErr.style.display = "none"); });
+// Grades d'escalade
+const GRADES = [
+  "3","4a","4b","4c","5a","5b","5c",
+  "6a","6a+","6b","6b+","6c","6c+",
+  "7a","7a+","7b","7b+","7c","7c+",
+  "8a","8a+","8b","8b+","8c","8c+",
+  "9a","9a+","9b","9b+","9c"
+];
 
-// Remplir lat/lng depuis la position utilisateur
+// État du wizard
+let wizardStep = 1;
+let wizardData = { name: "", type: "crag", lat: null, lng: null, orientation: null, niveau_min: "", niveau_max: "", description: "" };
+
+// DOM wizard
+const wizardTrack = document.getElementById("wizardTrack");
+const wizardProgressFill = document.getElementById("wizardProgressFill");
+const wizardNextBtn = document.getElementById("wizardNextBtn");
+const wizardBackBtn = document.getElementById("wizardBackBtn");
+const wizardCloseBtn = document.getElementById("wizardCloseBtn");
+const dots = [1,2,3,4].map(i => document.getElementById(`dot${i}`));
+
+// Peupler les selects de niveaux
+function populateLevelSelects() {
+  const minSel = document.getElementById("pNiveauMin");
+  const maxSel = document.getElementById("pNiveauMax");
+  if (!minSel || !maxSel) return;
+  const opts = GRADES.map(g => `<option value="${g}">${g}</option>`).join("");
+  minSel.innerHTML = `<option value="">Min</option>${opts}`;
+  maxSel.innerHTML = `<option value="">Max</option>${opts}`;
+}
+
+// Mise à jour de l'UI de navigation
+function updateWizardUI() {
+  const TOTAL = 4;
+  const pct = (wizardStep / TOTAL) * 100;
+  if (wizardProgressFill) wizardProgressFill.style.width = `${pct}%`;
+  if (wizardTrack) wizardTrack.style.transform = `translateX(-${(wizardStep - 1) * 25}%)`;
+
+  dots.forEach((d, i) => {
+    if (!d) return;
+    d.classList.toggle("active", i + 1 === wizardStep);
+    d.classList.toggle("done", i + 1 < wizardStep);
+  });
+
+  if (wizardBackBtn) wizardBackBtn.style.display = wizardStep > 1 ? "block" : "none";
+  if (wizardNextBtn) {
+    if (wizardStep < TOTAL) {
+      wizardNextBtn.textContent = "Suivant →";
+      wizardNextBtn.disabled = false;
+    } else {
+      wizardNextBtn.textContent = "Envoyer la demande";
+      wizardNextBtn.disabled = false;
+    }
+  }
+}
+
+// Validation par étape
+function validateStep(step) {
+  if (step === 1) {
+    const name = document.getElementById("pName")?.value.trim() || "";
+    const err = document.getElementById("errStep1");
+    if (!name) { if (err) err.textContent = "Le nom du spot est obligatoire."; return false; }
+    if (err) err.textContent = "";
+    wizardData.name = name;
+    wizardData.type = document.querySelector(".type-card.active")?.dataset.type || "crag";
+    return true;
+  }
+  if (step === 2) {
+    const lat = parseFloat(document.getElementById("pLat")?.value);
+    const lng = parseFloat(document.getElementById("pLng")?.value);
+    const err = document.getElementById("errStep2");
+    if (isNaN(lat) || isNaN(lng)) { if (err) err.textContent = "La position est obligatoire."; return false; }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { if (err) err.textContent = "Coordonnées invalides."; return false; }
+    if (err) err.textContent = "";
+    wizardData.lat = lat;
+    wizardData.lng = lng;
+    return true;
+  }
+  if (step === 3) {
+    wizardData.niveau_min = document.getElementById("pNiveauMin")?.value || "";
+    wizardData.niveau_max = document.getElementById("pNiveauMax")?.value || "";
+    wizardData.description = document.getElementById("pDescription")?.value.trim() || "";
+    wizardData.orientation = document.querySelector(".compass-btn.active")?.dataset.dir || null;
+    return true;
+  }
+  return true;
+}
+
+// Construction du récapitulatif
+function buildRecap() {
+  const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle" };
+  const recap = document.getElementById("recapCard");
+  if (!recap) return;
+  recap.innerHTML = `
+    <div class="recap-row"><span class="recap-row__label">Nom</span><span class="recap-row__value">${wizardData.name}</span></div>
+    <div class="recap-row"><span class="recap-row__label">Type</span><span class="recap-row__value">${typeIcons[wizardData.type] || wizardData.type}</span></div>
+    <div class="recap-row"><span class="recap-row__label">Latitude</span><span class="recap-row__value">${wizardData.lat?.toFixed(6)}</span></div>
+    <div class="recap-row"><span class="recap-row__label">Longitude</span><span class="recap-row__value">${wizardData.lng?.toFixed(6)}</span></div>
+    ${wizardData.niveau_min ? `<div class="recap-row"><span class="recap-row__label">Niveau min</span><span class="recap-row__value">${wizardData.niveau_min}</span></div>` : ""}
+    ${wizardData.niveau_max ? `<div class="recap-row"><span class="recap-row__label">Niveau max</span><span class="recap-row__value">${wizardData.niveau_max}</span></div>` : ""}
+    ${wizardData.orientation ? `<div class="recap-row"><span class="recap-row__label">Orientation</span><span class="recap-row__value">${wizardData.orientation}</span></div>` : ""}
+    ${wizardData.description ? `<div class="recap-row"><span class="recap-row__label">Description</span><span class="recap-row__value" style="font-size:.82rem">${wizardData.description}</span></div>` : ""}
+    <div class="recap-row">
+      <span class="recap-row__label" style="font-size:.8rem">${isMapAdmin() ? "✅ Sera approuvé immédiatement" : "⏳ Soumis à validation admin"}</span>
+    </div>
+  `;
+}
+
+// Réinitialiser le wizard
+function resetWizard() {
+  wizardStep = 1;
+  wizardData = { name: "", type: "crag", lat: null, lng: null, orientation: null, niveau_min: "", niveau_max: "", description: "" };
+  document.getElementById("pName") && (document.getElementById("pName").value = "");
+  document.getElementById("pLat") && (document.getElementById("pLat").value = "");
+  document.getElementById("pLng") && (document.getElementById("pLng").value = "");
+  document.getElementById("pNiveauMin") && (document.getElementById("pNiveauMin").value = "");
+  document.getElementById("pNiveauMax") && (document.getElementById("pNiveauMax").value = "");
+  document.getElementById("pDescription") && (document.getElementById("pDescription").value = "");
+  document.querySelectorAll(".type-card").forEach((c, i) => c.classList.toggle("active", i === 0));
+  document.querySelectorAll(".compass-btn").forEach(b => b.classList.remove("active"));
+  const cp = document.getElementById("coordsText");
+  if (cp) cp.textContent = "Position non définie";
+  ["errStep1","errStep2","errStep4"].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ""; });
+  updateWizardUI();
+}
+
+// Ouvrir le wizard
+proposeSpotBtn?.addEventListener("click", () => {
+  populateLevelSelects();
+  resetWizard();
+  proposeModal?.showModal();
+});
+
+// Fermer
+wizardCloseBtn?.addEventListener("click", () => proposeModal?.close());
+proposeModal?.addEventListener("click", (e) => { if (e.target === proposeModal) proposeModal.close(); });
+
+// Type cards
+document.querySelectorAll(".type-card").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".type-card").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+// Boussole
+document.querySelectorAll(".compass-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".compass-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+// Géolocalisation dans le wizard
 document.getElementById("pLocateBtn")?.addEventListener("click", () => {
+  const btn = document.getElementById("pLocateBtn");
+  const coordsText = document.getElementById("coordsText");
+  if (btn) { btn.disabled = true; btn.textContent = "Localisation…"; }
+
+  const setCoords = (lat, lng) => {
+    document.getElementById("pLat").value = lat.toFixed(6);
+    document.getElementById("pLng").value = lng.toFixed(6);
+    if (coordsText) coordsText.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Position trouvée ✓`; }
+  };
+
   if (userPosition) {
-    document.getElementById("pLat").value = userPosition.lat.toFixed(6);
-    document.getElementById("pLng").value = userPosition.lng.toFixed(6);
+    setCoords(userPosition.lat, userPosition.lng);
   } else {
-    map.locate({ enableHighAccuracy: true, timeout: 8000 });
-    map.once("locationfound", (e) => {
-      document.getElementById("pLat").value = e.latlng.lat.toFixed(6);
-      document.getElementById("pLng").value = e.latlng.lng.toFixed(6);
-    });
+    if (warnIfInsecureContext()) { if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Utiliser ma position`; } return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setCoords(pos.coords.latitude, pos.coords.longitude),
+      () => {
+        if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Utiliser ma position`; }
+        const errEl = document.getElementById("errStep2");
+        if (errEl) errEl.textContent = "Impossible d'obtenir la position.";
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
   }
 });
 
-proposeForm?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  proposeErr && (proposeErr.style.display = "none");
+// Navigation : Suivant
+wizardNextBtn?.addEventListener("click", async () => {
+  if (!validateStep(wizardStep)) return;
 
-  const name = document.getElementById("pName").value.trim();
-  const type = document.getElementById("pType").value;
-  const lat = parseFloat(document.getElementById("pLat").value);
-  const lng = parseFloat(document.getElementById("pLng").value);
-  const orientation = document.getElementById("pOrientation").value || null;
-  const niveau_min = document.getElementById("pNiveauMin").value.trim() || null;
-  const niveau_max = document.getElementById("pNiveauMax").value.trim() || null;
-  const description = document.getElementById("pDescription").value.trim() || null;
-
-  if (!name || isNaN(lat) || isNaN(lng)) {
-    proposeErr.textContent = "Nom, latitude et longitude sont obligatoires.";
-    proposeErr.style.display = "block";
+  if (wizardStep < 4) {
+    wizardStep++;
+    if (wizardStep === 4) buildRecap();
+    updateWizardUI();
     return;
   }
 
-  const btn = document.getElementById("proposeSubmitBtn");
-  btn.disabled = true;
-  btn.textContent = "Envoi…";
+  // Étape 4 → Soumettre
+  wizardNextBtn.disabled = true;
+  wizardNextBtn.textContent = "Envoi…";
+  const errEl = document.getElementById("errStep4");
+  if (errEl) errEl.textContent = "";
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/spots`, {
@@ -745,13 +901,13 @@ proposeForm?.addEventListener("submit", async (e) => {
         Authorization: `Bearer ${getMapToken()}`,
       },
       body: JSON.stringify({
-        name,
-        type,
-        location: { type: "Point", coordinates: [lng, lat] },
-        orientation,
-        niveau_min,
-        niveau_max,
-        description,
+        name: wizardData.name,
+        type: wizardData.type,
+        location: { type: "Point", coordinates: [wizardData.lng, wizardData.lat] },
+        orientation: wizardData.orientation || undefined,
+        niveau_min: wizardData.niveau_min || undefined,
+        niveau_max: wizardData.niveau_max || undefined,
+        description: wizardData.description || undefined,
       }),
     });
 
@@ -759,19 +915,20 @@ proposeForm?.addEventListener("submit", async (e) => {
     if (!res.ok) throw new Error(json?.detail || json?.error || "Erreur serveur");
 
     proposeModal?.close();
-    proposeForm?.reset();
-    const isAdmin = isMapAdmin();
-    showToast(isAdmin
+    showToast(isMapAdmin()
       ? "Spot ajouté et approuvé ✅"
       : "Demande envoyée ! Un admin va la valider 🙏"
     );
   } catch (err) {
-    proposeErr.textContent = "Erreur : " + err.message;
-    proposeErr.style.display = "block";
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Envoyer la demande";
+    if (errEl) errEl.textContent = "Erreur : " + err.message;
+    wizardNextBtn.disabled = false;
+    wizardNextBtn.textContent = "Envoyer la demande";
   }
+});
+
+// Navigation : Retour
+wizardBackBtn?.addEventListener("click", () => {
+  if (wizardStep > 1) { wizardStep--; updateWizardUI(); }
 });
 
 /* ---------- Chargement et affichage des spots ---------- */
