@@ -155,8 +155,15 @@ export function usersRouter(db) {
 
   // --- PATCH /api/users/:id ---
   r.patch("/:id", requireAuth, async (req, res) => {
+    const isAdmin = req.auth.roles?.includes("admin");
+    const isSelf = req.auth.uid === req.params.id;
+
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+
     try {
-      const updateSet = sanitizePartialUpdate(req.body ?? {});
+      const updateSet = sanitizePartialUpdate(req.body ?? {}, isAdmin);
       if (!Object.keys(updateSet).length) {
         return res.status(400).json({ error: "invalid_payload", detail: "empty_update" });
       }
@@ -175,6 +182,13 @@ export function usersRouter(db) {
 
   // --- DELETE /api/users/:id ---
   r.delete("/:id", requireAuth, async (req, res) => {
+    const isAdmin = req.auth.roles?.includes("admin");
+    const isSelf = req.auth.uid === req.params.id;
+
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+
     try {
       const result = await users.deleteOne({ _id: new ObjectId(req.params.id) });
       return res.json({ deleted: result.deletedCount === 1 });
@@ -187,7 +201,7 @@ export function usersRouter(db) {
   return r;
 }
 
-function sanitizePartialUpdate(body = {}) {
+function sanitizePartialUpdate(body = {}, isAdmin = false) {
   const set = {};
   const allowedRoles  = ["user", "admin", "moderator"];
   const allowedStatus = ["active", "banned", "pending"];
@@ -202,14 +216,19 @@ function sanitizePartialUpdate(body = {}) {
     set.email = email;
   }
   if (body.roles !== undefined) {
+    if (!isAdmin) throw new Error("Forbidden: only admin can change roles");
     if (!Array.isArray(body.roles) || body.roles.some(r => !allowedRoles.includes(r))) throw new Error("Invalid 'roles'");
     set.roles = body.roles;
   }
   if (body.status !== undefined) {
+    if (!isAdmin) throw new Error("Forbidden: only admin can change status");
     if (!allowedStatus.includes(body.status)) throw new Error("Invalid 'status'");
     set.status = body.status;
   }
-  if (body.emailVerified !== undefined) set.emailVerified = !!body.emailVerified;
+  if (body.emailVerified !== undefined) {
+    if (!isAdmin) throw new Error("Forbidden: only admin can change emailVerified");
+    set.emailVerified = !!body.emailVerified;
+  }
   if (body.avatarUrl !== undefined) {
     if (body.avatarUrl !== null && typeof body.avatarUrl !== "string") throw new Error("Invalid 'avatarUrl'");
     set.avatarUrl = body.avatarUrl;
