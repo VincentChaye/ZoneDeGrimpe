@@ -240,7 +240,11 @@ map.on("locationfound", (e) => {
 
 map.on("locationerror", (err) => {
   console.error("[map] locationerror:", err);
-  showToast("Impossible de récupérer votre position : " + (err.message || "erreur inconnue"), true);
+  // Fallback immédiat sur tous les spots si géoloc refusée
+  if (!userCentered && allSpots.length) {
+    const bounds = L.latLngBounds(allSpots.map((s) => [s.lat, s.lng]));
+    map.fitBounds(bounds.pad(0.2));
+  }
 });
 
 locateBtn?.addEventListener("click", requestLocation);
@@ -1058,10 +1062,18 @@ const mapLoading = document.getElementById("mapLoading");
       cluster.addLayer(m);
     });
 
-    // Zoom initial sur tous les spots
-    const bounds = L.latLngBounds(allSpots.map((s) => [s.lat, s.lng]));
+    // Zoom initial : essayer la géoloc, sinon fallback sur tous les spots
     if (!userCentered) {
-      map.fitBounds(bounds.pad(0.2));
+      const bounds = L.latLngBounds(allSpots.map((s) => [s.lat, s.lng]));
+      const fallback = () => { if (!userCentered) map.fitBounds(bounds.pad(0.2)); };
+
+      if (!navigator.geolocation) {
+        fallback();
+      } else {
+        requestLocation();
+        // Fallback si géoloc trop lente ou refusée
+        setTimeout(fallback, 6000);
+      }
     }
 
     // Gestion du spot dans l'URL (partage)
