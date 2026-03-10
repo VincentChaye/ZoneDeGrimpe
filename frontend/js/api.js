@@ -17,7 +17,12 @@ function getCache(key) {
   }
 }
 function setCache(key, data) {
-  localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch {
+    // Quota dépassé (Safari mobile ~5MB) → on vide et on réessaie
+    try { localStorage.clear(); localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch { /* silencieux */ }
+  }
 }
 
 /* ---------- coercion/normalisation ---------- */
@@ -70,7 +75,6 @@ function toSpot(s, i) {
       description: p.description ?? null,
       info_complementaires: p.info_complementaires ?? null,
       lat, lng,
-      raw: s,
     };
   }
 
@@ -100,7 +104,6 @@ function toSpot(s, i) {
     description: s.description ?? null,
     info_complementaires: s.info_complementaires ?? null,
     lat, lng,
-    raw: s,
   };
 }
 

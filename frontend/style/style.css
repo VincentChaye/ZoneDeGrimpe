@@ -428,8 +428,7 @@ body.sheet-open::after {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  /* Négatif pour coller aux bords du bottom-sheet */
-  margin: -1.5rem -1.5rem 0;
+  border-radius: var(--radius-lg);
 }
 
 .sc-header[data-type="crag"]    { background: linear-gradient(140deg, #E85120 0%, #A8290A 50%, #6B1204 100%); }
