@@ -1,32 +1,34 @@
-<!-- login.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Connexion — ZoneDeGrimpe</title>
+  <link rel="icon" href="./assets/ZoneDeGrimpeIcon.png" />
   <link rel="stylesheet" href="./style/style.css" />
 </head>
 <body class="theme page-auth">
+
   <header class="app-header">
     <a class="brand" href="./">
       <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
       <span class="brand__title">ZoneDeGrimpe</span>
     </a>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
   </header>
 
   <section class="card">
     <h2>Se connecter</h2>
     <form id="loginForm" class="form">
       <label>Email
-        <input type="email" name="email" required />
+        <input type="email" name="email" required autocomplete="email" />
       </label>
       <label>Mot de passe
-        <input type="password" name="password" required />
+        <input type="password" name="password" required autocomplete="current-password" />
       </label>
       <button class="btn" type="submit">Connexion</button>
     </form>
-    <p class="mt-12">Pas de compte ? <a href="./register.html">Créer un compte</a></p>
+    <p class="alt-links">Pas de compte ? <a href="./register.html">Créer un compte</a></p>
     <p id="loginErr" class="error" style="display:none"></p>
   </section>
 

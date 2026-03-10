@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,60 +8,53 @@
   <link rel="stylesheet" href="./style/style.css" />
   <link rel="stylesheet" href="./style/materiel.css" />
 </head>
-
 <body class="theme">
+
   <header class="app-header">
     <a class="brand" href="./">
       <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
       <span class="brand__title">ZoneDeGrimpe</span>
     </a>
-    <button id="hamburger" class="hamburger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="nav">
-      <span></span><span></span><span></span>
-    </button>
-    <nav id="nav" class="nav">
+    <nav id="nav" class="nav" aria-label="Navigation principale">
       <a href="./index.html">Accueil</a>
       <a class="active" href="./materiel.html">Matériel</a>
       <a href="./map.html">Carte</a>
       <a href="./parametres.html">Paramètres</a>
-      <button id="themeToggle" class="btn btn--ghost" type="button">Thème</button>
     </nav>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
   </header>
 
   <section class="banner banner--page">
     <h1>Mon matériel</h1>
-    <p>Ajoute, édite et suit tes équipements.</p>
+    <p>Ajoute, édite et suis tes équipements.</p>
   </section>
 
   <main class="container" id="main">
-    <!-- Onglets de navigation -->
-    <nav class="tabs" id="materialTabs">
-      <button class="tab-btn active" data-tab="inventory">📦 Inventaire</button>
-      <button class="tab-btn" data-tab="maintenance">🔧 Maintenance</button>
-      <button class="tab-btn" data-tab="advice">💡 Conseils</button>
-      <button class="tab-btn" data-tab="stats">📊 Statistiques</button>
+    <nav class="tabs" id="materialTabs" aria-label="Onglets matériel">
+      <button class="tab-btn active" data-tab="inventory">Inventaire</button>
+      <button class="tab-btn" data-tab="maintenance">Maintenance</button>
+      <button class="tab-btn" data-tab="advice">Conseils</button>
+      <button class="tab-btn" data-tab="stats">Stats</button>
     </nav>
 
-    <!-- Onglet Inventaire -->
+    <!-- Inventaire -->
     <div class="tab-content active" id="tab-inventory">
       <div class="toolbar">
-        <input id="gearSearch" class="input" placeholder="Rechercher…" />
-        <select id="gearTagFilter" class="select">
+        <input id="gearSearch" class="input" placeholder="Rechercher…" style="flex:1;min-width:0" />
+        <select id="gearTagFilter" class="select" style="flex:1;min-width:0">
           <option value="">Toutes catégories</option>
-          <!-- Les catégories seront chargées dynamiquement depuis l'API -->
         </select>
-        <button type="button" id="addGearBtn" class="btn" aria-label="Ajouter un équipement">
-          ➕ Ajouter un équipement
-        </button>
+        <button type="button" id="addGearBtn" class="btn" aria-label="Ajouter un équipement">+ Ajouter</button>
       </div>
       <section id="gearList" class="grid"></section>
     </div>
 
-    <!-- Onglet Maintenance -->
+    <!-- Maintenance -->
     <div class="tab-content" id="tab-maintenance">
       <div class="maintenance-sections">
         <section class="maintenance-card">
-          <h3>🔍 Inspections à échéance</h3>
-          <p>Matériel nécessitant une inspection prochainement</p>
+          <h3>Inspections à échéance</h3>
+          <p>Matériel nécessitant une inspection prochainement.</p>
           <div class="toolbar">
             <select id="inspectionDays" class="select">
               <option value="7">Dans 7 jours</option>
@@ -75,8 +67,8 @@
         </section>
 
         <section class="maintenance-card">
-          <h3>⚠️ Matériel à remplacer</h3>
-          <p>Équipement proche de la fin de vie</p>
+          <h3>Matériel à remplacer</h3>
+          <p>Équipement proche de la fin de vie.</p>
           <div class="toolbar">
             <select id="retireThreshold" class="select">
               <option value="0.7">70% d'usure</option>
@@ -90,46 +82,39 @@
       </div>
     </div>
 
-    <!-- Onglet Conseils -->
+    <!-- Conseils -->
     <div class="tab-content" id="tab-advice">
       <div class="advice-sections">
         <section class="advice-card">
-          <h3>🎯 Analyse de votre matériel</h3>
-          <p>Recommandations basées sur votre inventaire</p>
+          <h3>Analyse de votre matériel</h3>
+          <p>Recommandations basées sur votre inventaire.</p>
           <div class="toolbar">
-            <label>Localisation (optionnel)
-              <div style="display: flex; gap: 0.5rem;">
+            <label style="flex:1;display:flex;flex-direction:column;gap:.35rem">
+              Localisation (optionnel)
+              <div style="display:flex;gap:.4rem">
                 <input id="adviceLat" class="input" placeholder="Latitude" type="number" step="any" />
                 <input id="adviceLng" class="input" placeholder="Longitude" type="number" step="any" />
                 <button id="getLocationBtn" class="btn btn--ghost" title="Utiliser ma position">📍</button>
               </div>
             </label>
-            <button id="getMaterialAdviceBtn" class="btn">Analyser</button>
+            <button id="getMaterialAdviceBtn" class="btn" style="align-self:flex-end">Analyser</button>
           </div>
           <div id="materialAdvice" class="advice-results"></div>
         </section>
 
         <section class="advice-card">
-          <h3>🏔️ Spots recommandés</h3>
-          <p>Falaises adaptées à votre niveau et matériel</p>
+          <h3>Spots recommandés</h3>
+          <p>Falaises adaptées à votre niveau et matériel.</p>
           <div class="toolbar">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;flex:1">
               <input id="spotsLat" class="input" placeholder="Latitude" type="number" step="any" />
               <input id="spotsLng" class="input" placeholder="Longitude" type="number" step="any" />
               <select id="spotsLevel" class="select">
-                <option value="">Niveau minimum</option>
-                <option value="4a">4a</option>
-                <option value="4b">4b</option>
-                <option value="4c">4c</option>
-                <option value="5a">5a</option>
-                <option value="5b">5b</option>
-                <option value="5c">5c</option>
-                <option value="6a">6a</option>
-                <option value="6b">6b</option>
-                <option value="6c">6c</option>
-                <option value="7a">7a</option>
-                <option value="7b">7b</option>
-                <option value="7c">7c</option>
+                <option value="">Niveau min</option>
+                <option>4a</option><option>4b</option><option>4c</option>
+                <option>5a</option><option>5b</option><option>5c</option>
+                <option>6a</option><option>6b</option><option>6c</option>
+                <option>7a</option><option>7b</option><option>7c</option>
               </select>
               <select id="spotsExposition" class="select">
                 <option value="">Toutes expositions</option>
@@ -143,46 +128,75 @@
                 <option value="NW">Nord-Ouest</option>
               </select>
             </div>
-            <button id="getSpotsAdviceBtn" class="btn">Rechercher</button>
+            <button id="getSpotsAdviceBtn" class="btn" style="align-self:flex-end">Rechercher</button>
           </div>
           <div id="spotsAdvice" class="advice-results"></div>
         </section>
       </div>
     </div>
 
-    <!-- Onglet Statistiques -->
+    <!-- Stats -->
     <div class="tab-content" id="tab-stats">
       <div class="stats-grid">
         <div class="stat-card">
-          <h3>📊 Résumé inventaire</h3>
+          <h3>Résumé inventaire</h3>
           <div id="inventoryStats"></div>
         </div>
         <div class="stat-card">
-          <h3>💰 Valeur totale</h3>
+          <h3>Valeur totale</h3>
           <div id="valueStats"></div>
         </div>
         <div class="stat-card">
-          <h3>🔄 État général</h3>
+          <h3>État général</h3>
           <div id="conditionStats"></div>
         </div>
       </div>
     </div>
   </main>
 
-  <!-- Modal formulaire (contenu généré par JavaScript) -->
   <dialog id="gearModal" class="modal">
-    <form id="gearForm" class="modal__content">
-      <!-- Le contenu du formulaire sera généré dynamiquement -->
-    </form>
+    <form id="gearForm" class="modal__content"></form>
   </dialog>
 
   <footer class="app-footer">
     <p>© <span id="year"></span> ZoneDeGrimpe</p>
   </footer>
 
+  <!-- Bottom Tab Bar (mobile) -->
+  <nav class="tab-bar" aria-label="Navigation principale">
+    <a href="./index.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      <span>Accueil</span>
+    </a>
+    <a href="./map.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="10" r="3"/>
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      </svg>
+      <span>Carte</span>
+    </a>
+    <a href="./materiel.html" class="tab-bar__item active" aria-current="page">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 9V7a6 6 0 0112 0v2"/>
+        <rect x="2" y="9" width="20" height="13" rx="2"/>
+        <path d="M9 14h6"/>
+      </svg>
+      <span>Matériel</span>
+    </a>
+    <a href="./parametres.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/>
+      </svg>
+      <span>Profil</span>
+    </a>
+  </nav>
+
   <script type="module" src="./config.js"></script>
   <script type="module" src="./js/ui.js"></script>
   <script type="module" src="./js/materiel-smart.js"></script>
 </body>
-
 </html>

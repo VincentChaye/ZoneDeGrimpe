@@ -1,34 +1,33 @@
-<!-- register.html -->
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Créer un compte — ZoneDeGrimpe</title>
+  <link rel="icon" href="./assets/ZoneDeGrimpeIcon.png" />
   <link rel="stylesheet" href="./style/style.css" />
 </head>
+<body class="theme page-auth">
 
-<body class="theme theme page-auth">
   <header class="app-header">
     <a class="brand" href="./">
-      <img src="./assets/ZoneDeGrimpeIcon.png" class="brand__icon" />
+      <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
       <span class="brand__title">ZoneDeGrimpe</span>
     </a>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
   </header>
 
   <section class="card">
     <h2>Créer un compte</h2>
-    <!-- register.html (section formulaire) -->
     <form id="regForm" class="form">
       <label>Nom affiché
-        <input type="text" name="displayName" placeholder="Votre nom" />
+        <input type="text" name="displayName" placeholder="Votre nom" autocomplete="name" />
       </label>
       <label>Email
-        <input type="email" name="email" required />
+        <input type="email" name="email" required autocomplete="email" />
       </label>
       <label>Mot de passe
-        <input type="password" name="password" required minlength="6" />
+        <input type="password" name="password" required minlength="6" autocomplete="new-password" />
       </label>
       <label>Niveau
         <select name="level" id="levelSelect">
@@ -39,13 +38,11 @@
       </label>
       <button class="btn" type="submit">Créer le compte</button>
     </form>
-
-    <p class="mt-12">Déjà inscrit ? <a href="./login.html">Se connecter</a></p>
+    <p class="alt-links">Déjà inscrit ? <a href="./login.html">Se connecter</a></p>
     <p id="regErr" class="error" style="display:none"></p>
   </section>
 
   <script src="./config.js"></script>
   <script type="module" src="./js/register.js"></script>
 </body>
-
 </html>

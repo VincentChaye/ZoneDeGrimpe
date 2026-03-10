@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,25 +8,24 @@
   <link rel="stylesheet" href="./style/style.css" />
   <link rel="stylesheet" href="./style/parametres.css" />
 </head>
-
 <body class="theme">
+
   <header class="app-header">
     <a class="brand" href="./">
       <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
       <span class="brand__title">ZoneDeGrimpe</span>
     </a>
-    <button id="hamburger" class="hamburger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="nav">
-      <span></span><span></span><span></span>
-    </button>
-    <nav id="nav" class="nav">
+    <nav id="nav" class="nav" aria-label="Navigation principale">
       <a href="./index.html">Accueil</a>
       <a href="./materiel.html">Matériel</a>
+      <a href="./map.html">Carte</a>
       <a class="active" href="./parametres.html">Paramètres</a>
-      <button id="themeToggle" class="btn btn--ghost" type="button">Thème</button>
     </nav>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
   </header>
 
   <main class="container settings" id="settingsRoot" hidden>
+
     <details class="card" open>
       <summary class="card__title">Informations personnelles</summary>
       <div class="card__content">
@@ -35,41 +33,45 @@
           <div class="field__label">Nom de compte</div>
           <div class="field__value" id="displayName">—</div>
         </div>
-
         <div class="field">
           <div class="field__label">Email</div>
           <div class="field__value" id="email">—</div>
         </div>
-
         <div class="field">
           <div class="field__label">Téléphone</div>
           <div class="field__value">
             <span id="phone">—</span>
-            <button class="icon-btn" id="editPhoneBtn" title="Modifier le téléphone"
-              aria-label="Modifier le téléphone">✏️</button>
+            <button class="icon-btn" id="editPhoneBtn" title="Modifier" aria-label="Modifier le téléphone">✏️</button>
           </div>
         </div>
-
         <div class="field">
           <div class="field__label">Rôle</div>
           <div class="field__value" id="role">—</div>
         </div>
-      
         <div class="field">
           <div class="field__label">Niveau</div>
           <div class="field__value">
             <span id="level">—</span>
-            <button class="icon-btn" id="editLevelBtn" title="Modifier le niveau"
-              aria-label="Modifier le niveau">✏️</button>
+            <button class="icon-btn" id="editLevelBtn" title="Modifier" aria-label="Modifier le niveau">✏️</button>
           </div>
         </div>
-     
         <div class="field field--avatar">
           <div class="field__label">Avatar</div>
           <div class="field__value">
             <img id="avatarImg" class="avatar" alt="Avatar utilisateur" src="" />
-            <button class="icon-btn" id="editAvatarBtn" title="Modifier l’avatar"
-              aria-label="Modifier l’avatar">✏️</button>
+            <button class="icon-btn" id="editAvatarBtn" title="Modifier" aria-label="Modifier l'avatar">✏️</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary class="card__title">Apparence</summary>
+      <div class="card__content">
+        <div class="field">
+          <div class="field__label">Thème</div>
+          <div class="field__value">
+            <button class="btn btn--ghost" id="themeToggleSettings" type="button">Basculer thème</button>
           </div>
         </div>
       </div>
@@ -85,15 +87,48 @@
         <p class="hint">La suppression est définitive. Une confirmation est requise.</p>
       </div>
     </details>
+
   </main>
 
   <footer class="app-footer">
     <span>&copy; <span id="year"></span> ZoneDeGrimpe</span>
   </footer>
 
+  <!-- Bottom Tab Bar (mobile) -->
+  <nav class="tab-bar" aria-label="Navigation principale">
+    <a href="./index.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      <span>Accueil</span>
+    </a>
+    <a href="./map.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="10" r="3"/>
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      </svg>
+      <span>Carte</span>
+    </a>
+    <a href="./materiel.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 9V7a6 6 0 0112 0v2"/>
+        <rect x="2" y="9" width="20" height="13" rx="2"/>
+        <path d="M9 14h6"/>
+      </svg>
+      <span>Matériel</span>
+    </a>
+    <a href="./parametres.html" class="tab-bar__item active" aria-current="page">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/>
+      </svg>
+      <span>Profil</span>
+    </a>
+  </nav>
+
   <script src="./config.js"></script>
   <script type="module" src="./js/ui.js"></script>
   <script type="module" src="./js/parametres.js"></script>
 </body>
-
 </html>

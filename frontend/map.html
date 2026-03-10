@@ -10,22 +10,20 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 </head>
-<body class="theme">
+<body class="theme page-map">
+
   <header class="app-header app-header--compact">
     <a class="brand" href="./">
       <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
       <span class="brand__title">ZoneDeGrimpe</span>
     </a>
-    <button id="hamburger" class="hamburger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="nav">
-      <span></span><span></span><span></span>
-    </button>
-    <nav id="nav" class="nav">
+    <nav id="nav" class="nav" aria-label="Navigation principale">
       <a href="./index.html">Accueil</a>
       <a href="./materiel.html">Matériel</a>
       <a class="active" href="./map.html">Carte</a>
       <a href="./parametres.html">Paramètres</a>
-      <button id="themeToggle" class="btn btn--ghost" type="button">Thème</button>
     </nav>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
   </header>
 
   <main class="map-layout">
@@ -35,29 +33,27 @@
     <div class="filter-bar" id="filterBar" role="region" aria-label="Filtres carte">
       <button id="searchToggleBtn" class="btn btn--ghost btn--compact" title="Rechercher un spot" aria-expanded="false" aria-controls="searchBar">🔍</button>
       <button id="locateBtn" class="btn btn--compact" title="Me localiser">📍</button>
-
       <select id="filterType" class="filter-select" aria-label="Filtrer par type">
-        <option value="">Tous les types</option>
-        <option value="crag">🧗 Falaise</option>
-        <option value="boulder">🪨 Bloc</option>
-        <option value="indoor">🏢 Salle</option>
+        <option value="">Tous</option>
+        <option value="crag">Falaise</option>
+        <option value="boulder">Bloc</option>
+        <option value="indoor">Salle</option>
       </select>
-
       <button id="toggleFilters" class="btn btn--ghost btn--compact" title="Plus de filtres">⚙️</button>
-      <button id="resetFilters" class="btn btn--ghost btn--compact" title="Réinitialiser les filtres" style="display:none;">🔄</button>
+      <button id="resetFilters" class="btn btn--ghost btn--compact" title="Réinitialiser les filtres" style="display:none;">↺</button>
     </div>
 
     <!-- Barre de recherche (masquée par défaut) -->
     <div class="search-bar" id="searchBar" hidden>
-      <input type="text" id="searchInput" placeholder="Rechercher un spot..." aria-label="Rechercher un spot" autocomplete="off">
+      <input type="text" id="searchInput" placeholder="Rechercher un spot…" aria-label="Rechercher un spot" autocomplete="off" />
       <div id="searchResults" class="search-results" aria-live="polite"></div>
     </div>
 
-    <!-- Panneau de filtres avancés (masqué par défaut) -->
+    <!-- Filtres avancés (masqués par défaut) -->
     <div class="advanced-filters" id="advancedFilters" style="display:none;">
       <div class="filter-group">
-        <label for="filterNiveauMin">Niveau min:</label>
-        <select id="filterNiveauMin" class="filter-select">
+        <label for="filterNiveauMin">Niveau minimum</label>
+        <select id="filterNiveauMin" class="filter-select" style="width:100%">
           <option value="">Tous</option>
           <option value="3">3</option>
           <option value="4">4</option>
@@ -68,36 +64,64 @@
           <option value="9">9</option>
         </select>
       </div>
-      
       <div class="filter-group">
-        <label for="filterDistance">
-          Distance: <span id="distanceValue">Toutes</span>
-        </label>
-        <input type="range" id="filterDistance" min="0" max="500" value="500" step="10">
+        <label for="filterDistance">Distance : <span id="distanceValue">Toutes</span></label>
+        <input type="range" id="filterDistance" min="0" max="500" value="500" step="10" style="width:100%" />
       </div>
     </div>
 
-    <!-- Loading indicator -->
+    <!-- Loading -->
     <div id="mapLoading" class="map-loading">
       <div class="map-loading__spinner"></div>
       <span>Chargement des spots…</span>
     </div>
 
-    <!-- Toast d'erreur -->
+    <!-- Toast -->
     <div id="mapToast" class="map-toast" aria-live="assertive" style="display:none;"></div>
 
-    <!-- Bottom sheet pour fiche spot -->
+    <!-- Bottom sheet fiche spot -->
     <section class="bottom-sheet" id="bottomSheet" aria-hidden="true">
       <button class="bottom-sheet__close" id="sheetClose" aria-label="Fermer">×</button>
-      <div class="bottom-sheet__content" id="sheetContent">
-        <!-- Contenu injecté par JS -->
-      </div>
+      <div class="bottom-sheet__content" id="sheetContent"></div>
     </section>
   </main>
 
   <footer class="app-footer app-footer--hidden-mobile">
     <p>© <span id="year"></span> ZoneDeGrimpe</p>
   </footer>
+
+  <!-- Bottom Tab Bar (mobile) -->
+  <nav class="tab-bar" aria-label="Navigation principale">
+    <a href="./index.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      <span>Accueil</span>
+    </a>
+    <a href="./map.html" class="tab-bar__item active" aria-current="page">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="10" r="3"/>
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      </svg>
+      <span>Carte</span>
+    </a>
+    <a href="./materiel.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 9V7a6 6 0 0112 0v2"/>
+        <rect x="2" y="9" width="20" height="13" rx="2"/>
+        <path d="M9 14h6"/>
+      </svg>
+      <span>Matériel</span>
+    </a>
+    <a href="./parametres.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/>
+      </svg>
+      <span>Profil</span>
+    </a>
+  </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>

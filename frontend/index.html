@@ -12,55 +12,51 @@
   <link rel="stylesheet" href="./style/style.css" />
 </head>
 <body class="theme">
+
   <header class="app-header">
     <a class="brand" href="./">
       <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
       <span class="brand__title">ZoneDeGrimpe</span>
     </a>
-    <button id="hamburger" class="hamburger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="nav">
-      <span></span><span></span><span></span>
-    </button>
     <nav id="nav" class="nav" aria-label="Navigation principale">
       <a class="active" href="./index.html">Accueil</a>
       <a href="./materiel.html">Matériel</a>
       <a href="./map.html">Carte</a>
       <a href="./parametres.html">Paramètres</a>
-      <button id="themeToggle" class="btn btn--ghost" type="button" title="Basculer le thème">Thème</button>
     </nav>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
   </header>
 
-  <!-- Banner / Splash minimal -->
-  <section class="banner" style="--brand:#06668C">
-    <div class="banner__content">
-      <img src="./assets/ZoneDeGrimpeIcon.png" alt="" class="banner__logo" />
-      <h1 class="banner__title">Trouve ta prochaine voie</h1>
-      <p class="banner__subtitle">Explore les zones de grimpe, organise ton matériel, règle ton compte.</p>
-      <div class="quick-actions">
-        <a class="card" href="./map.html">
-          <h3>Carte</h3><p>Spots, filtres, itinéraires</p>
-        </a>
-        <a class="card" href="./materiel.html">
-          <h3>Matériel</h3><p>Ajoute, édite, suit ton équipement</p>
-        </a>
-        <a class="card" href="./parametres.html">
-          <h3>Paramètres</h3><p>Profil, préférences, sauvegarde</p>
-        </a>
-      </div>
+  <section class="banner">
+    <img src="./assets/ZoneDeGrimpeIcon.png" alt="" class="banner__logo" />
+    <h1 class="banner__title">Trouve ta prochaine voie</h1>
+    <p class="banner__subtitle">Explore les zones de grimpe, organise ton matériel, règle ton compte.</p>
+    <div class="quick-actions">
+      <a class="card" href="./map.html">
+        <h3>Carte</h3>
+        <p>Spots, filtres, itinéraires</p>
+      </a>
+      <a class="card" href="./materiel.html">
+        <h3>Matériel</h3>
+        <p>Ajoute, édite, suit ton équipement</p>
+      </a>
+      <a class="card" href="./parametres.html">
+        <h3>Paramètres</h3>
+        <p>Profil, préférences, sauvegarde</p>
+      </a>
     </div>
   </section>
 
   <main class="container" id="main">
     <section class="modules-grid" id="modulesGrid" aria-label="Modules dynamiques">
-      <!-- Sections dynamiques futures -->
       <article class="module">
-        <h2>Announcements</h2>
-        <p> Application en developpement,
-          les données affichées sont fictives. Les fonctionnalités d'authentification,
+        <h2>Annonces</h2>
+        <p>Application en développement.
+          Les données affichées sont fictives. Les fonctionnalités d'authentification,
           de gestion de matériel et de spots de grimpe sont en cours d'implémentation.
-          <br/><br/>
-          Merci de votre compréhension.
-          <br/><br/>
-          Vincent et Clement de l'équipe ZoneDeGrimpe.
+          <br /><br />
+          Merci de votre compréhension.<br />
+          Vincent et Clément de l'équipe ZoneDeGrimpe.
         </p>
       </article>
     </section>
@@ -69,6 +65,39 @@
   <footer class="app-footer">
     <p>© <span id="year"></span> ZoneDeGrimpe</p>
   </footer>
+
+  <!-- Bottom Tab Bar (mobile) -->
+  <nav class="tab-bar" aria-label="Navigation principale">
+    <a href="./index.html" class="tab-bar__item active" aria-current="page">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      <span>Accueil</span>
+    </a>
+    <a href="./map.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="10" r="3"/>
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      </svg>
+      <span>Carte</span>
+    </a>
+    <a href="./materiel.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 9V7a6 6 0 0112 0v2"/>
+        <rect x="2" y="9" width="20" height="13" rx="2"/>
+        <path d="M9 14h6"/>
+      </svg>
+      <span>Matériel</span>
+    </a>
+    <a href="./parametres.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/>
+      </svg>
+      <span>Profil</span>
+    </a>
+  </nav>
 
   <script type="module" src="./js/main.js"></script>
 </body>
