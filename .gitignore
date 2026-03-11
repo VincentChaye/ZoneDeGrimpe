@@ -1,4 +1,6 @@
 backend/.env
+CLAUDE.md
+.claude/
 backend/node_modules
 .DS_Store
 Thumbs.db
