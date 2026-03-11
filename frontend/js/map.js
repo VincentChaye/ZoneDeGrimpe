@@ -330,173 +330,288 @@ window.shareSpot = function(spotId) {
   }
 };
 
-/* ---------- Fonction pour voir les détails complets ---------- */
-window.viewSpotDetails = function(spotId) {
-  const spot = allSpots.find(s => s.id === spotId);
-  if (!spot) return;
-  
-  const detailsHTML = `
-    <div class="spot-details">
-      <h3 class="spot-title">Détails complets</h3>
-      <div class="spot-info-list">
-        <div class="spot-info-item"><strong>Nom :</strong> ${spot.name || 'Non renseigné'}</div>
-        <div class="spot-info-item"><strong>Type :</strong> ${spot.type || 'Non renseigné'}</div>
-        <div class="spot-info-item"><strong>Sous-type :</strong> ${spot.soustype || 'Non renseigné'}</div>
-        <div class="spot-info-item"><strong>Niveau min :</strong> ${spot.niveau_min || 'Non renseigné'}</div>
-        <div class="spot-info-item"><strong>Niveau max :</strong> ${spot.niveau_max || 'Non renseigné'}</div>
-        <div class="spot-info-item"><strong>Orientation :</strong> ${spot.orientation || 'Non renseignée'}</div>
-        <div class="spot-info-item"><strong>Nombre de voies :</strong> ${spot.id_voix?.length || 0}</div>
-        ${spot.description ? `<div class="spot-info-item"><strong>Description :</strong> ${spot.description}</div>` : ''}
-        ${spot.info_complementaires ? `<div class="spot-info-item"><strong>Infos complémentaires :</strong> ${spot.info_complementaires}</div>` : ''}
-        ${spot.url ? `<div class="spot-info-item"><strong>URL :</strong> <a href="${spot.url}" target="_blank" rel="noopener">${spot.url}</a></div>` : ''}
-        <div class="spot-info-item"><strong>Coordonnées :</strong> ${spot.lat.toFixed(6)}, ${spot.lng.toFixed(6)}</div>
-      </div>
-      <div class="spot-actions">
-        <button class="btn" onclick="window.editSpot && editSpot('${spot.id}')">Modifier</button>
-        <button class="btn btn--ghost" onclick="closeSheet()">Fermer</button>
-      </div>
+/* ---------- Wizard "Modifier un spot" ---------- */
+const editModal = document.getElementById("editModal");
+
+let editWizardStep    = 1;
+let editWizardSpotId  = null;
+let editWizardOrig    = null; // valeurs actuelles du spot
+let editWizardData    = { name: "", type: "crag", orientation: null, niveau_min: "", niveau_max: "", description: "" };
+
+const eWizardTrack       = document.getElementById("eWizardTrack");
+const eWizardProgressFill = document.getElementById("eWizardProgressFill");
+const eWizardNextBtn     = document.getElementById("eWizardNextBtn");
+const eWizardBackBtn     = document.getElementById("eWizardBackBtn");
+const eWizardCloseBtn    = document.getElementById("eWizardCloseBtn");
+const eDots = [1, 2, 3].map(i => document.getElementById(`eDot${i}`));
+
+function populateEditLevelSelects() {
+  const minSel = document.getElementById("eNiveauMin");
+  const maxSel = document.getElementById("eNiveauMax");
+  if (!minSel || !maxSel) return;
+  const opts = GRADES.map(g => `<option value="${g}">${g}</option>`).join("");
+  minSel.innerHTML = `<option value="">Min</option>${opts}`;
+  maxSel.innerHTML = `<option value="">Max</option>${opts}`;
+}
+
+function updateEditWizardUI() {
+  const TOTAL = 3;
+  if (eWizardProgressFill) eWizardProgressFill.style.width = `${(editWizardStep / TOTAL) * 100}%`;
+  if (eWizardTrack) eWizardTrack.style.transform = `translateX(-${(editWizardStep - 1) * 33.333}%)`;
+
+  eDots.forEach((d, i) => {
+    if (!d) return;
+    d.classList.toggle("active", i + 1 === editWizardStep);
+    d.classList.toggle("done",   i + 1 < editWizardStep);
+  });
+
+  if (eWizardBackBtn) eWizardBackBtn.style.display = editWizardStep > 1 ? "block" : "none";
+  if (eWizardNextBtn) {
+    eWizardNextBtn.textContent = editWizardStep < TOTAL ? "Suivant →" : "Envoyer la modification";
+    eWizardNextBtn.disabled = false;
+  }
+}
+
+function setEditErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg || "";
+}
+
+function validateEditStep(step) {
+  if (step === 1) {
+    const name = document.getElementById("eName")?.value.trim() || "";
+    if (!name) { setEditErr("errEditStep1", "Le nom du spot est obligatoire."); return false; }
+    setEditErr("errEditStep1", "");
+    editWizardData.name = name;
+    editWizardData.type = document.querySelector("#editModal .type-card.active")?.dataset.type || "crag";
+    return true;
+  }
+  if (step === 2) {
+    editWizardData.niveau_min  = document.getElementById("eNiveauMin")?.value || "";
+    editWizardData.niveau_max  = document.getElementById("eNiveauMax")?.value || "";
+    editWizardData.description = document.getElementById("eDescription")?.value.trim() || "";
+    editWizardData.orientation = document.querySelector("#editModal .compass-btn.active")?.dataset.dir || null;
+    return true;
+  }
+  return true;
+}
+
+function buildEditRecap() {
+  const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle" };
+  const recap = document.getElementById("eRecapCard");
+  if (!recap || !editWizardOrig) return;
+
+  const orig = editWizardOrig;
+
+  function diffRow(label, key, displayFn) {
+    const newVal    = editWizardData[key] || null;
+    const oldVal    = orig[key] || null;
+    const newDisplay = displayFn ? displayFn(newVal) : (newVal || "—");
+    const oldDisplay = displayFn ? displayFn(oldVal) : (oldVal || "—");
+    const changed   = (newVal || "") !== (oldVal || "");
+    return `
+      <div class="recap-row${changed ? " recap-row--changed" : ""}">
+        <span class="recap-row__label">${label}</span>
+        <span class="recap-row__value">
+          ${changed && oldVal ? `<span class="recap-old">${oldDisplay}</span> → ` : ""}${newDisplay}
+        </span>
+      </div>`;
+  }
+
+  recap.innerHTML = `
+    ${diffRow("Nom", "name")}
+    ${diffRow("Type", "type", v => typeIcons[v] || v || "—")}
+    ${diffRow("Niveau min", "niveau_min")}
+    ${diffRow("Niveau max", "niveau_max")}
+    ${diffRow("Orientation", "orientation")}
+    ${diffRow("Description", "description")}
+    <div class="recap-row">
+      <span class="recap-row__label" style="font-size:.8rem">
+        ${isMapAdmin() ? "✅ Appliqué immédiatement" : "⏳ Soumis à validation admin"}
+      </span>
     </div>
   `;
-  
-  openSheet(detailsHTML);
-};
+}
 
-/* ---------- Fonction pour modifier un spot ---------- */
+function resetEditWizard() {
+  editWizardStep = 1;
+  editWizardData = { name: "", type: "crag", orientation: null, niveau_min: "", niveau_max: "", description: "" };
+  ["errEditStep1", "errEditStep3"].forEach(id => setEditErr(id, ""));
+  if (eWizardNextBtn) { eWizardNextBtn.style.display = ""; eWizardNextBtn.disabled = false; eWizardNextBtn.textContent = "Suivant →"; }
+  const footer = document.getElementById("eWizardFooter");
+  footer?.querySelectorAll("button:not(#eWizardNextBtn):not(#eWizardBackBtn)").forEach(b => b.remove());
+  updateEditWizardUI();
+}
+
+/* Ouvrir le wizard d'édition pré-rempli */
 window.editSpot = function(spotId) {
   const spot = allSpots.find(s => s.id === spotId);
   if (!spot) return;
-  
-  const formHTML = `
-    <div class="spot-edit-form">
-      <h3 class="spot-title">Modifier le spot</h3>
-      <form id="editSpotForm" onsubmit="return false;">
-        <div class="form-group">
-          <label for="editName">Nom du spot *</label>
-          <input type="text" id="editName" name="name" value="${spot.name || ''}" required maxlength="120">
-        </div>
-        
-        <div class="form-group">
-          <label for="editSoustype">Sous-type</label>
-          <select id="editSoustype" name="soustype">
-            <option value="">-- Sélectionner --</option>
-            <option value="diff" ${spot.soustype === 'diff' ? 'selected' : ''}>Difficulté (diff)</option>
-            <option value="bloc" ${spot.soustype === 'bloc' ? 'selected' : ''}>Bloc</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="editNiveauMin">Niveau minimum</label>
-          <input type="text" id="editNiveauMin" name="niveau_min" value="${spot.niveau_min || ''}" placeholder="Ex: 4a, 5c" maxlength="10">
-        </div>
-        
-        <div class="form-group">
-          <label for="editNiveauMax">Niveau maximum</label>
-          <input type="text" id="editNiveauMax" name="niveau_max" value="${spot.niveau_max || ''}" placeholder="Ex: 7b, 8a+" maxlength="10">
-        </div>
-        
-        <div class="form-group">
-          <label for="editOrientation">Orientation</label>
-          <select id="editOrientation" name="orientation">
-            <option value="">-- Sélectionner --</option>
-            <option value="N" ${spot.orientation === 'N' ? 'selected' : ''}>Nord (N)</option>
-            <option value="NE" ${spot.orientation === 'NE' ? 'selected' : ''}>Nord-Est (NE)</option>
-            <option value="E" ${spot.orientation === 'E' ? 'selected' : ''}>Est (E)</option>
-            <option value="SE" ${spot.orientation === 'SE' ? 'selected' : ''}>Sud-Est (SE)</option>
-            <option value="S" ${spot.orientation === 'S' ? 'selected' : ''}>Sud (S)</option>
-            <option value="SO" ${spot.orientation === 'SO' ? 'selected' : ''}>Sud-Ouest (SO)</option>
-            <option value="O" ${spot.orientation === 'O' ? 'selected' : ''}>Ouest (O)</option>
-            <option value="NO" ${spot.orientation === 'NO' ? 'selected' : ''}>Nord-Ouest (NO)</option>
-          </select>
-        </div>
-        
-        <div class="spot-actions">
-          <button type="button" class="btn" onclick="window.submitSpotEdit && submitSpotEdit('${spot.id}')">Enregistrer</button>
-          <button type="button" class="btn btn--ghost" onclick="closeSheet()">Annuler</button>
-        </div>
-      </form>
-    </div>
-  `;
-  
-  openSheet(formHTML);
+
+  editWizardSpotId = spotId;
+  editWizardOrig   = spot;
+
+  populateEditLevelSelects();
+  resetEditWizard();
+
+  // Pré-remplir les données
+  editWizardData.name        = spot.name || "";
+  editWizardData.type        = spot.type || "crag";
+  editWizardData.orientation = spot.orientation || null;
+  editWizardData.niveau_min  = spot.niveau_min || "";
+  editWizardData.niveau_max  = spot.niveau_max || "";
+  editWizardData.description = spot.description || "";
+
+  // Appliquer aux inputs
+  const nameInput = document.getElementById("eName");
+  if (nameInput) nameInput.value = editWizardData.name;
+
+  document.querySelectorAll("#editModal .type-card").forEach(c => {
+    c.classList.toggle("active", c.dataset.type === editWizardData.type);
+  });
+
+  // Niveaux (après que les selects soient peuplés)
+  setTimeout(() => {
+    const minSel = document.getElementById("eNiveauMin");
+    const maxSel = document.getElementById("eNiveauMax");
+    if (minSel && editWizardData.niveau_min) minSel.value = editWizardData.niveau_min;
+    if (maxSel && editWizardData.niveau_max) maxSel.value = editWizardData.niveau_max;
+  }, 0);
+
+  const descInput = document.getElementById("eDescription");
+  if (descInput) descInput.value = editWizardData.description;
+
+  document.querySelectorAll("#editModal .compass-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.dir === editWizardData.orientation);
+  });
+
+  closeSheet();
+  editModal?.showModal();
 };
 
-/* ---------- Fonction pour soumettre la modification ---------- */
-window.submitSpotEdit = async function(spotId) {
-  const form = document.getElementById('editSpotForm');
-  if (!form) return;
-  
-  const formData = new FormData(form);
-  const updates = {};
-  
-  // Récupérer seulement les champs modifiables
-  const name = formData.get('name')?.trim();
-  const soustype = formData.get('soustype')?.trim();
-  const niveau_min = formData.get('niveau_min')?.trim();
-  const niveau_max = formData.get('niveau_max')?.trim();
-  const orientation = formData.get('orientation')?.trim();
-  
-  if (name) updates.name = name;
-  if (soustype) updates.soustype = soustype;
-  if (niveau_min) updates.niveau_min = niveau_min;
-  if (niveau_max) updates.niveau_max = niveau_max;
-  if (orientation) updates.orientation = orientation;
-  
-  // Si aucune modification
-  if (Object.keys(updates).length === 0) {
-    showToast('Aucune modification à enregistrer.');
+// Fermer le modal
+eWizardCloseBtn?.addEventListener("click", () => editModal?.close());
+editModal?.addEventListener("click", e => { if (e.target === editModal) editModal.close(); });
+
+// Type cards (edit modal uniquement)
+document.querySelectorAll("#editModal .type-card").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#editModal .type-card").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+// Boussole (edit modal uniquement)
+document.querySelectorAll("#editModal .compass-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#editModal .compass-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+// Navigation : Suivant
+eWizardNextBtn?.addEventListener("click", async () => {
+  if (!validateEditStep(editWizardStep)) return;
+
+  if (editWizardStep < 3) {
+    editWizardStep++;
+    if (editWizardStep === 3) buildEditRecap();
+    updateEditWizardUI();
     return;
   }
-  
-  try {
-    const auth = JSON.parse(localStorage.getItem('auth') || '{}');
-    const token = auth.token || localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/api/spots/${spotId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify(updates)
-    });
-    
-    // Récupérer le texte brut de la réponse
-    const responseText = await response.text();
-    
-    // Parser le JSON seulement si la réponse n'est pas vide
-    let result = null;
-    if (responseText) {
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Erreur de parsing JSON:', parseError, 'Réponse:', responseText);
-        throw new Error('Réponse invalide du serveur');
-      }
-    }
-    
-    if (!response.ok) {
-      const errorMsg = result?.error || result?.detail || 'Erreur lors de la modification';
-      throw new Error(errorMsg);
-    }
-    
-    // Mettre à jour le spot dans allSpots
-    const spotIndex = allSpots.findIndex(s => s.id === spotId);
-    if (spotIndex !== -1) {
-      allSpots[spotIndex] = { ...allSpots[spotIndex], ...updates };
-    }
-    
-    showToast('Modifications enregistrées !');
-    closeSheet();
-    
-    // Recharger les spots pour avoir les données à jour
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-    
-  } catch (error) {
-    console.error('Erreur lors de la modification:', error);
-    showToast(`Erreur : ${error.message}`, true);
+
+  // Étape 3 → Soumettre
+  eWizardNextBtn.disabled = true;
+  eWizardNextBtn.textContent = "Envoi…";
+  setEditErr("errEditStep3", "");
+
+  const token = getMapToken();
+  if (!token) {
+    setEditErr("errEditStep3", "Tu n'es pas connecté. Reconnecte-toi.");
+    eWizardNextBtn.disabled = false;
+    eWizardNextBtn.textContent = "Réessayer";
+    return;
   }
-};
+
+  // Calculer uniquement les champs modifiés
+  const orig = editWizardOrig;
+  const changes = {};
+  if ((editWizardData.name || "") !== (orig.name || ""))
+    changes.name = editWizardData.name;
+  if ((editWizardData.type || "crag") !== (orig.type || "crag"))
+    changes.type = editWizardData.type;
+  if ((editWizardData.orientation || null) !== (orig.orientation || null))
+    changes.orientation = editWizardData.orientation;
+  if ((editWizardData.niveau_min || "") !== (orig.niveau_min || ""))
+    changes.niveau_min = editWizardData.niveau_min || null;
+  if ((editWizardData.niveau_max || "") !== (orig.niveau_max || ""))
+    changes.niveau_max = editWizardData.niveau_max || null;
+  if ((editWizardData.description || "") !== (orig.description || ""))
+    changes.description = editWizardData.description || null;
+
+  if (Object.keys(changes).length === 0) {
+    setEditErr("errEditStep3", "Aucune modification détectée.");
+    eWizardNextBtn.disabled = false;
+    eWizardNextBtn.textContent = "Envoyer la modification";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/spot-edits`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ spotId: editWizardSpotId, changes }),
+    });
+
+    const text = await res.text();
+    let json;
+    try { json = JSON.parse(text); } catch { json = {}; }
+    if (!res.ok) throw new Error(json?.detail || json?.error || `Erreur ${res.status}`);
+
+    const isAdmin = isMapAdmin();
+    const recapCard = document.getElementById("eRecapCard");
+    if (recapCard) {
+      recapCard.innerHTML = `
+        <div style="text-align:center;padding:1.5rem 0">
+          <div style="font-size:3rem;margin-bottom:.75rem">${isAdmin ? "✅" : "⏳"}</div>
+          <p style="font-weight:700;font-size:1.05rem;margin:0 0 .4rem">
+            ${isAdmin ? "Modifications appliquées !" : "Demande envoyée !"}
+          </p>
+          <p style="font-size:.88rem;color:var(--text-2);margin:0">
+            ${isAdmin
+              ? "Le spot a été mis à jour sur la carte."
+              : "Un admin va examiner ta modification. Suis son statut dans Paramètres → Mes demandes."
+            }
+          </p>
+        </div>`;
+    }
+    eWizardNextBtn.style.display = "none";
+    if (eWizardBackBtn) eWizardBackBtn.style.display = "none";
+
+    const footer = document.getElementById("eWizardFooter");
+    if (footer) {
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "btn";
+      closeBtn.textContent = "Fermer";
+      closeBtn.style.flex = "1";
+      closeBtn.addEventListener("click", () => {
+        editModal?.close();
+        if (isAdmin) window.location.reload();
+      });
+      footer.appendChild(closeBtn);
+    }
+  } catch (err) {
+    console.error("[edit-wizard] Erreur:", err);
+    setEditErr("errEditStep3", "Erreur : " + err.message);
+    eWizardNextBtn.disabled = false;
+    eWizardNextBtn.textContent = "Réessayer";
+  }
+});
+
+// Navigation : Retour
+eWizardBackBtn?.addEventListener("click", () => {
+  if (editWizardStep > 1) { editWizardStep--; updateEditWizardUI(); }
+});
 
 /* ---------- Calcul de distance entre deux points ---------- */
 function calculateDistance(lat1, lng1, lat2, lng2) {
@@ -886,18 +1001,18 @@ proposeSpotBtn?.addEventListener("click", () => {
 wizardCloseBtn?.addEventListener("click", () => proposeModal?.close());
 proposeModal?.addEventListener("click", (e) => { if (e.target === proposeModal) proposeModal.close(); });
 
-// Type cards
-document.querySelectorAll(".type-card").forEach(btn => {
+// Type cards (propose modal uniquement)
+document.querySelectorAll("#proposeModal .type-card").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".type-card").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll("#proposeModal .type-card").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
   });
 });
 
-// Boussole
-document.querySelectorAll(".compass-btn").forEach(btn => {
+// Boussole (propose modal uniquement)
+document.querySelectorAll("#proposeModal .compass-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".compass-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll("#proposeModal .compass-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
   });
 });

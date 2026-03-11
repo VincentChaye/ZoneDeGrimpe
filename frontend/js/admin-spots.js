@@ -44,7 +44,7 @@ let currentPage = 0;
 const PAGE_SIZE = 20;
 
 async function init() {
-  await Promise.all([loadPending(), loadAllSpots()]);
+  await Promise.all([loadPending(), loadPendingEdits(), loadAllSpots()]);
 
   document.getElementById("spotSearch").addEventListener("input", debounce(applyFilters, 300));
   document.getElementById("spotStatusFilter").addEventListener("change", applyFilters);
@@ -136,6 +136,96 @@ function renderPending(items) {
     `;
   }).join("");
 }
+
+// ── Modifications en attente ─────────────────────────────────────────────────
+
+async function loadPendingEdits() {
+  try {
+    const res = await fetch(`${API}/spot-edits/pending`, { headers: authHeaders() });
+    if (!res.ok) throw new Error("Erreur " + res.status);
+    const { items, total } = await res.json();
+
+    document.getElementById("statPendingEdits").textContent = total;
+    document.getElementById("editsBadge").textContent = total;
+    renderPendingEdits(items);
+  } catch (e) {
+    document.getElementById("editsList").innerHTML =
+      `<div class="admin-empty"><p>⚠️</p><p>Erreur : ${e.message}</p></div>`;
+  }
+}
+
+const FIELD_LABELS = {
+  name: "Nom", type: "Type", niveau_min: "Niveau min", niveau_max: "Niveau max",
+  orientation: "Orientation", description: "Description", url: "URL", soustype: "Sous-type",
+};
+
+function renderPendingEdits(items) {
+  const container = document.getElementById("editsList");
+  if (!items.length) {
+    container.innerHTML = `<div class="admin-empty"><p>✅</p><p>Aucune modification en attente.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = items.map((e) => {
+    const author = e.proposedBy?.displayName || "Inconnu";
+    const date   = e.createdAt ? new Date(e.createdAt).toLocaleDateString("fr-FR") : "—";
+
+    const diffRows = Object.entries(e.changes).map(([key, newVal]) => {
+      const oldVal = e.previousValues?.[key];
+      const label  = FIELD_LABELS[key] || key;
+      return `
+        <div class="edit-diff-row">
+          <span class="edit-diff-row__field">${esc(label)}</span>
+          <span class="edit-diff-row__old">${esc(String(oldVal ?? "—"))}</span>
+          <span class="edit-diff-row__arrow">→</span>
+          <span class="edit-diff-row__new">${esc(String(newVal ?? "—"))}</span>
+        </div>`;
+    }).join("");
+
+    return `
+      <div class="pending-card" id="ec-${e._id}">
+        <div class="pending-card__header">
+          <h3 class="pending-card__title">✏️ ${esc(e.spotName || "Spot inconnu")}</h3>
+          <span class="status-badge status-badge--pending">Modification</span>
+        </div>
+        <div class="edit-diff">${diffRows}</div>
+        <p class="pending-card__meta">
+          <strong>Proposé par :</strong> ${esc(author)} &nbsp;·&nbsp; <strong>Le :</strong> ${date}
+        </p>
+        <div class="pending-card__actions">
+          <button class="btn" onclick="approveEdit('${e._id}')">✅ Approuver</button>
+          <button class="btn btn--danger" onclick="rejectEdit('${e._id}')">❌ Rejeter</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+window.approveEdit = async (id) => {
+  try {
+    const res = await fetch(`${API}/spot-edits/${id}/approve`, { method: "PATCH", headers: authHeaders() });
+    if (!res.ok) throw new Error("Erreur " + res.status);
+    showToast("Modification approuvée ✅");
+    await loadPendingEdits();
+  } catch (e) { showToast("Erreur : " + e.message, true); }
+};
+
+window.rejectEdit = async (id) => {
+  const reason = prompt("Raison du rejet (optionnel) :") ?? undefined;
+  if (reason === undefined) return;
+  try {
+    const res = await fetch(`${API}/spot-edits/${id}/reject`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+    if (!res.ok) throw new Error("Erreur " + res.status);
+    showToast("Modification rejetée");
+    await loadPendingEdits();
+  } catch (e) { showToast("Erreur : " + e.message, true); }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function applyFilters() {
   const q = document.getElementById("spotSearch").value.toLowerCase();

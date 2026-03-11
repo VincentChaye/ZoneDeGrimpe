@@ -10,6 +10,7 @@ import { userMaterielRouter } from "./src/routes/userMateriel.routes.js";
 import { materielSpecsRouter } from "./src/routes/materielSpecs.routes.js";
 import { analyticsRouter } from "./src/routes/analytics.routes.js";
 import { adviceRouter } from "./src/routes/advice.routes.js";
+import { spotEditsRouter } from "./src/routes/spot-edits.routes.js";
 
 
 
@@ -99,7 +100,7 @@ if (hasUri) {
   app.use("/api/materiel_specs", materielSpecsRouter(db));
   app.use("/api/analytics", analyticsRouter(db));
   app.use("/api/advice", adviceRouter(db));
-
+  app.use("/api/spot-edits", spotEditsRouter(db));
 
   console.log("MongoDB mode activé");
 } else {

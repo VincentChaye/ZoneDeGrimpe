@@ -587,6 +587,10 @@ body.sheet-open::after {
   box-shadow: 0 0 0 3px rgba(232,81,32,.12);
 }
 
+/* === Recap diff (wizard modification) === */
+.recap-row--changed .recap-row__value { color: var(--accent, #E85120); font-weight: 600; }
+.recap-old { text-decoration: line-through; opacity: .55; font-size: .88em; }
+
 /* === Toast === */
 .map-toast {
   position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);

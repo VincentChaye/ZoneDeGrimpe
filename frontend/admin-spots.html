@@ -44,7 +44,11 @@
     <div class="admin-stats">
       <div class="admin-stat">
         <div class="admin-stat__value" id="statPending">—</div>
-        <div class="admin-stat__label">En attente</div>
+        <div class="admin-stat__label">Nouveaux spots</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat__value" id="statPendingEdits">—</div>
+        <div class="admin-stat__label">Modifications</div>
       </div>
       <div class="admin-stat">
         <div class="admin-stat__value" id="statApproved">—</div>
@@ -59,8 +63,12 @@
     <!-- Tabs -->
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="pending">
-        Demandes en attente
+        Nouveaux spots
         <span class="admin-tab-badge" id="pendingBadge">0</span>
+      </button>
+      <button class="admin-tab" data-tab="edits">
+        Modifications
+        <span class="admin-tab-badge" id="editsBadge">0</span>
       </button>
       <button class="admin-tab" data-tab="all">Tous les spots</button>
     </div>
@@ -68,6 +76,13 @@
     <!-- Tab : Demandes pending -->
     <div class="admin-tab-content active" id="tab-pending">
       <div id="pendingList">
+        <div class="admin-empty"><p>⏳</p><p>Chargement…</p></div>
+      </div>
+    </div>
+
+    <!-- Tab : Modifications en attente -->
+    <div class="admin-tab-content" id="tab-edits">
+      <div id="editsList">
         <div class="admin-empty"><p>⏳</p><p>Chargement…</p></div>
       </div>
     </div>

@@ -228,6 +228,125 @@
       </div><!-- /wizard -->
     </dialog>
 
+    <!-- Wizard : Modifier un spot -->
+    <dialog id="editModal" class="propose-modal">
+      <div class="wizard">
+
+        <!-- Header -->
+        <div class="wizard__header">
+          <p class="wizard__title">✏️ Modifier le spot</p>
+          <button class="wizard__close" id="eWizardCloseBtn" aria-label="Fermer">✕</button>
+        </div>
+
+        <!-- Progression -->
+        <div class="wizard__progress">
+          <div class="wizard__progress-fill" id="eWizardProgressFill" style="width:33%"></div>
+        </div>
+
+        <!-- Indicateur étapes (3 dots) -->
+        <div class="wizard__steps">
+          <div class="wizard__dot active" id="eDot1"></div>
+          <div class="wizard__dot" id="eDot2"></div>
+          <div class="wizard__dot" id="eDot3"></div>
+        </div>
+
+        <!-- Slides (3 étapes → track 300%, chaque slide 33.333%) -->
+        <div class="wizard__slides">
+          <div class="wizard__track" id="eWizardTrack" style="width:300%">
+
+            <!-- Étape 1 : Nom + Type -->
+            <div class="wizard__slide" style="width:33.333%">
+              <p class="wizard__step-label">Étape 1 · 3</p>
+              <h2 class="wizard__slide-title">Nom & Type</h2>
+              <p class="wizard__slide-sub">Modifie si nécessaire</p>
+
+              <input class="wizard-input wizard-input--lg" type="text" id="eName"
+                maxlength="120" placeholder="Nom du spot…" autocomplete="off" />
+
+              <div class="type-cards">
+                <button class="type-card" data-type="crag" data-wizard="edit" type="button">
+                  <span class="type-card__icon">🧗</span>
+                  <span class="type-card__label">Falaise</span>
+                </button>
+                <button class="type-card" data-type="boulder" data-wizard="edit" type="button">
+                  <span class="type-card__icon">🪨</span>
+                  <span class="type-card__label">Bloc</span>
+                </button>
+                <button class="type-card" data-type="indoor" data-wizard="edit" type="button">
+                  <span class="type-card__icon">🏢</span>
+                  <span class="type-card__label">Salle</span>
+                </button>
+              </div>
+              <p class="wizard-error" id="errEditStep1"></p>
+            </div>
+
+            <!-- Étape 2 : Détails -->
+            <div class="wizard__slide" style="width:33.333%">
+              <p class="wizard__step-label">Étape 2 · 3</p>
+              <h2 class="wizard__slide-title">Les détails</h2>
+              <p class="wizard__slide-sub">Tout est optionnel</p>
+
+              <!-- Niveaux -->
+              <div>
+                <label class="wizard-label">Niveaux</label>
+                <div class="levels-grid">
+                  <select class="wizard-input" id="eNiveauMin">
+                    <option value="">Min</option>
+                  </select>
+                  <span>→</span>
+                  <select class="wizard-input" id="eNiveauMax">
+                    <option value="">Max</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Boussole -->
+              <div>
+                <label class="wizard-label">Orientation</label>
+                <div class="compass">
+                  <button class="compass-btn" data-dir="NO" data-wizard="edit" type="button">NO</button>
+                  <button class="compass-btn" data-dir="N"  data-wizard="edit" type="button">N</button>
+                  <button class="compass-btn" data-dir="NE" data-wizard="edit" type="button">NE</button>
+                  <button class="compass-btn" data-dir="O"  data-wizard="edit" type="button">O</button>
+                  <div class="compass-center">⊕</div>
+                  <button class="compass-btn" data-dir="E"  data-wizard="edit" type="button">E</button>
+                  <button class="compass-btn" data-dir="SO" data-wizard="edit" type="button">SO</button>
+                  <button class="compass-btn" data-dir="S"  data-wizard="edit" type="button">S</button>
+                  <button class="compass-btn" data-dir="SE" data-wizard="edit" type="button">SE</button>
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div>
+                <label class="wizard-label">Description</label>
+                <textarea class="wizard-input" id="eDescription" rows="3" maxlength="2000"
+                  placeholder="Rocher calcaire ensoleillé…"></textarea>
+              </div>
+            </div>
+
+            <!-- Étape 3 : Récap + diff -->
+            <div class="wizard__slide" style="width:33.333%">
+              <p class="wizard__step-label">Étape 3 · 3</p>
+              <h2 class="wizard__slide-title">Récapitulatif</h2>
+              <p class="wizard__slide-sub">Vérifie tes changements avant d'envoyer</p>
+              <div class="recap-card" id="eRecapCard">
+                <!-- Rempli dynamiquement -->
+              </div>
+              <p class="wizard-error" id="errEditStep3"></p>
+            </div>
+
+          </div><!-- /eWizardTrack -->
+        </div><!-- /wizard__slides -->
+
+        <!-- Footer -->
+        <div class="wizard__footer" id="eWizardFooter">
+          <button class="btn btn--ghost btn--back" id="eWizardBackBtn" type="button" style="display:none">← Retour</button>
+          <button class="btn" id="eWizardNextBtn" type="button">Suivant →</button>
+        </div>
+
+      </div><!-- /wizard -->
+    </dialog>
+
     <!-- Loading -->
     <div id="mapLoading" class="map-loading">
       <div class="map-loading__spinner"></div>
