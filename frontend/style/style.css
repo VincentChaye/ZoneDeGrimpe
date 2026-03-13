@@ -29,17 +29,17 @@
   --accent-hover: #1F5E3A;
   --accent-muted: rgba(45,122,79,.12);
 
-  /* Verdure claire — fond brume de forêt */
-  --bg:        #EBF2EC;
-  --surface:   rgba(255,255,255,.72);
-  --surface-2: rgba(220,235,222,.80);
-  --text:      #162218;
-  --text-2:    #4E6654;
-  --border:    rgba(80,130,90,.22);
+  /* Calcaire clair — grès, roche sèche, mousse */
+  --bg:        #EDE8DC;
+  --surface:   rgba(244,239,227,.88);
+  --surface-2: rgba(231,224,208,.90);
+  --text:      #1E1A10;
+  --text-2:    #5C5240;
+  --border:    rgba(100,85,55,.20);
 
-  --shadow-sm: 0 1px 3px rgba(20,50,28,.07), 0 1px 2px rgba(20,50,28,.04);
-  --shadow:    0 4px 14px rgba(20,50,28,.10), 0 1px 3px rgba(20,50,28,.06);
-  --shadow-lg: 0 14px 44px rgba(20,50,28,.14), 0 4px 12px rgba(20,50,28,.08);
+  --shadow-sm: 0 1px 3px rgba(40,30,15,.08), 0 1px 2px rgba(40,30,15,.05);
+  --shadow:    0 4px 14px rgba(40,30,15,.12), 0 1px 3px rgba(40,30,15,.07);
+  --shadow-lg: 0 14px 44px rgba(40,30,15,.16), 0 4px 12px rgba(40,30,15,.09);
 
   /* Globet reste pour les titres (identité de marque) */
   /* Inter pour le body : plus lisible, même rendu que l'admin */
@@ -84,8 +84,8 @@ body {
   color: var(--text);
   background: var(--bg);
   /* Texture nature légère en thème clair, invisible en dark */
-  background-image: radial-gradient(ellipse at 20% 10%, rgba(82,183,136,.08) 0%, transparent 50%),
-                    radial-gradient(ellipse at 80% 85%, rgba(45,122,79,.06) 0%, transparent 50%);
+  background-image: radial-gradient(ellipse at 20% 10%, rgba(180,160,110,.10) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 85%, rgba(45,122,79,.07) 0%, transparent 50%);
   transition: background .25s, color .25s;
 }
 
