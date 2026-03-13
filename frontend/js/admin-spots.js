@@ -16,6 +16,17 @@ function authHeaders() {
 const adminContent = document.getElementById("adminContent");
 const accessDenied = document.getElementById("accessDenied");
 
+// --- State ---
+const PAGE_SIZE = 20;
+let spotsPage = 0;
+let spotsTotal = 0;
+let pendingItems = [];
+let pendingEditsItems = [];
+let selectedPending = new Set();
+let selectedEdits = new Set();
+let groupByUser = false;
+let rejectCallback = null;
+
 if (!getToken()) {
   location.href = "./login.html?next=" + encodeURIComponent(location.pathname);
 } else if (!isAdmin()) {
@@ -34,20 +45,6 @@ document.querySelectorAll(".admin-tab").forEach((tab) => {
     document.getElementById("tab-" + tab.dataset.tab)?.classList.add("active");
   });
 });
-
-// --- State ---
-let spotsPage = 0;
-let spotsTotal = 0;
-const PAGE_SIZE = 20;
-
-let pendingItems = [];
-let pendingEditsItems = [];
-let selectedPending = new Set();
-let selectedEdits = new Set();
-let groupByUser = false;
-
-// --- Reject modal state ---
-let rejectCallback = null;
 
 // --- Init ---
 async function init() {
