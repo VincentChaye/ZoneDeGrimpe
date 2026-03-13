@@ -1,0 +1,22 @@
+{
+  "name": "ZoneDeGrimpe",
+  "short_name": "ZoneDeGrimpe",
+  "description": "Cartographier et explorer des zones de grimpe.",
+  "start_url": "./map.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#EDE8DC",
+  "theme_color": "#2D5A27",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "./assets/ZoneDeGrimpeIcon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "travel", "navigation"],
+  "screenshots": []
+}

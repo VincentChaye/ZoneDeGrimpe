@@ -46,3 +46,8 @@ if (document.readyState === "loading") {
 } else {
   initCommonUI();
 }
+
+// Enregistrement du Service Worker (PWA)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
