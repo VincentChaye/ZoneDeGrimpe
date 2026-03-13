@@ -59,15 +59,15 @@
 }
 
 :root[data-theme="dark"] {
-  --bg:        #0D1410;
-  --surface:   #151F18;
-  --surface-2: #1C2A20;
-  --text:      #E0EDE4;
-  --text-2:    #7A9882;
-  --accent:    #52B788;
-  --accent-hover: #3A9E70;
-  --accent-muted: rgba(82,183,136,.12);
-  --border:    #243328;
+  --bg:        #130F0B;
+  --surface:   #1E1A14;
+  --surface-2: #28231C;
+  --text:      #EDE8DF;
+  --text-2:    #8A8078;
+  --accent:    #F07040;
+  --accent-hover: #D45E30;
+  --accent-muted: rgba(240,112,64,.1);
+  --border:    #302820;
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,.45);
   --shadow:    0 4px 14px rgba(0,0,0,.55);
