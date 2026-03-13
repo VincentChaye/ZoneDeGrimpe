@@ -31,6 +31,18 @@
   <main class="map-layout">
     <div id="map" class="map"></div>
 
+    <!-- Bannière géolocalisation -->
+    <div id="geo-banner" class="geo-banner" hidden>
+      <div class="geo-banner__body">
+        <span class="geo-banner__icon">📍</span>
+        <p class="geo-banner__text"></p>
+      </div>
+      <div class="geo-banner__actions">
+        <button id="geoBannerAccept" class="btn btn--compact">Activer</button>
+        <button id="geoBannerDismiss" class="btn btn--ghost btn--compact">Ignorer</button>
+      </div>
+    </div>
+
     <!-- Barre de filtres flottante -->
     <div class="filter-bar" id="filterBar" role="region" aria-label="Filtres carte">
       <button id="searchToggleBtn" class="btn btn--ghost btn--compact" title="Rechercher un spot" aria-expanded="false" aria-controls="searchBar">🔍</button>

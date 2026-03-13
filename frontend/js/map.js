@@ -249,6 +249,76 @@ map.on("locationerror", (err) => {
 
 locateBtn?.addEventListener("click", requestLocation);
 
+/* ---------- Bannière géolocalisation ---------- */
+const geoBanner      = document.getElementById("geo-banner");
+const geoBannerText  = geoBanner?.querySelector(".geo-banner__text");
+const geoBannerAccept  = document.getElementById("geoBannerAccept");
+const geoBannerDismiss = document.getElementById("geoBannerDismiss");
+
+function showGeoBanner(denied = false) {
+  if (!geoBanner) return;
+  geoBannerText.textContent = denied
+    ? "La géolocalisation est bloquée. Autorise-la dans les réglages de ton navigateur."
+    : "Active la localisation pour voir les spots près de toi.";
+  if (geoBannerAccept) geoBannerAccept.hidden = denied;
+  geoBanner.hidden = false;
+}
+function hideGeoBanner() { if (geoBanner) geoBanner.hidden = true; }
+
+geoBannerAccept?.addEventListener("click", () => {
+  hideGeoBanner();
+  requestLocation();
+});
+geoBannerDismiss?.addEventListener("click", hideGeoBanner);
+
+// Cache la bannière dès que la géoloc est acceptée
+map.on("locationfound", hideGeoBanner);
+
+// Montre la bannière si la géoloc échoue (refus ou erreur)
+map.on("locationerror", () => {
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: "geolocation" }).then((p) => {
+      showGeoBanner(p.state === "denied");
+    }).catch(() => showGeoBanner(false));
+  } else {
+    showGeoBanner(false);
+  }
+});
+
+async function initGeoPrompt(fallback) {
+  if (!navigator.geolocation) { fallback(); return; }
+
+  if (!navigator.permissions) {
+    // Permissions API non supportée : demande directe
+    requestLocation();
+    setTimeout(fallback, 6000);
+    return;
+  }
+
+  try {
+    const perm = await navigator.permissions.query({ name: "geolocation" });
+    if (perm.state === "granted") {
+      requestLocation();
+      setTimeout(fallback, 6000);
+    } else if (perm.state === "denied") {
+      showGeoBanner(true);
+      fallback();
+    } else {
+      // "prompt" : l'utilisateur n'a pas encore décidé
+      showGeoBanner(false);
+      fallback();
+    }
+    // Réagit si l'utilisateur change les permissions dans le navigateur
+    perm.onchange = () => {
+      if (perm.state === "granted") { hideGeoBanner(); requestLocation(); }
+      else if (perm.state === "denied") { showGeoBanner(true); }
+    };
+  } catch {
+    requestLocation();
+    setTimeout(fallback, 6000);
+  }
+}
+
 /* ---------- Icônes des spots selon le type ---------- */
 
 function makeCliffIcon(spot, size = 38) {
@@ -1182,13 +1252,7 @@ const mapLoading = document.getElementById("mapLoading");
       const bounds = L.latLngBounds(allSpots.map((s) => [s.lat, s.lng]));
       const fallback = () => { if (!userCentered) map.fitBounds(bounds.pad(0.2)); };
 
-      if (!navigator.geolocation) {
-        fallback();
-      } else {
-        requestLocation();
-        // Fallback si géoloc trop lente ou refusée
-        setTimeout(fallback, 6000);
-      }
+      initGeoPrompt(fallback);
     }
 
     // Gestion du spot dans l'URL (partage)

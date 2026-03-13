@@ -394,6 +394,33 @@ h1, h2, h3, h4, h5, h6 {
 }
 .map        { position: absolute; inset: 0; }
 
+/* === Bannière géolocalisation === */
+.geo-banner {
+  position: absolute;
+  bottom: calc(var(--tab-bar-h) + .875rem);
+  left: 50%; transform: translateX(-50%);
+  z-index: 2000;
+  width: min(380px, calc(100vw - 2rem));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: .75rem 1rem;
+  display: flex; flex-direction: column; gap: .6rem;
+  animation: bannerIn .25s var(--spring);
+}
+.geo-banner[hidden] { display: none; }
+@keyframes bannerIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.geo-banner__body { display: flex; align-items: center; gap: .6rem; }
+.geo-banner__icon { font-size: 1.4rem; flex-shrink: 0; }
+.geo-banner__text { margin: 0; font-size: .875rem; color: var(--text); line-height: 1.4; }
+.geo-banner__actions { display: flex; gap: .5rem; justify-content: flex-end; }
+
 /* === Barre de filtres flottante === */
 .filter-bar {
   position: absolute; top: .75rem; right: .75rem;
