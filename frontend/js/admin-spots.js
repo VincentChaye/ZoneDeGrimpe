@@ -430,7 +430,6 @@ window.approveAll = async (idsJson, type) => {
         ? fetch(`${API}/spots/${id}/approve`, { method: "PATCH", headers: authHeaders() })
         : fetch(`${API}/spot-edits/${id}/approve`, { method: "PATCH", headers: authHeaders() })
     ));
-    showToast(`${ids.length} élément${ids.length > 1 ? "s" : ""} approuvé${ids.length > 1 ? "s" : ""} ✅`);
     clearSelection();
     if (type === "spot") await Promise.all([loadPending(), loadSpotsPage()]);
     else await loadPendingEdits();
@@ -445,7 +444,6 @@ window.openRejectModal = (idsJson, type) => {
   rejectCallback = async (reason) => {
     try {
       await Promise.all(ids.map((id) => rejectById(id, type, reason)));
-      showToast(`${ids.length} élément${ids.length > 1 ? "s" : ""} rejeté${ids.length > 1 ? "s" : ""}`);
       clearSelection();
       if (type === "spot") await Promise.all([loadPending(), loadSpotsPage()]);
       else await loadPendingEdits();
@@ -466,7 +464,6 @@ window.approveSpot = async (id) => {
   try {
     const res = await fetch(`${API}/spots/${id}/approve`, { method: "PATCH", headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Spot approuvé ✅");
     await Promise.all([loadPending(), loadSpotsPage()]);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -475,7 +472,6 @@ window.approveEdit = async (id) => {
   try {
     const res = await fetch(`${API}/spot-edits/${id}/approve`, { method: "PATCH", headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Modification approuvée ✅");
     await loadPendingEdits();
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -485,7 +481,6 @@ window.deleteSpot = async (id, name) => {
   try {
     const res = await fetch(`${API}/spots/${id}`, { method: "DELETE", headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Spot supprimé");
     await Promise.all([loadPending(), loadSpotsPage()]);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
