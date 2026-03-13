@@ -23,23 +23,23 @@
   font-display: swap;
 }
 
-/* === Variables — Palette "Roche" (Nature Distilled) === */
+/* === Variables — Palette "Forêt & Verre" (Nature Light) === */
 :root {
-  --accent:       #E85120;
-  --accent-hover: #C44010;
-  --accent-muted: rgba(232,81,32,.1);
+  --accent:       #2D7A4F;
+  --accent-hover: #1F5E3A;
+  --accent-muted: rgba(45,122,79,.12);
 
-  /* Sable chaud — clairement visible, pas blanc */
-  --bg:        #EDE5D8;
-  --surface:   #F8F3ED;
-  --surface-2: #E0D8CD;
-  --text:      #1C1916;
-  --text-2:    #6D6459;
-  --border:    #C4BCB2;
+  /* Verdure claire — fond brume de forêt */
+  --bg:        #EBF2EC;
+  --surface:   rgba(255,255,255,.72);
+  --surface-2: rgba(220,235,222,.80);
+  --text:      #162218;
+  --text-2:    #4E6654;
+  --border:    rgba(80,130,90,.22);
 
-  --shadow-sm: 0 1px 3px rgba(26,23,20,.08), 0 1px 2px rgba(26,23,20,.05);
-  --shadow:    0 4px 14px rgba(26,23,20,.12), 0 1px 3px rgba(26,23,20,.07);
-  --shadow-lg: 0 14px 44px rgba(26,23,20,.18), 0 4px 12px rgba(26,23,20,.1);
+  --shadow-sm: 0 1px 3px rgba(20,50,28,.07), 0 1px 2px rgba(20,50,28,.04);
+  --shadow:    0 4px 14px rgba(20,50,28,.10), 0 1px 3px rgba(20,50,28,.06);
+  --shadow-lg: 0 14px 44px rgba(20,50,28,.14), 0 4px 12px rgba(20,50,28,.08);
 
   /* Globet reste pour les titres (identité de marque) */
   /* Inter pour le body : plus lisible, même rendu que l'admin */
@@ -59,15 +59,15 @@
 }
 
 :root[data-theme="dark"] {
-  --bg:        #130F0B;
-  --surface:   #1E1A14;
-  --surface-2: #28231C;
-  --text:      #EDE8DF;
-  --text-2:    #8A8078;
-  --accent:    #F07040;
-  --accent-hover: #D45E30;
-  --accent-muted: rgba(240,112,64,.1);
-  --border:    #302820;
+  --bg:        #0D1410;
+  --surface:   #151F18;
+  --surface-2: #1C2A20;
+  --text:      #E0EDE4;
+  --text-2:    #7A9882;
+  --accent:    #52B788;
+  --accent-hover: #3A9E70;
+  --accent-muted: rgba(82,183,136,.12);
+  --border:    #243328;
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,.45);
   --shadow:    0 4px 14px rgba(0,0,0,.55);
@@ -83,6 +83,9 @@ body {
   font-family: var(--font-body);
   color: var(--text);
   background: var(--bg);
+  /* Texture nature légère en thème clair, invisible en dark */
+  background-image: radial-gradient(ellipse at 20% 10%, rgba(82,183,136,.08) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 85%, rgba(45,122,79,.06) 0%, transparent 50%);
   transition: background .25s, color .25s;
 }
 
@@ -102,6 +105,8 @@ h1, h2, h3, h4, h5, h6 {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 1.25rem;
   background: var(--surface);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
@@ -835,7 +840,7 @@ body.page-auth .row    { display: flex; gap: .75rem; flex-wrap: wrap; justify-co
 }
 .wizard__progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #c73e10, var(--accent), #f5793a);
+  background: linear-gradient(90deg, #1F5E3A, var(--accent), #52B788);
   background-size: 200% 100%;
   transition: width .5s cubic-bezier(.4,0,.2,1);
   position: relative;
@@ -845,7 +850,7 @@ body.page-auth .row    { display: flex; gap: .75rem; flex-wrap: wrap; justify-co
   position: absolute; right: -4px; top: 50%; transform: translateY(-50%);
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px rgba(232,81,32,.25);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px rgba(45,122,79,.30);
 }
 
 /* ---- Step dots ---- */
@@ -917,20 +922,20 @@ body.page-auth .row    { display: flex; gap: .75rem; flex-wrap: wrap; justify-co
 .type-card::after {
   content: '';
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(232,81,32,.1) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(45,122,79,.12) 0%, transparent 70%);
   opacity: 0; transition: opacity .2s;
 }
 .type-card:hover {
-  border-color: rgba(232,81,32,.5);
+  border-color: rgba(45,122,79,.5);
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(232,81,32,.12);
+  box-shadow: 0 6px 20px rgba(45,122,79,.14);
 }
 .type-card:hover::after { opacity: 1; }
 .type-card:active { transform: scale(.95) translateY(0); }
 .type-card.active {
   border-color: var(--accent);
-  background: rgba(232,81,32,.05);
-  box-shadow: 0 0 0 3px rgba(232,81,32,.15), inset 0 1px 0 rgba(232,81,32,.15);
+  background: rgba(45,122,79,.07);
+  box-shadow: 0 0 0 3px rgba(45,122,79,.18), inset 0 1px 0 rgba(45,122,79,.12);
 }
 .type-card.active::after { opacity: 1; }
 .type-card__icon {
@@ -1068,11 +1073,11 @@ select.wizard-input {
 }
 .compass-btn:hover {
   border-color: var(--accent); color: var(--accent);
-  background: rgba(232,81,32,.05); transform: scale(1.08);
+  background: rgba(45,122,79,.07); transform: scale(1.08);
 }
 .compass-btn.active {
   border-color: var(--accent); background: var(--accent); color: #fff;
-  box-shadow: 0 2px 8px rgba(232,81,32,.35); transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(45,122,79,.35); transform: scale(1.05);
 }
 /* North in traditional compass red */
 .compass-btn[data-dir="N"] { color: #b91c1c; font-size: .85rem; }
@@ -1082,7 +1087,7 @@ select.wizard-input {
 .compass-center {
   display: flex; align-items: center; justify-content: center;
   font-size: .5rem; color: var(--text-2); opacity: .25;
-  background: radial-gradient(circle, rgba(232,81,32,.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(45,122,79,.08) 0%, transparent 70%);
   border-radius: 50%; border: 1px dashed var(--border);
 }
 
@@ -1095,7 +1100,7 @@ select.wizard-input {
 .recap-card::before {
   content: ''; display: block;
   height: 3px;
-  background: linear-gradient(90deg, #c73e10, var(--accent), #f5793a);
+  background: linear-gradient(90deg, #1F5E3A, var(--accent), #52B788);
 }
 .recap-row {
   display: flex; justify-content: space-between; align-items: baseline;
