@@ -160,8 +160,8 @@ function renderPendingGrouped(items) {
             <span class="user-group__count">${gi.length} spot${gi.length > 1 ? "s" : ""}</span>
           </div>
           <div class="user-group__actions">
-            <button class="btn btn--compact" onclick="approveAll(${JSON.stringify(idsJson)}, 'spot')">✅ Tout approuver</button>
-            <button class="btn btn--danger btn--compact" onclick="openRejectModal(${JSON.stringify(idsJson)}, 'spot')">❌ Tout rejeter</button>
+            <button class="btn btn--compact" onclick="approveAll(${JSON.stringify(idsJson)}, 'spot')">Tout approuver</button>
+            <button class="btn btn--danger btn--compact" onclick="openRejectModal(${JSON.stringify(idsJson)}, 'spot')">Tout rejeter</button>
           </div>
         </div>
         ${gi.map((s) => renderPendingCard(s)).join("")}
@@ -192,15 +192,15 @@ function renderPendingCard(s) {
       <p class="pending-card__meta">
         <strong>Niveaux :</strong> ${s.niveau_min || "?"} → ${s.niveau_max || "?"} &nbsp;·&nbsp;
         <strong>Orient. :</strong> ${s.orientation || "—"}
-        ${mapUrl ? `&nbsp;·&nbsp; <a href="${mapUrl}" target="_blank" class="admin-link">📍 Carte</a>` : ""}
+        ${mapUrl ? `&nbsp;·&nbsp; <a href="${mapUrl}" target="_blank" class="admin-link">Carte</a>` : ""}
       </p>
       ${s.description ? `<p class="pending-card__meta pending-card__desc">${esc(s.description.slice(0, 140))}${s.description.length > 140 ? "…" : ""}</p>` : ""}
       <p class="pending-card__meta">
         <strong>Par :</strong> ${esc(author)} &nbsp;·&nbsp; <strong>Le :</strong> ${date}
       </p>
       <div class="pending-card__actions">
-        <button class="btn" onclick="approveSpot('${id}')">✅ Approuver</button>
-        <button class="btn btn--danger" onclick="openRejectModal(['${id}'], 'spot')">❌ Rejeter</button>
+        <button class="btn" onclick="approveSpot('${id}')">Approuver</button>
+        <button class="btn btn--danger" onclick="openRejectModal(['${id}'], 'spot')">Rejeter</button>
       </div>
     </div>
   `;
@@ -269,7 +269,7 @@ function renderPendingEdits(items) {
           <label class="pending-card__check">
             <input type="checkbox" ${checked ? "checked" : ""} onchange="toggleSelect('${id}', 'edit', this.checked)" />
           </label>
-          <h3 class="pending-card__title">✏️ ${esc(e.spotName || "Spot inconnu")}</h3>
+          <h3 class="pending-card__title">${esc(e.spotName || "Spot inconnu")}</h3>
           <span class="status-badge status-badge--pending">Modif.</span>
         </div>
         <div class="edit-diff">${diffRows}</div>
@@ -277,8 +277,8 @@ function renderPendingEdits(items) {
           <strong>Par :</strong> ${esc(author)} &nbsp;·&nbsp; <strong>Le :</strong> ${date}
         </p>
         <div class="pending-card__actions">
-          <button class="btn" onclick="approveEdit('${id}')">✅ Approuver</button>
-          <button class="btn btn--danger" onclick="openRejectModal(['${id}'], 'edit')">❌ Rejeter</button>
+          <button class="btn" onclick="approveEdit('${id}')">Approuver</button>
+          <button class="btn btn--danger" onclick="openRejectModal(['${id}'], 'edit')">Rejeter</button>
         </div>
       </div>
     `;
@@ -339,9 +339,9 @@ function renderTable(items) {
         <td>${date}</td>
         <td>
           <div class="admin-actions">
-            ${st === "pending"  ? `<button class="btn btn--compact" onclick="approveSpot('${s._id}')">✅</button><button class="btn btn--danger btn--compact" onclick="openRejectModal(['${s._id}'], 'spot')">❌</button>` : ""}
-            ${st === "rejected" ? `<button class="btn btn--compact btn--ghost" onclick="approveSpot('${s._id}')">↩</button>` : ""}
-            <button class="btn btn--danger btn--compact btn--ghost" onclick="deleteSpot('${s._id}', '${esc(s.name)}')">🗑</button>
+            ${st === "pending"  ? `<button class="btn btn--compact" onclick="approveSpot('${s._id}')">Approuv.</button><button class="btn btn--danger btn--compact" onclick="openRejectModal(['${s._id}'], 'spot')">Rejeter</button>` : ""}
+            ${st === "rejected" ? `<button class="btn btn--compact btn--ghost" onclick="approveSpot('${s._id}')">Restaurer</button>` : ""}
+            <button class="btn btn--danger btn--compact btn--ghost" onclick="deleteSpot('${s._id}', '${esc(s.name)}')">Suppr.</button>
           </div>
         </td>
       </tr>

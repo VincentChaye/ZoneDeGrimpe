@@ -119,7 +119,7 @@ function renderTable(users) {
                 ? `<button class="btn btn--compact btn--ghost" onclick="banUser('${u._id}', '${esc(u.displayName || u.email)}')">Bannir</button>`
                 : `<button class="btn btn--compact btn--ghost" onclick="unbanUser('${u._id}')">Débannir</button>`
               }
-              <button class="btn btn--danger btn--compact" onclick="deleteUser('${u._id}', '${esc(u.displayName || u.email)}')">🗑</button>
+              <button class="btn btn--danger btn--compact" onclick="deleteUser('${u._id}', '${esc(u.displayName || u.email)}')">Suppr.</button>
             ` : "<em style='font-size:.8rem;color:var(--text-2)'>—</em>"}
           </div>
         </td>
@@ -263,8 +263,8 @@ window.showUserSubmissions = async (userId, displayName) => {
             <p class="pending-card__meta"><strong>Niveaux :</strong> ${s.niveau_min || "?"} → ${s.niveau_max || "?"} · <strong>Le :</strong> ${date}</p>
             ${s.description ? `<p class="pending-card__meta">${esc(s.description.slice(0, 100))}${s.description.length > 100 ? "…" : ""}</p>` : ""}
             <div class="pending-card__actions">
-              <button class="btn" onclick="approveSpotFromModal('${s._id}', '${userId}', '${esc(displayName)}')">✅ Approuver</button>
-              <button class="btn btn--danger" onclick="rejectSpotFromModal('${s._id}', '${userId}', '${esc(displayName)}')">❌ Rejeter</button>
+              <button class="btn" onclick="approveSpotFromModal('${s._id}', '${userId}', '${esc(displayName)}')">Approuver</button>
+              <button class="btn btn--danger" onclick="rejectSpotFromModal('${s._id}', '${userId}', '${esc(displayName)}')">Rejeter</button>
             </div>
           </div>
         `;
@@ -282,13 +282,13 @@ window.showUserSubmissions = async (userId, displayName) => {
         return `
           <div class="pending-card">
             <div class="pending-card__header">
-              <h3 class="pending-card__title">✏️ ${esc(e.spotName || "Spot inconnu")}</h3>
+              <h3 class="pending-card__title">${esc(e.spotName || "Spot inconnu")}</h3>
               <span class="pending-card__meta">${date}</span>
             </div>
             <div class="edit-diff">${diffRows}</div>
             <div class="pending-card__actions">
-              <button class="btn" onclick="approveEditFromModal('${e._id}', '${userId}', '${esc(displayName)}')">✅ Approuver</button>
-              <button class="btn btn--danger" onclick="rejectEditFromModal('${e._id}', '${userId}', '${esc(displayName)}')">❌ Rejeter</button>
+              <button class="btn" onclick="approveEditFromModal('${e._id}', '${userId}', '${esc(displayName)}')">Approuver</button>
+              <button class="btn btn--danger" onclick="rejectEditFromModal('${e._id}', '${userId}', '${esc(displayName)}')">Rejeter</button>
             </div>
           </div>
         `;
