@@ -83,6 +83,19 @@
     <!-- Pagination -->
     <div class="admin-pagination" id="usersPagination"></div>
 
+    <!-- User submissions panel -->
+    <dialog id="userSubmissionsModal" class="admin-modal admin-modal--wide">
+      <div class="admin-modal__content">
+        <div class="admin-modal__header">
+          <h3 class="admin-modal__title" id="userSubmissionsTitle">Soumissions</h3>
+          <button class="btn btn--ghost btn--compact" id="userSubmissionsClose">✕</button>
+        </div>
+        <div id="userSubmissionsContent">
+          <div class="admin-empty"><p>⏳</p><p>Chargement…</p></div>
+        </div>
+      </div>
+    </dialog>
+
   </main>
 
   <!-- Bottom Tab Bar (mobile) -->

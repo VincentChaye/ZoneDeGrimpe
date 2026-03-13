@@ -75,6 +75,19 @@
 
     <!-- Tab : Demandes pending -->
     <div class="admin-tab-content active" id="tab-pending">
+      <div class="admin-toolbar">
+        <input class="input" id="pendingSearch" placeholder="Filtrer par nom ou auteur…" type="search" />
+        <select class="select" id="pendingTypeFilter" style="max-width:130px">
+          <option value="">Tous types</option>
+          <option value="crag">Crag</option>
+          <option value="boulder">Bloc</option>
+          <option value="indoor">Indoor</option>
+        </select>
+        <button class="btn btn--ghost btn--compact" id="pendingGroupToggle" title="Grouper par utilisateur">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Par user
+        </button>
+      </div>
       <div id="pendingList">
         <div class="admin-empty"><p>⏳</p><p>Chargement…</p></div>
       </div>
@@ -82,6 +95,9 @@
 
     <!-- Tab : Modifications en attente -->
     <div class="admin-tab-content" id="tab-edits">
+      <div class="admin-toolbar">
+        <input class="input" id="editsSearch" placeholder="Filtrer par spot ou auteur…" type="search" />
+      </div>
       <div id="editsList">
         <div class="admin-empty"><p>⏳</p><p>Chargement…</p></div>
       </div>
@@ -118,6 +134,27 @@
       <!-- Mobile cards -->
       <div class="pending-cards-mobile" id="spotsMobileList"></div>
       <div class="admin-pagination" id="spotsPagination"></div>
+    </div>
+
+    <!-- Reject modal -->
+    <dialog id="rejectModal" class="admin-modal">
+      <div class="admin-modal__content">
+        <h3 class="admin-modal__title">Raison du rejet</h3>
+        <p class="admin-modal__sub">Optionnel — sera communiquée à l'utilisateur</p>
+        <textarea class="admin-modal__textarea" id="rejectReason" placeholder="Ex: doublon, coordonnées incorrectes…" rows="3"></textarea>
+        <div class="admin-modal__actions">
+          <button class="btn btn--ghost" id="rejectCancel">Annuler</button>
+          <button class="btn btn--danger" id="rejectConfirm">Confirmer le rejet</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Bulk action bar -->
+    <div class="bulk-bar" id="bulkBar" hidden>
+      <span class="bulk-bar__count" id="bulkCount"></span>
+      <button class="btn btn--sm" id="bulkApprove">✅ Approuver</button>
+      <button class="btn btn--danger btn--sm" id="bulkReject">❌ Rejeter</button>
+      <button class="btn btn--ghost btn--sm" id="bulkClear" title="Désélectionner tout">✕</button>
     </div>
 
   </main>

@@ -50,6 +50,10 @@ async function init() {
       loadUsers();
     }
   });
+
+  document.getElementById("userSubmissionsClose").addEventListener("click", () => {
+    document.getElementById("userSubmissionsModal").close();
+  });
 }
 
 async function loadUsers() {
@@ -106,6 +110,7 @@ function renderTable(users) {
         <td>
           <div class="admin-actions">
             ${!isSelf ? `
+              <button class="btn btn--ghost btn--compact" onclick="showUserSubmissions('${u._id}', '${esc(u.displayName || u.email)}')">Soumissions</button>
               <button class="btn btn--compact ${isAdminUser ? "btn--ghost" : ""}"
                 onclick="toggleAdmin('${u._id}', ${isAdminUser})">
                 ${isAdminUser ? "Retirer admin" : "Promouvoir"}
@@ -219,6 +224,125 @@ window.deleteUser = async (id, name) => {
     if (!res.ok) throw new Error("Erreur " + res.status);
     showToast("Compte supprimé");
     loadUsers();
+  } catch (e) { showToast("Erreur : " + e.message, true); }
+};
+
+// --- User submissions ---
+window.showUserSubmissions = async (userId, displayName) => {
+  const modal = document.getElementById("userSubmissionsModal");
+  document.getElementById("userSubmissionsTitle").textContent = `Soumissions de ${displayName}`;
+  document.getElementById("userSubmissionsContent").innerHTML = `<div class="admin-empty"><p>⏳</p><p>Chargement…</p></div>`;
+  modal.showModal();
+
+  try {
+    const [spotsRes, editsRes] = await Promise.all([
+      fetch(`${API}/spots/pending?limit=500`, { headers: authHeaders() }),
+      fetch(`${API}/spot-edits/pending`, { headers: authHeaders() }),
+    ]);
+
+    const { items: spots } = spotsRes.ok ? await spotsRes.json() : { items: [] };
+    const { items: edits } = editsRes.ok ? await editsRes.json() : { items: [] };
+
+    const userSpots = spots.filter((s) => s.submittedBy?.uid === userId || s.createdBy?.uid === userId);
+    const userEdits = edits.filter((e) => e.proposedBy?.uid === userId);
+
+    if (!userSpots.length && !userEdits.length) {
+      document.getElementById("userSubmissionsContent").innerHTML =
+        `<div class="admin-empty"><p>✅</p><p>Aucune soumission en attente pour cet utilisateur.</p></div>`;
+      return;
+    }
+
+    let html = "";
+
+    if (userSpots.length) {
+      html += `<h4 class="submissions-section-title">Spots proposés (${userSpots.length})</h4>`;
+      html += userSpots.map((s) => {
+        const date = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : "—";
+        return `
+          <div class="pending-card">
+            <div class="pending-card__header">
+              <h3 class="pending-card__title">${esc(s.name)}</h3>
+              <span class="type-chip type-chip--${s.type || "crag"}">${s.type || "—"}</span>
+            </div>
+            <p class="pending-card__meta"><strong>Niveaux :</strong> ${s.niveau_min || "?"} → ${s.niveau_max || "?"} · <strong>Le :</strong> ${date}</p>
+            ${s.description ? `<p class="pending-card__meta">${esc(s.description.slice(0, 100))}${s.description.length > 100 ? "…" : ""}</p>` : ""}
+            <div class="pending-card__actions">
+              <button class="btn" onclick="approveSpotFromModal('${s._id}', '${userId}', '${esc(displayName)}')">✅ Approuver</button>
+              <button class="btn btn--danger" onclick="rejectSpotFromModal('${s._id}', '${userId}', '${esc(displayName)}')">❌ Rejeter</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    if (userEdits.length) {
+      html += `<h4 class="submissions-section-title">Modifications proposées (${userEdits.length})</h4>`;
+      html += userEdits.map((e) => {
+        const date = e.createdAt ? new Date(e.createdAt).toLocaleDateString("fr-FR") : "—";
+        const diffRows = Object.entries(e.changes).map(([key, newVal]) => {
+          const oldVal = e.previousValues?.[key];
+          return `<div class="edit-diff-row"><span class="edit-diff-row__field">${esc(key)}</span><span class="edit-diff-row__old">${esc(String(oldVal ?? "—"))}</span><span class="edit-diff-row__arrow">→</span><span class="edit-diff-row__new">${esc(String(newVal ?? "—"))}</span></div>`;
+        }).join("");
+        return `
+          <div class="pending-card">
+            <div class="pending-card__header">
+              <h3 class="pending-card__title">✏️ ${esc(e.spotName || "Spot inconnu")}</h3>
+              <span class="pending-card__meta">${date}</span>
+            </div>
+            <div class="edit-diff">${diffRows}</div>
+            <div class="pending-card__actions">
+              <button class="btn" onclick="approveEditFromModal('${e._id}', '${userId}', '${esc(displayName)}')">✅ Approuver</button>
+              <button class="btn btn--danger" onclick="rejectEditFromModal('${e._id}', '${userId}', '${esc(displayName)}')">❌ Rejeter</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    document.getElementById("userSubmissionsContent").innerHTML = html;
+  } catch (e) {
+    document.getElementById("userSubmissionsContent").innerHTML =
+      `<div class="admin-empty"><p>⚠️</p><p>Erreur : ${e.message}</p></div>`;
+  }
+};
+
+window.approveSpotFromModal = async (spotId, userId, displayName) => {
+  try {
+    const res = await fetch(`${API}/spots/${spotId}/approve`, { method: "PATCH", headers: authHeaders() });
+    if (!res.ok) throw new Error("Erreur " + res.status);
+    showToast("Spot approuvé ✅");
+    showUserSubmissions(userId, displayName);
+  } catch (e) { showToast("Erreur : " + e.message, true); }
+};
+
+window.rejectSpotFromModal = async (spotId, userId, displayName) => {
+  const reason = window.prompt("Raison du rejet (optionnel) :") ?? undefined;
+  if (reason === undefined) return;
+  try {
+    const res = await fetch(`${API}/spots/${spotId}/reject`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ reason }) });
+    if (!res.ok) throw new Error("Erreur " + res.status);
+    showToast("Spot rejeté");
+    showUserSubmissions(userId, displayName);
+  } catch (e) { showToast("Erreur : " + e.message, true); }
+};
+
+window.approveEditFromModal = async (editId, userId, displayName) => {
+  try {
+    const res = await fetch(`${API}/spot-edits/${editId}/approve`, { method: "PATCH", headers: authHeaders() });
+    if (!res.ok) throw new Error("Erreur " + res.status);
+    showToast("Modification approuvée ✅");
+    showUserSubmissions(userId, displayName);
+  } catch (e) { showToast("Erreur : " + e.message, true); }
+};
+
+window.rejectEditFromModal = async (editId, userId, displayName) => {
+  const reason = window.prompt("Raison du rejet (optionnel) :") ?? undefined;
+  if (reason === undefined) return;
+  try {
+    const res = await fetch(`${API}/spot-edits/${editId}/reject`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ reason }) });
+    if (!res.ok) throw new Error("Erreur " + res.status);
+    showToast("Modification rejetée");
+    showUserSubmissions(userId, displayName);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
 
