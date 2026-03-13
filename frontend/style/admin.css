@@ -1,27 +1,18 @@
-/* === Admin — Dark Dashboard Theme === */
-/* Palette inspirée GitHub dark + Data-Dense Dashboard (ui-ux-pro-max) */
+/* === Admin — Layout & Components === */
+/* Utilise la palette du site principal (style.css) — nature/warm */
 
-/* Google Fonts — Inter */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* ── Force palette sombre sur les pages admin ──────────────────────────────── */
-body.theme {
-  --bg:           #0D1117;
-  --surface:      #161B22;
-  --surface-2:    #21262D;
-  --border:       #30363D;
-  --text:         #E6EDF3;
-  --text-2:       #7D8590;
-  --accent:       #3FB950;
-  --accent-hover: #2EA043;
-  --shadow-sm:    0 1px 3px rgba(0,0,0,.4);
-  --shadow:       0 4px 16px rgba(0,0,0,.5);
-  --shadow-lg:    0 12px 40px rgba(0,0,0,.65);
-  --font-heading: 'Inter', system-ui, sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
+/* Couleurs sémantiques admin (statuts, diff) */
+:root {
+  --c-danger:  #D73A2A;
+  --c-warning: #A86C00;
+  --c-info:    #1A6FA8;
+  --c-success: #2A7A3B;
+}
+[data-theme="dark"] {
   --c-danger:  #F85149;
   --c-warning: #D29922;
   --c-info:    #58A6FF;
+  --c-success: #3FB950;
 }
 
 /* ── Header admin ──────────────────────────────────────────────────────────── */
@@ -37,8 +28,8 @@ body.theme {
 }
 .admin-badge {
   display: inline-flex; align-items: center;
-  background: rgba(63,185,80,.12); color: #3FB950;
-  border: 1px solid rgba(63,185,80,.3);
+  background: var(--accent-muted); color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   font-size: .62rem; font-weight: 700;
   padding: .18rem .55rem; border-radius: 99px;
   letter-spacing: .07em; text-transform: uppercase;
@@ -63,7 +54,7 @@ body.theme {
 .admin-stat:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(63,185,80,.12);
+  box-shadow: 0 4px 20px var(--accent-muted);
 }
 .admin-stat::after {
   content: '';
@@ -116,9 +107,9 @@ body.theme {
 .admin-toolbar .input  { flex: 1; min-width: 180px; }
 .admin-toolbar .select { cursor: pointer; }
 
-/* ── Inputs / Selects (override style.css pour admin) ─────────────────────── */
+/* ── Inputs / Selects ──────────────────────────────────────────────────────── */
 .input, .select {
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: var(--radius-sm);
@@ -130,7 +121,7 @@ body.theme {
 .input:focus, .select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(63,185,80,.15);
+  box-shadow: 0 0 0 3px var(--accent-muted);
 }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
@@ -162,13 +153,13 @@ body.theme {
   font-size: .67rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
 }
-.status-badge--pending  { background: rgba(210,153,34,.12);  color: #D29922; border: 1px solid rgba(210,153,34,.3); }
-.status-badge--approved { background: rgba(63,185,80,.1);    color: #3FB950; border: 1px solid rgba(63,185,80,.25); }
-.status-badge--rejected { background: rgba(248,81,73,.1);    color: #F85149; border: 1px solid rgba(248,81,73,.25); }
-.status-badge--active   { background: rgba(63,185,80,.1);    color: #3FB950; border: 1px solid rgba(63,185,80,.25); }
-.status-badge--banned   { background: rgba(248,81,73,.1);    color: #F85149; border: 1px solid rgba(248,81,73,.25); }
-.status-badge--admin    { background: rgba(188,140,255,.12); color: #BC8CFF; border: 1px solid rgba(188,140,255,.25); }
-.status-badge--user     { background: var(--surface-2);      color: var(--text-2); border: 1px solid var(--border); }
+.status-badge--pending  { background: rgba(168,108,0,.1);   color: var(--c-warning); border: 1px solid rgba(168,108,0,.25); }
+.status-badge--approved { background: rgba(42,122,59,.1);   color: var(--c-success); border: 1px solid rgba(42,122,59,.25); }
+.status-badge--rejected { background: rgba(215,58,42,.1);   color: var(--c-danger);  border: 1px solid rgba(215,58,42,.25); }
+.status-badge--active   { background: rgba(42,122,59,.1);   color: var(--c-success); border: 1px solid rgba(42,122,59,.25); }
+.status-badge--banned   { background: rgba(215,58,42,.1);   color: var(--c-danger);  border: 1px solid rgba(215,58,42,.25); }
+.status-badge--admin    { background: var(--accent-muted);  color: var(--accent);    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+.status-badge--user     { background: var(--surface-2);     color: var(--text-2);    border: 1px solid var(--border); }
 
 /* ── Boutons (override style.css) ──────────────────────────────────────────── */
 .btn {
@@ -183,7 +174,7 @@ body.theme {
 }
 .btn:hover {
   background: var(--accent-hover); transform: translateY(-1px);
-  box-shadow: 0 0 14px rgba(63,185,80,.3); text-decoration: none;
+  box-shadow: 0 4px 16px var(--accent-muted); text-decoration: none;
 }
 .btn:active { transform: translateY(0); }
 .btn--ghost {
@@ -194,17 +185,17 @@ body.theme {
   border-color: var(--text-2); box-shadow: none; transform: none;
 }
 .btn--danger {
-  background: rgba(248,81,73,.08); color: #F85149; border-color: rgba(248,81,73,.3);
+  background: rgba(215,58,42,.08); color: var(--c-danger); border-color: rgba(215,58,42,.3);
 }
 .btn--danger:hover {
-  background: rgba(248,81,73,.16); border-color: #F85149;
-  box-shadow: 0 0 14px rgba(248,81,73,.2); color: #F85149;
+  background: rgba(215,58,42,.16); border-color: var(--c-danger);
+  box-shadow: 0 4px 16px rgba(215,58,42,.2); color: var(--c-danger);
 }
 .btn--compact { padding: .3rem .65rem; font-size: .8rem; }
 .btn--sm      { padding: .35rem .8rem;  font-size: .8rem; }
 .btn.active {
   background: var(--accent); color: #fff; border-color: var(--accent-hover);
-  box-shadow: 0 0 10px rgba(63,185,80,.3);
+  box-shadow: 0 4px 12px var(--accent-muted);
 }
 
 /* ── Cards demandes ────────────────────────────────────────────────────────── */
@@ -213,7 +204,7 @@ body.theme {
   border-radius: var(--radius); padding: 1rem 1.1rem; margin-bottom: .6rem;
   transition: border-color .15s, box-shadow .15s; position: relative;
 }
-.pending-card:hover { border-color: #3D444D; box-shadow: var(--shadow); }
+.pending-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px var(--accent-muted); }
 .pending-card__header {
   display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; flex-wrap: wrap;
 }
@@ -240,7 +231,7 @@ body.theme {
 }
 .pending-card--selected {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 1px rgba(63,185,80,.4), inset 0 0 0 1000px rgba(63,185,80,.03) !important;
+  box-shadow: 0 0 0 1px var(--accent-muted), inset 0 0 0 1000px var(--accent-muted) !important;
 }
 
 /* ── Type chips ────────────────────────────────────────────────────────────── */
@@ -251,9 +242,9 @@ body.theme {
   text-transform: uppercase; letter-spacing: .05em;
   white-space: nowrap; flex-shrink: 0;
 }
-.type-chip--crag    { background: rgba(88,166,255,.1);  color: #58A6FF; border: 1px solid rgba(88,166,255,.25); }
-.type-chip--boulder { background: rgba(210,153,34,.1);  color: #D29922; border: 1px solid rgba(210,153,34,.25); }
-.type-chip--indoor  { background: rgba(188,140,255,.1); color: #BC8CFF; border: 1px solid rgba(188,140,255,.25); }
+.type-chip--crag    { background: rgba(26,111,168,.1);  color: var(--c-info);    border: 1px solid rgba(26,111,168,.25); }
+.type-chip--boulder { background: rgba(168,108,0,.1);   color: var(--c-warning); border: 1px solid rgba(168,108,0,.25); }
+.type-chip--indoor  { background: var(--accent-muted);  color: var(--accent);    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
 
 /* ── Grouper par user ──────────────────────────────────────────────────────── */
 .user-group { margin-bottom: 1.25rem; }
@@ -288,15 +279,15 @@ body.theme {
   font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
 }
 .edit-diff-row__old {
-  text-decoration: line-through; color: #F85149;
-  background: rgba(248,81,73,.08); border: 1px solid rgba(248,81,73,.2);
+  text-decoration: line-through; color: var(--c-danger);
+  background: rgba(215,58,42,.08); border: 1px solid rgba(215,58,42,.2);
   padding: .1rem .4rem; border-radius: .25rem;
   max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .edit-diff-row__arrow { color: var(--text-2); flex-shrink: 0; opacity: .5; }
 .edit-diff-row__new {
-  color: #3FB950; font-weight: 600;
-  background: rgba(63,185,80,.08); border: 1px solid rgba(63,185,80,.2);
+  color: var(--c-success); font-weight: 600;
+  background: rgba(42,122,59,.08); border: 1px solid rgba(42,122,59,.2);
   padding: .1rem .4rem; border-radius: .25rem;
   max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -321,17 +312,17 @@ body.theme {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
-.admin-denied h2 { color: #F85149; }
+.admin-denied h2 { color: var(--c-danger); }
 
 /* ── Reject modal ──────────────────────────────────────────────────────────── */
 .admin-modal {
   border: 1px solid var(--border); border-radius: var(--radius-lg);
   padding: 0; background: var(--surface);
-  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+  box-shadow: 0 20px 60px rgba(0,0,0,.15), 0 4px 16px rgba(0,0,0,.08);
   max-width: min(480px, 95vw); width: 100%; color: var(--text);
 }
 .admin-modal--wide { max-width: min(680px, 95vw); }
-.admin-modal::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(6px); }
+.admin-modal::backdrop { background: rgba(0,0,0,.4); backdrop-filter: blur(4px); }
 .admin-modal__content { padding: 1.5rem; display: flex; flex-direction: column; gap: .75rem; }
 .admin-modal__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .admin-modal__title { font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text); }
@@ -347,7 +338,7 @@ body.theme {
 }
 .admin-modal__textarea:focus {
   outline: none; border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(63,185,80,.15);
+  box-shadow: 0 0 0 3px var(--accent-muted);
 }
 .admin-modal__actions { display: flex; gap: .5rem; justify-content: flex-end; }
 #userSubmissionsContent { max-height: 60vh; overflow-y: auto; padding-right: .25rem; }
@@ -358,7 +349,7 @@ body.theme {
   display: flex; align-items: center; gap: .5rem;
   background: var(--surface); border: 1px solid var(--border); border-radius: 99px;
   padding: .5rem .9rem;
-  box-shadow: 0 8px 32px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05);
+  box-shadow: 0 8px 32px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
   backdrop-filter: blur(8px); z-index: 200; white-space: nowrap;
 }
 .bulk-bar__count { font-size: .82rem; font-weight: 600; color: var(--text-2); padding: 0 .25rem; }
