@@ -36,9 +36,8 @@ document.querySelectorAll(".admin-tab").forEach((tab) => {
 });
 
 // --- State ---
-let allSpots = [];
-let filteredSpots = [];
-let currentPage = 0;
+let spotsPage = 0;
+let spotsTotal = 0;
 const PAGE_SIZE = 20;
 
 let pendingItems = [];
@@ -52,7 +51,7 @@ let rejectCallback = null;
 
 // --- Init ---
 async function init() {
-  await Promise.all([loadPending(), loadPendingEdits(), loadAllSpots()]);
+  await Promise.all([loadPending(), loadPendingEdits(), loadSpotsPage()]);
 
   // Pending filters
   document.getElementById("pendingSearch").addEventListener("input", debounce(renderPendingView, 200));
@@ -67,9 +66,9 @@ async function init() {
   // Edits filter
   document.getElementById("editsSearch").addEventListener("input", debounce(renderEditsView, 200));
 
-  // Spots table filters
-  document.getElementById("spotSearch").addEventListener("input", debounce(applyFilters, 300));
-  document.getElementById("spotStatusFilter").addEventListener("change", applyFilters);
+  // Spots table filters → reset page et refetch
+  document.getElementById("spotSearch").addEventListener("input", debounce(() => { spotsPage = 0; loadSpotsPage(); }, 300));
+  document.getElementById("spotStatusFilter").addEventListener("change", () => { spotsPage = 0; loadSpotsPage(); });
 
   // Bulk bar buttons
   document.getElementById("bulkApprove").addEventListener("click", handleBulkApprove);
@@ -289,66 +288,51 @@ function renderPendingEdits(items) {
   }).join("");
 }
 
-// ── All spots table ───────────────────────────────────────────────────────────
+// ── All spots table (pagination serveur) ──────────────────────────────────────
 
-async function loadAllSpots() {
+async function loadSpotsPage() {
+  const name   = document.getElementById("spotSearch").value.trim();
+  const status = document.getElementById("spotStatusFilter").value;
+
+  const params = new URLSearchParams({ limit: PAGE_SIZE, skip: spotsPage * PAGE_SIZE });
+  if (name)   params.set("name", name);
+  if (status) params.set("status", status);
+
+  const tbody     = document.getElementById("spotsTableBody");
+  const mobileList = document.getElementById("spotsMobileList");
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-2)">Chargement…</td></tr>`;
+
   try {
-    const res = await fetch(`${API}/spots?limit=5000&format=flat`, { headers: authHeaders() });
+    const res = await fetch(`${API}/spots/admin?${params}`, { headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    allSpots = await res.json();
+    const { items, total, totalAll, totalApproved } = await res.json();
 
-    const resPending = await fetch(`${API}/spots/pending?limit=500`, { headers: authHeaders() });
-    if (resPending.ok) {
-      const { items } = await resPending.json();
-      items.forEach((p) => {
-        if (!allSpots.find((s) => String(s._id) === String(p._id))) {
-          allSpots.push({ ...p, id: p._id.toString() });
-        }
-      });
-    }
+    spotsTotal = total;
+    document.getElementById("statTotal").textContent    = totalAll;
+    document.getElementById("statApproved").textContent = totalApproved;
 
-    document.getElementById("statTotal").textContent = allSpots.length;
-    const approved = allSpots.filter((s) => !s.status || s.status === "approved").length;
-    document.getElementById("statApproved").textContent = approved;
-
-    filteredSpots = [...allSpots];
-    renderTable();
+    renderTable(items);
   } catch (e) {
-    document.getElementById("spotsTableBody").innerHTML =
-      `<tr><td colspan="6" style="text-align:center;color:#dc2626">Erreur : ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--c-danger)">Erreur : ${e.message}</td></tr>`;
+    mobileList.innerHTML = "";
   }
 }
 
-function applyFilters() {
-  const q = document.getElementById("spotSearch").value.toLowerCase();
-  const status = document.getElementById("spotStatusFilter").value;
-
-  filteredSpots = allSpots.filter((s) => {
-    const matchName = !q || s.name?.toLowerCase().includes(q);
-    const matchStatus = !status || (s.status || "approved") === status;
-    return matchName && matchStatus;
-  });
-  currentPage = 0;
-  renderTable();
-}
-
-function renderTable() {
-  const tbody = document.getElementById("spotsTableBody");
+function renderTable(items) {
+  const tbody      = document.getElementById("spotsTableBody");
   const mobileList = document.getElementById("spotsMobileList");
-  const start = currentPage * PAGE_SIZE;
-  const page = filteredSpots.slice(start, start + PAGE_SIZE);
 
-  if (!page.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-2)">Aucun spot trouvé.</td></tr>`;
+  if (!items.length) {
+    tbody.innerHTML     = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-2)">Aucun spot trouvé.</td></tr>`;
     mobileList.innerHTML = `<div class="admin-empty"><p>🔍</p><p>Aucun spot trouvé.</p></div>`;
     renderPagination();
     return;
   }
 
-  tbody.innerHTML = page.map((s) => {
-    const st = s.status || "approved";
+  tbody.innerHTML = items.map((s) => {
+    const st     = s.status || "approved";
     const author = s.submittedBy?.displayName || s.createdBy?.displayName || "—";
-    const date = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : "—";
+    const date   = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : "—";
     return `
       <tr>
         <td><strong>${esc(s.name)}</strong></td>
@@ -358,7 +342,7 @@ function renderTable() {
         <td>${date}</td>
         <td>
           <div class="admin-actions">
-            ${st === "pending" ? `<button class="btn btn--compact" onclick="approveSpot('${s._id}')">✅</button><button class="btn btn--danger btn--compact" onclick="openRejectModal(['${s._id}'], 'spot')">❌</button>` : ""}
+            ${st === "pending"  ? `<button class="btn btn--compact" onclick="approveSpot('${s._id}')">✅</button><button class="btn btn--danger btn--compact" onclick="openRejectModal(['${s._id}'], 'spot')">❌</button>` : ""}
             ${st === "rejected" ? `<button class="btn btn--compact btn--ghost" onclick="approveSpot('${s._id}')">↩</button>` : ""}
             <button class="btn btn--danger btn--compact btn--ghost" onclick="deleteSpot('${s._id}', '${esc(s.name)}')">🗑</button>
           </div>
@@ -367,8 +351,8 @@ function renderTable() {
     `;
   }).join("");
 
-  mobileList.innerHTML = page.map((s) => {
-    const st = s.status || "approved";
+  mobileList.innerHTML = items.map((s) => {
+    const st     = s.status || "approved";
     const author = s.submittedBy?.displayName || s.createdBy?.displayName || "—";
     return `
       <div class="pending-card">
@@ -389,18 +373,17 @@ function renderTable() {
 }
 
 function renderPagination() {
-  const total = filteredSpots.length;
-  const pages = Math.ceil(total / PAGE_SIZE);
-  const pg = document.getElementById("spotsPagination");
+  const pages = Math.ceil(spotsTotal / PAGE_SIZE);
+  const pg    = document.getElementById("spotsPagination");
   if (pages <= 1) { pg.innerHTML = ""; return; }
   pg.innerHTML = `
-    <button class="btn btn--ghost btn--compact" onclick="changePage(-1)" ${currentPage === 0 ? "disabled" : ""}>←</button>
-    <span style="font-size:.88rem;color:var(--text-2)">${currentPage + 1} / ${pages}</span>
-    <button class="btn btn--ghost btn--compact" onclick="changePage(1)" ${currentPage >= pages - 1 ? "disabled" : ""}>→</button>
+    <button class="btn btn--ghost btn--compact" onclick="changePage(-1)" ${spotsPage === 0 ? "disabled" : ""}>←</button>
+    <span style="font-size:.88rem;color:var(--text-2)">${spotsPage + 1} / ${pages} <small style="opacity:.6">(${spotsTotal} spots)</small></span>
+    <button class="btn btn--ghost btn--compact" onclick="changePage(1)" ${spotsPage >= pages - 1 ? "disabled" : ""}>→</button>
   `;
 }
 
-window.changePage = (dir) => { currentPage += dir; renderTable(); };
+window.changePage = (dir) => { spotsPage += dir; loadSpotsPage(); };
 
 // ── Selection & bulk ──────────────────────────────────────────────────────────
 
@@ -452,7 +435,7 @@ window.approveAll = async (idsJson, type) => {
     ));
     showToast(`${ids.length} élément${ids.length > 1 ? "s" : ""} approuvé${ids.length > 1 ? "s" : ""} ✅`);
     clearSelection();
-    if (type === "spot") await Promise.all([loadPending(), loadAllSpots()]);
+    if (type === "spot") await Promise.all([loadPending(), loadSpotsPage()]);
     else await loadPendingEdits();
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -467,7 +450,7 @@ window.openRejectModal = (idsJson, type) => {
       await Promise.all(ids.map((id) => rejectById(id, type, reason)));
       showToast(`${ids.length} élément${ids.length > 1 ? "s" : ""} rejeté${ids.length > 1 ? "s" : ""}`);
       clearSelection();
-      if (type === "spot") await Promise.all([loadPending(), loadAllSpots()]);
+      if (type === "spot") await Promise.all([loadPending(), loadSpotsPage()]);
       else await loadPendingEdits();
     } catch (e) { showToast("Erreur : " + e.message, true); }
   };
@@ -487,7 +470,7 @@ window.approveSpot = async (id) => {
     const res = await fetch(`${API}/spots/${id}/approve`, { method: "PATCH", headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
     showToast("Spot approuvé ✅");
-    await Promise.all([loadPending(), loadAllSpots()]);
+    await Promise.all([loadPending(), loadSpotsPage()]);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
 
@@ -506,7 +489,7 @@ window.deleteSpot = async (id, name) => {
     const res = await fetch(`${API}/spots/${id}`, { method: "DELETE", headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
     showToast("Spot supprimé");
-    await Promise.all([loadPending(), loadAllSpots()]);
+    await Promise.all([loadPending(), loadSpotsPage()]);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
 

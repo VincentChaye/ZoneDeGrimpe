@@ -201,6 +201,35 @@ export function spotsRouter(db) {
   });
 
   // ================================================================
+  // GET /admin — Liste paginée admin (tous statuts, requireAdmin)
+  // ================================================================
+  r.get("/admin", requireAdmin, async (req, res) => {
+    try {
+      const { limit = 20, skip = 0, name = "", status = "" } = req.query;
+      const lim = Math.max(1, Math.min(parseInt(limit, 10) || 20, 100));
+      const sk  = Math.max(0, parseInt(skip, 10) || 0);
+
+      const filter = {};
+      if (name) filter.name = { $regex: name.trim(), $options: "i" };
+      if (status === "approved") filter.status = { $nin: ["pending", "rejected"] };
+      else if (status) filter.status = status;
+
+      const [items, total, totalAll, totalApproved] = await Promise.all([
+        spots.find(filter, { projection: MAP_PROJECTION })
+          .sort({ createdAt: -1 }).skip(sk).limit(lim).toArray(),
+        spots.countDocuments(filter),
+        spots.countDocuments({}),
+        spots.countDocuments({ status: { $nin: ["pending", "rejected"] } }),
+      ]);
+
+      res.json({ items: items.map(toFlat), total, totalAll, totalApproved, limit: lim, skip: sk });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
   // GET /:id — Détail complet (public)
   // ================================================================
   r.get("/:id", async (req, res) => {
