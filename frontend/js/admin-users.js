@@ -185,7 +185,6 @@ window.toggleAdmin = async (id, currentlyAdmin) => {
       body: JSON.stringify({ roles: newRoles }),
     });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast(currentlyAdmin ? "Droits admin retirés" : "Utilisateur promu admin");
     loadUsers();
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -199,7 +198,6 @@ window.banUser = async (id, name) => {
       body: JSON.stringify({ status: "banned" }),
     });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Utilisateur banni");
     loadUsers();
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -212,7 +210,6 @@ window.unbanUser = async (id) => {
       body: JSON.stringify({ status: "active" }),
     });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Utilisateur débanni");
     loadUsers();
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -222,7 +219,6 @@ window.deleteUser = async (id, name) => {
   try {
     const res = await fetch(`${API}/users/${id}`, { method: "DELETE", headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Compte supprimé");
     loadUsers();
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -310,7 +306,6 @@ window.approveSpotFromModal = async (spotId, userId, displayName) => {
   try {
     const res = await fetch(`${API}/spots/${spotId}/approve`, { method: "PATCH", headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Spot approuvé ✅");
     showUserSubmissions(userId, displayName);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -321,7 +316,6 @@ window.rejectSpotFromModal = async (spotId, userId, displayName) => {
   try {
     const res = await fetch(`${API}/spots/${spotId}/reject`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ reason }) });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Spot rejeté");
     showUserSubmissions(userId, displayName);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -330,7 +324,6 @@ window.approveEditFromModal = async (editId, userId, displayName) => {
   try {
     const res = await fetch(`${API}/spot-edits/${editId}/approve`, { method: "PATCH", headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Modification approuvée ✅");
     showUserSubmissions(userId, displayName);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
@@ -341,7 +334,6 @@ window.rejectEditFromModal = async (editId, userId, displayName) => {
   try {
     const res = await fetch(`${API}/spot-edits/${editId}/reject`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ reason }) });
     if (!res.ok) throw new Error("Erreur " + res.status);
-    showToast("Modification rejetée");
     showUserSubmissions(userId, displayName);
   } catch (e) { showToast("Erreur : " + e.message, true); }
 };
