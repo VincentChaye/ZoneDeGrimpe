@@ -484,12 +484,6 @@ function rowToCard(item) {
   const shortName = name.length > 10 ? name.substring(0, 10) + "…" : name;
   const condition = item?.lifecycle?.condition || "good";
 
-  // Update gear count stat after render
-  setTimeout(() => {
-    const rows_count = document.getElementById('gearList')?.querySelectorAll('.inv-cell').length;
-    if (window.updateGearCount && rows_count !== undefined) window.updateGearCount(rows_count);
-  }, 50);
-
   return `
     <div class="inv-cell inv-cell--${condition}" title="${escapeHTML(name)}\n${escapeHTML(cat)} · ${condition}">
       <div class="inv-cell__icon">${icon}</div>
@@ -531,6 +525,7 @@ async function refresh() {
   try {
     const q = (search && search.value || "").toLowerCase();
     rows = await apiList();
+    if (window.updateSlotCounts) window.updateSlotCounts(rows);
 
     const filtered = rows.filter(item => {
       const searchText = JSON.stringify(item).toLowerCase();

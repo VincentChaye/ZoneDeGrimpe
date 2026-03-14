@@ -1,25 +1,19 @@
-/* === Matériel — RPG Dofus-style layout === */
+/* === Matériel — RPG Adventurer layout === */
 
 /* ── Body ── */
-body.page-rpg {
-  overflow: hidden; /* desktop: panels scroll internally */
-}
-@media (max-width: 767px) {
-  body.page-rpg { overflow: auto; }
-}
+body.page-rpg { overflow: hidden; }
+@media (max-width: 767px) { body.page-rpg { overflow: auto; } }
 
-/* ── Mobile tabs nav ── */
+/* ── Mobile panel tabs ── */
 .rpg-tabs-nav {
-  display: none; /* hidden desktop */
+  display: none;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   position: sticky;
   top: var(--header-h);
   z-index: 100;
 }
-@media (max-width: 767px) {
-  .rpg-tabs-nav { display: flex; }
-}
+@media (max-width: 767px) { .rpg-tabs-nav { display: flex; } }
 
 .rpg-tab-btn {
   flex: 1;
@@ -41,15 +35,15 @@ body.page-rpg {
   font-weight: 600;
 }
 
-/* ── 3-column desktop layout ── */
+/* ── 2-column desktop layout ── */
 .rpg-layout {
   display: grid;
-  grid-template-columns: 260px 1fr 270px;
+  grid-template-columns: 340px 1fr;
   height: calc(100dvh - var(--header-h));
   overflow: hidden;
 }
 @media (max-width: 1024px) {
-  .rpg-layout { grid-template-columns: 240px 1fr 250px; }
+  .rpg-layout { grid-template-columns: 300px 1fr; }
 }
 @media (max-width: 767px) {
   .rpg-layout {
@@ -63,20 +57,29 @@ body.page-rpg {
 .rpg-panel {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
   overflow: hidden;
   height: 100%;
 }
-.rpg-panel--right { border-right: 0; }
+
+.rpg-panel--char {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.rpg-panel--content {
+  overflow: hidden;
+}
 
 @media (max-width: 767px) {
   .rpg-panel {
     display: none;
     min-height: calc(100dvh - var(--header-h) - var(--tab-bar-h) - 43px);
-    border-right: 0;
     height: auto;
+    border-right: 0;
   }
   .rpg-panel.active { display: flex; }
+  .rpg-panel--content {
+    overflow: visible;
+  }
 }
 
 .rpg-panel__header {
@@ -98,53 +101,149 @@ body.page-rpg {
   letter-spacing: .02em;
 }
 
-/* btn--compact variant */
 .btn--compact {
   padding: .3rem .65rem;
   font-size: .75rem;
   min-height: unset;
 }
 
-/* ── Character stage ── */
-.char-stage {
-  padding: 1rem .75rem .75rem;
+/* ── Character arena ── */
+.char-arena {
+  padding: 1rem .75rem .5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .75rem;
+  gap: .5rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  background: radial-gradient(ellipse at 50% 60%, rgba(193,136,69,.06) 0%, transparent 70%);
 }
-.char-scene {
-  width: 110px;
-  height: 140px;
+
+.char-slot-row {
+  display: flex;
+  justify-content: center;
+  gap: .5rem;
+}
+
+.char-middle {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+}
+
+.char-slot-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* ── DiceBear avatar ── */
+.char-figure-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: .75rem;
+}
+.char-figure-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(193,136,69,.1) 0%, rgba(106,100,90,.05) 60%, transparent 80%);
+  border-radius: 50%;
+  border: 1.5px solid rgba(193,136,69,.2);
+}
+.char-figure {
+  width: 150px;
+  height: 150px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,.14));
+  transition: filter .3s;
+}
+.char-figure[src=""] { opacity: 0; }
+
+@media (max-width: 767px) {
+  .char-figure { width: 130px; height: 130px; }
+  .char-middle { grid-template-columns: 72px 1fr 72px; }
+}
+
+/* ── Equipment slots ── */
+.eq-slot {
+  width: 68px;
+  height: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  transition: border-color .2s, transform .15s var(--spring, cubic-bezier(.34,1.56,.64,1)), box-shadow .2s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1px 3px rgba(44,39,32,.07);
+}
+.eq-slot:hover {
+  border-color: var(--amber, #C18845);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(193,136,69,.2), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.eq-slot--active {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, rgba(93,112,82,.12) 0%, rgba(93,112,82,.05) 100%);
+  box-shadow: 0 0 0 3px rgba(93,112,82,.15), inset 0 1px 0 rgba(255,255,255,.3);
+}
+.eq-slot--active:hover {
+  border-color: var(--accent);
+  box-shadow: 0 6px 16px rgba(93,112,82,.2), 0 0 0 3px rgba(93,112,82,.15);
+}
+
+.eq-slot__icon  { font-size: 1.45rem; line-height: 1; }
+.eq-slot__label {
+  font-size: .5rem;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+.eq-slot__count {
+  position: absolute;
+  top: -6px; right: -6px;
+  min-width: 16px; height: 16px;
+  background: var(--amber, #C18845);
+  color: #fff;
+  font-size: .55rem;
+  font-weight: 700;
+  font-style: normal;
+  border-radius: 99px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at 30% 50%, rgba(193,136,69,.12) 0%, transparent 60%), var(--surface-2);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 2px 8px rgba(44,39,32,.06);
-}
-.char-scene::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(106,100,90,.03) 5px, rgba(106,100,90,.03) 6px);
-}
-.char-svg {
-  width: 88px;
-  height: 118px;
-  position: relative;
-  z-index: 1;
+  padding: 0 3px;
+  line-height: 1;
+  border: 1.5px solid var(--surface);
 }
 
+@media (max-width: 767px) {
+  .eq-slot { width: 60px; height: 60px; }
+  .eq-slot__icon { font-size: 1.2rem; }
+}
+
+/* ── Customization swatches ── */
 .char-options {
-  width: 100%;
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: .45rem;
+  flex-shrink: 0;
 }
 .char-option-group {
   display: flex;
@@ -157,7 +256,7 @@ body.page-rpg {
   letter-spacing: .09em;
   text-transform: uppercase;
   color: var(--text-2);
-  width: 40px;
+  width: 52px;
   flex-shrink: 0;
 }
 .char-swatches {
@@ -174,16 +273,6 @@ body.page-rpg {
   transition: transform .15s var(--spring, cubic-bezier(.34,1.56,.64,1)), border-color .15s, box-shadow .15s;
   flex-shrink: 0;
 }
-.swatch--text {
-  background: var(--surface-2) !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .72rem;
-  line-height: 1;
-  border-radius: var(--radius-sm);
-  color: var(--text-2);
-}
 .swatch:hover { transform: scale(1.18); }
 .swatch.active {
   border-color: var(--text);
@@ -193,9 +282,9 @@ body.page-rpg {
 
 /* ── Stats panel ── */
 .char-stats-panel {
-  padding: .75rem 1rem;
-  overflow-y: auto;
+  padding: .65rem 1rem;
   flex: 1;
+  overflow-y: auto;
 }
 .char-stats-title {
   font-size: .62rem;
@@ -203,14 +292,14 @@ body.page-rpg {
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--amber, #C18845);
-  margin: 0 0 .65rem;
+  margin: 0 0 .6rem;
 }
 .char-stat-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: .5rem;
-  padding: .42rem 0;
+  padding: .4rem 0;
   border-bottom: 1px solid var(--border);
 }
 .char-stat-row:last-child { border-bottom: 0; }
@@ -260,6 +349,47 @@ body.page-rpg {
 }
 .xp-label { font-size: .67rem; color: var(--text-2); }
 
+/* ── Content tabs (right panel) ── */
+.content-tabs-nav {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+.content-tab-btn {
+  flex: 1;
+  padding: .65rem .5rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.content-tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Content sub-panels ── */
+.content-sub {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.content-sub--active { display: flex; }
+
+@media (max-width: 767px) {
+  .content-sub { overflow: visible; min-height: auto; }
+  .content-sub--active { min-height: calc(100dvh - var(--header-h) - var(--tab-bar-h) - 43px - 40px); }
+}
+
 /* ── Inventory panel ── */
 .inv-controls {
   padding: .5rem .75rem;
@@ -298,12 +428,12 @@ body.page-rpg {
   overflow-y: auto;
   padding: .6rem;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
   gap: .4rem;
   align-content: start;
 }
 
-/* ── RPG Inventory cells ── */
+/* ── RPG inventory cells ── */
 .inv-cell {
   aspect-ratio: 1;
   display: flex;
@@ -334,11 +464,11 @@ body.page-rpg {
 }
 
 /* Condition variants */
-.inv-cell--new       { border-color: rgba(34,197,94,.4); }
-.inv-cell--new:hover  { border-color: rgba(34,197,94,.7); box-shadow: 0 6px 16px rgba(34,197,94,.15); }
-.inv-cell--worn      { border-color: rgba(234,179,8,.45); }
-.inv-cell--retire-soon { border-color: rgba(239,68,68,.5); }
-.inv-cell--retired   { opacity: .45; filter: grayscale(.5); }
+.inv-cell--new          { border-color: rgba(34,197,94,.4); }
+.inv-cell--new:hover    { border-color: rgba(34,197,94,.7); box-shadow: 0 6px 16px rgba(34,197,94,.15); }
+.inv-cell--worn         { border-color: rgba(234,179,8,.45); }
+.inv-cell--retire-soon  { border-color: rgba(239,68,68,.5); }
+.inv-cell--retired      { opacity: .45; filter: grayscale(.5); }
 
 .inv-cell__icon {
   font-size: 1.7rem;
@@ -356,7 +486,6 @@ body.page-rpg {
   line-height: 1.2;
   padding: 0 .15rem;
 }
-
 .inv-cell__del {
   position: absolute;
   top: 2px; right: 3px;
@@ -391,7 +520,6 @@ body.page-rpg {
 }
 .inv-cell:hover .inv-cell__edit { display: flex; }
 
-/* Empty state */
 .inv-empty {
   grid-column: 1 / -1;
   text-align: center;
@@ -402,6 +530,13 @@ body.page-rpg {
 .inv-empty p:first-child { font-size: 2rem; margin-bottom: .5rem; }
 
 /* ── Quest panel ── */
+.quest-list-wrap {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 .quest-section {
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
@@ -563,34 +698,18 @@ body.page-rpg {
 }
 .info-text { margin: 0; font-size: .88rem; color: var(--text); }
 .info-text .warning { color: #dc2626; font-weight: 700; }
-.info-text .ok { color: #16a34a; font-weight: 700; }
+.info-text .ok      { color: #16a34a; font-weight: 700; }
 
-/* ── Results / status helpers ── */
-.results-list { margin-top: .5rem; }
-.result-item {
-  background: var(--surface-2);
-  border-radius: var(--radius-sm);
-  padding: .75rem;
-  margin-bottom: .35rem;
-  border-left: 3px solid var(--accent);
-}
-.result-item.warning { border-left-color: #f59e0b; }
-.result-item.danger  { border-left-color: #dc2626; }
-
-.status-warning { color: #dc2626; font-size: .8rem; font-weight: 600; }
-.status-caution { color: #f59e0b; font-size: .8rem; font-weight: 600; }
-.status-ok      { color: #16a34a; font-size: .8rem; font-weight: 600; }
-
+/* ── Status helpers ── */
 .error-state {
   text-align: center;
   padding: 2rem 1rem;
   color: var(--text-2);
 }
+.status-warning { color: #dc2626; font-size: .8rem; font-weight: 600; }
+.status-caution { color: #f59e0b; font-size: .8rem; font-weight: 600; }
+.status-ok      { color: #16a34a; font-size: .8rem; font-weight: 600; }
 
-/* ── Footer hidden on mobile ── */
-.app-footer--hidden-mobile {
-  display: block;
-}
-@media (max-width: 767px) {
-  .app-footer--hidden-mobile { display: none; }
-}
+/* ── Footer ── */
+.app-footer--hidden-mobile { display: block; }
+@media (max-width: 767px) { .app-footer--hidden-mobile { display: none; } }

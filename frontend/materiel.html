@@ -31,7 +31,7 @@
     <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
   </header>
 
-  <!-- Mobile panel tabs (hidden on desktop via CSS) -->
+  <!-- Mobile panel tabs -->
   <div class="rpg-tabs-nav">
     <button class="rpg-tab-btn active" data-panel="character">🧗 Grimpeur</button>
     <button class="rpg-tab-btn" data-panel="inventory">🎒 Équipement</button>
@@ -39,109 +39,92 @@
   </div>
 
   <main class="rpg-layout">
-    <!-- LEFT PANEL: Character -->
-    <section class="rpg-panel rpg-panel--left active" id="panel-character">
+
+    <!-- ── LEFT PANEL: Character ── -->
+    <section class="rpg-panel rpg-panel--char active" id="panel-character">
       <div class="rpg-panel__header">
         <h2 class="rpg-panel__title">Mon Grimpeur</h2>
       </div>
 
-      <!-- Character display area -->
-      <div class="char-stage">
-        <div class="char-scene">
-          <!-- SVG character inline -->
-          <svg id="charSvg" class="char-svg" viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
-            <!-- Background wall hint -->
-            <rect x="0" y="0" width="16" height="150" rx="3" fill="#8B7355" opacity="0.1"/>
-            <!-- Rope (decorative) -->
-            <path d="M9 0 Q7 30 11 60 Q9 90 7 150" stroke="#C18845" stroke-width="2" stroke-dasharray="4,3" fill="none" opacity="0.3"/>
-            <!-- Rock hold -->
-            <ellipse cx="12" cy="22" rx="6" ry="4" fill="#9B8B77" opacity="0.5"/>
-            <!-- Left arm (reaching up) -->
-            <path d="M38 50 L16 26" stroke-linecap="round" stroke-width="7" style="stroke:var(--skin-color)"/>
-            <circle cx="14" cy="23" r="6" style="fill:var(--skin-color)"/>
-            <!-- Right arm (resting) -->
-            <path d="M62 50 L80 40" stroke-linecap="round" stroke-width="7" style="stroke:var(--skin-color)"/>
-            <circle cx="82" cy="38" r="5" style="fill:var(--skin-color)"/>
-            <!-- Torso -->
-            <rect x="36" y="46" width="28" height="28" rx="6" style="fill:var(--outfit-color)"/>
-            <!-- Harness straps -->
-            <path d="M40 46 L36 62 M60 46 L64 62 M36 60 L64 60" stroke="#E3CD8B" stroke-width="1.5" fill="none" opacity="0.7"/>
-            <!-- Chalk bag -->
-            <rect x="23" y="66" width="11" height="13" rx="3" fill="#F0BE86" opacity="0.9"/>
-            <ellipse cx="28.5" cy="66" rx="5.5" ry="2.5" fill="#E3CD8B"/>
-            <!-- Pants -->
-            <rect x="36" y="73" width="28" height="26" rx="3" style="fill:var(--outfit-color)" opacity="0.85"/>
-            <line x1="50" y1="73" x2="50" y2="99" stroke="rgba(0,0,0,.08)" stroke-width="1.5"/>
-            <!-- Left leg -->
-            <rect x="36" y="98" width="12" height="26" rx="4" style="fill:var(--outfit-color)" opacity="0.9"/>
-            <!-- Right leg -->
-            <rect x="52" y="98" width="12" height="26" rx="4" style="fill:var(--outfit-color)" opacity="0.9"/>
-            <!-- Shoes -->
-            <ellipse cx="42" cy="127" rx="10" ry="5" style="fill:var(--shoes-color)" transform="rotate(-8 42 127)"/>
-            <ellipse cx="58" cy="127" rx="10" ry="5" style="fill:var(--shoes-color)" transform="rotate(8 58 127)"/>
-            <!-- Head -->
-            <circle cx="50" cy="30" r="15" style="fill:var(--skin-color)"/>
-            <!-- Ears -->
-            <ellipse cx="35" cy="30" rx="3.5" ry="4.5" style="fill:var(--skin-color)"/>
-            <ellipse cx="65" cy="30" rx="3.5" ry="4.5" style="fill:var(--skin-color)"/>
-            <!-- Eyes -->
-            <circle cx="44" cy="28" r="2.5" fill="#2C1A0A"/>
-            <circle cx="56" cy="28" r="2.5" fill="#2C1A0A"/>
-            <circle cx="45" cy="27" r="1" fill="rgba(255,255,255,.9)"/>
-            <circle cx="57" cy="27" r="1" fill="rgba(255,255,255,.9)"/>
-            <!-- Smile -->
-            <path d="M44 35 Q50 40 56 35" stroke="#2C1A0A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <!-- Character arena: DiceBear avatar + Dofus-style equipment slots -->
+      <div class="char-arena">
 
-            <!-- Helmet None (default: just hair) -->
-            <g id="charHelmetNone">
-              <path d="M35 24 Q36 14 50 13 Q64 14 65 24" style="fill:var(--skin-color)" opacity="0.9"/>
-            </g>
-            <!-- Helmet Beanie (hidden) -->
-            <g id="charHelmetBeanie" style="display:none">
-              <path d="M34 26 Q34 11 50 10 Q66 11 66 26 Z" style="fill:var(--outfit-color)"/>
-              <rect x="33" y="24" width="34" height="4" rx="2" style="fill:var(--outfit-color)" opacity="0.7"/>
-              <circle cx="50" cy="10" r="5" style="fill:var(--outfit-color)"/>
-              <circle cx="50" cy="10" r="3" fill="rgba(255,255,255,.2)"/>
-            </g>
-            <!-- Helmet Climbing (hidden) -->
-            <g id="charHelmetHelmet" style="display:none">
-              <path d="M33 27 Q33 10 50 9 Q67 10 67 27 Z" fill="#E3CD8B"/>
-              <rect x="42" y="11" width="4" height="8" rx="2" fill="rgba(0,0,0,.15)"/>
-              <rect x="50" y="11" width="4" height="8" rx="2" fill="rgba(0,0,0,.15)"/>
-              <rect x="32" y="25" width="36" height="5" rx="2.5" fill="#C18845"/>
-              <path d="M36 28 Q34 35 38 39" stroke="#C18845" stroke-width="1.5" fill="none"/>
-              <path d="M64 28 Q66 35 62 39" stroke="#C18845" stroke-width="1.5" fill="none"/>
-            </g>
-          </svg>
+        <!-- Top: Casque -->
+        <div class="char-slot-row">
+          <button class="eq-slot" data-cat="Casque" title="Voir mes casques">
+            <span class="eq-slot__icon">⛑️</span>
+            <span class="eq-slot__label">Casque</span>
+            <em class="eq-slot__count" data-slot-count="Casque"></em>
+          </button>
         </div>
 
-        <!-- Customization swatches -->
-        <div class="char-options">
-          <div class="char-option-group">
-            <span class="char-option-label">Peau</span>
-            <div class="char-swatches">
-              <button class="swatch swatch--skin active" data-skin="light" style="background:#FDDBB4" title="Claire"></button>
-              <button class="swatch swatch--skin" data-skin="medium" style="background:#C8874A" title="Moyenne"></button>
-              <button class="swatch swatch--skin" data-skin="tan" style="background:#8D5524" title="Hâlée"></button>
-              <button class="swatch swatch--skin" data-skin="dark" style="background:#4A2C0A" title="Foncée"></button>
-            </div>
+        <!-- Middle row: left slots + avatar + right slots -->
+        <div class="char-middle">
+          <div class="char-slot-col">
+            <button class="eq-slot" data-cat="Baudrier" title="Voir mes baudriers">
+              <span class="eq-slot__icon">🧗</span>
+              <span class="eq-slot__label">Baudrier</span>
+              <em class="eq-slot__count" data-slot-count="Baudrier"></em>
+            </button>
+            <button class="eq-slot" data-cat="Corde" title="Voir mes cordes">
+              <span class="eq-slot__icon">🪢</span>
+              <span class="eq-slot__label">Corde</span>
+              <em class="eq-slot__count" data-slot-count="Corde"></em>
+            </button>
           </div>
-          <div class="char-option-group">
-            <span class="char-option-label">Tenue</span>
-            <div class="char-swatches">
-              <button class="swatch swatch--outfit active" data-outfit="olive" style="background:#5D7052" title="Olive"></button>
-              <button class="swatch swatch--outfit" data-outfit="amber" style="background:#C18845" title="Ambre"></button>
-              <button class="swatch swatch--outfit" data-outfit="stone" style="background:#6A645A" title="Pierre"></button>
-              <button class="swatch swatch--outfit" data-outfit="peach" style="background:#F0BE86" title="Sable"></button>
-            </div>
+
+          <div class="char-figure-wrap">
+            <img id="charFigure" class="char-figure" alt="Mon grimpeur" />
           </div>
-          <div class="char-option-group">
-            <span class="char-option-label">Casque</span>
-            <div class="char-swatches char-swatches--emoji">
-              <button class="swatch swatch--helmet swatch--text active" data-helmet="none" title="Sans">—</button>
-              <button class="swatch swatch--helmet swatch--text" data-helmet="beanie" title="Bonnet">🧢</button>
-              <button class="swatch swatch--helmet swatch--text" data-helmet="helmet" title="Casque">⛑️</button>
-            </div>
+
+          <div class="char-slot-col">
+            <button class="eq-slot" data-cat="Chausson" title="Voir mes chaussons">
+              <span class="eq-slot__icon">👟</span>
+              <span class="eq-slot__label">Chausson</span>
+              <em class="eq-slot__count" data-slot-count="Chausson"></em>
+            </button>
+            <button class="eq-slot" data-cat="Dégaine" title="Voir mes dégaines">
+              <span class="eq-slot__icon">🪝</span>
+              <span class="eq-slot__label">Dégaine</span>
+              <em class="eq-slot__count" data-slot-count="Dégaine"></em>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom: Magnésie + Mousqueton -->
+        <div class="char-slot-row">
+          <button class="eq-slot" data-cat="Magnésie" title="Voir ma magnésie">
+            <span class="eq-slot__icon">⚪</span>
+            <span class="eq-slot__label">Magnésie</span>
+            <em class="eq-slot__count" data-slot-count="Magnésie"></em>
+          </button>
+          <button class="eq-slot" data-cat="Mousqueton" title="Voir mes mousquetons">
+            <span class="eq-slot__icon">🔗</span>
+            <span class="eq-slot__label">Mousqueton</span>
+            <em class="eq-slot__count" data-slot-count="Mousqueton"></em>
+          </button>
+        </div>
+
+      </div><!-- /char-arena -->
+
+      <!-- Customization swatches -->
+      <div class="char-options">
+        <div class="char-option-group">
+          <span class="char-option-label">Peau</span>
+          <div class="char-swatches">
+            <button class="swatch swatch--skin active" data-skin="light"  style="background:#f2d3b1" title="Claire"></button>
+            <button class="swatch swatch--skin"        data-skin="medium" style="background:#d08b5b" title="Moyenne"></button>
+            <button class="swatch swatch--skin"        data-skin="tan"    style="background:#a57257" title="Hâlée"></button>
+            <button class="swatch swatch--skin"        data-skin="dark"   style="background:#694d3d" title="Foncée"></button>
+          </div>
+        </div>
+        <div class="char-option-group">
+          <span class="char-option-label">Cheveux</span>
+          <div class="char-swatches">
+            <button class="swatch swatch--hair active" data-hair="brown"  style="background:#6c4545" title="Châtain"></button>
+            <button class="swatch swatch--hair"        data-hair="blonde" style="background:#f4d150" title="Blond"></button>
+            <button class="swatch swatch--hair"        data-hair="black"  style="background:#2c1a0a" title="Noir"></button>
+            <button class="swatch swatch--hair"        data-hair="red"    style="background:#a0522d" title="Roux"></button>
           </div>
         </div>
       </div>
@@ -175,53 +158,66 @@
       </div>
     </section>
 
-    <!-- CENTER PANEL: Inventory -->
-    <section class="rpg-panel rpg-panel--center" id="panel-inventory">
-      <div class="rpg-panel__header">
-        <h2 class="rpg-panel__title">Inventaire</h2>
-        <button class="btn btn--compact" id="addGearBtn">+ Ajouter</button>
-      </div>
-      <div class="inv-controls">
-        <input id="gearSearch" class="inv-search" placeholder="Rechercher…" autocomplete="off" />
-        <select id="gearTagFilter" class="filter-select">
-          <option value="">Toutes catégories</option>
-        </select>
-      </div>
-      <div class="inv-grid" id="gearList"></div>
-    </section>
+    <!-- ── RIGHT PANEL: Inventory + Quests ── -->
+    <section class="rpg-panel rpg-panel--content" id="panel-content">
 
-    <!-- RIGHT PANEL: Quests -->
-    <section class="rpg-panel rpg-panel--right" id="panel-quests">
-      <div class="rpg-panel__header">
-        <h2 class="rpg-panel__title">Carnet</h2>
-        <button class="btn btn--compact" id="addQuestBtn">+ Projet</button>
+      <!-- Internal tab nav (desktop + mobile) -->
+      <div class="content-tabs-nav">
+        <button class="content-tab-btn active" data-content="inventory">🎒 Équipement</button>
+        <button class="content-tab-btn"        data-content="quests">📜 Carnet</button>
       </div>
 
-      <div class="quest-section">
-        <div class="quest-section__header">
-          <span class="quest-section__icon">🎯</span>
-          <h3 class="quest-section__title">Projets</h3>
-          <span class="quest-count" id="activeQuestCount">0</span>
+      <!-- Inventory sub-panel -->
+      <div class="content-sub content-sub--active" id="content-inventory">
+        <div class="rpg-panel__header">
+          <h2 class="rpg-panel__title">Inventaire</h2>
+          <button class="btn btn--compact" id="addGearBtn">+ Ajouter</button>
         </div>
-        <div class="quest-list" id="activeQuests">
-          <div class="quest-empty">Aucun projet pour l'instant</div>
+        <div class="inv-controls">
+          <input id="gearSearch"    class="inv-search"    placeholder="Rechercher…" autocomplete="off" />
+          <select id="gearTagFilter" class="filter-select">
+            <option value="">Toutes catégories</option>
+          </select>
+        </div>
+        <div class="inv-grid" id="gearList"></div>
+      </div>
+
+      <!-- Quests sub-panel -->
+      <div class="content-sub" id="content-quests">
+        <div class="rpg-panel__header">
+          <h2 class="rpg-panel__title">Carnet</h2>
+          <button class="btn btn--compact" id="addQuestBtn">+ Projet</button>
+        </div>
+
+        <div class="quest-list-wrap">
+          <div class="quest-section">
+            <div class="quest-section__header">
+              <span class="quest-section__icon">🎯</span>
+              <h3 class="quest-section__title">Projets</h3>
+              <span class="quest-count" id="activeQuestCount">0</span>
+            </div>
+            <div class="quest-list" id="activeQuests">
+              <div class="quest-empty">Aucun projet pour l'instant</div>
+            </div>
+          </div>
+
+          <div class="quest-section quest-section--done">
+            <div class="quest-section__header">
+              <span class="quest-section__icon">✅</span>
+              <h3 class="quest-section__title">Voies réalisées</h3>
+              <span class="quest-count quest-count--done" id="completedCount">0</span>
+            </div>
+            <div class="quest-list" id="completedQuests">
+              <div class="quest-empty">Aucune voie loggée</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="quest-section quest-section--done">
-        <div class="quest-section__header">
-          <span class="quest-section__icon">✅</span>
-          <h3 class="quest-section__title">Voies réalisées</h3>
-          <span class="quest-count quest-count--done" id="completedCount">0</span>
-        </div>
-        <div class="quest-list" id="completedQuests">
-          <div class="quest-empty">Aucune voie loggée</div>
-        </div>
-      </div>
     </section>
   </main>
 
-  <!-- Gear modal (kept from existing - same IDs required) -->
+  <!-- Gear modal (required by materiel-smart.js) -->
   <dialog id="gearModal" class="modal">
     <form id="gearForm" class="modal__content"></form>
   </dialog>
@@ -258,7 +254,6 @@
     <p>© <span id="year"></span> ZoneDeGrimpe</p>
   </footer>
 
-  <!-- Bottom Tab Bar (mobile) - same as other pages -->
   <nav class="tab-bar" aria-label="Navigation principale">
     <a href="./index.html" class="tab-bar__item">
       <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
