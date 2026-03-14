@@ -150,13 +150,14 @@ function spotCardHTML(s) {
 
   return `
     <div class="spot-card">
-      <div class="sc-header" data-type="${typeKey}">
-        <div class="sc-shine"></div>
-        <span class="sc-type-icon">${typeIcon}</span>
-        ${gradeText ? `<span class="sc-grade-badge" data-level="${gradeLevel}">Niv. ${gradeText}</span>` : ""}
-        <div class="sc-header-bottom">
+      <div class="sc-banner" data-type="${typeKey}">
+        <span class="sc-banner__icon">${typeIcon}</span>
+        <div class="sc-banner__info">
           <h3 class="sc-name">${s.name}</h3>
-          <span class="sc-type-label">${typeLabel}</span>
+          <div class="sc-meta">
+            <span class="sc-type-label">${typeLabel}</span>
+            ${gradeText ? `<span class="sc-grade-badge" data-level="${gradeLevel}">${gradeText}</span>` : ""}
+          </div>
         </div>
       </div>
       <div class="sc-body">

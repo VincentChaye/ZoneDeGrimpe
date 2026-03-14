@@ -1,4 +1,4 @@
-const CACHE = "zdg-v1";
+const CACHE = "zdg-__SHA__";
 const APP_SHELL = [
   "./",
   "./index.html",

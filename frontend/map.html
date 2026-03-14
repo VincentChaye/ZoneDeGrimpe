@@ -6,7 +6,7 @@
   <title>ZoneDeGrimpe — Carte</title>
   <link rel="icon" href="./assets/ZoneDeGrimpeIcon.png" />
   <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#2D5A27" />
+  <meta name="theme-color" content="#5D7052" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="ZoneDeGrimpe" />
@@ -49,18 +49,22 @@
       </div>
     </div>
 
-    <!-- Barre de filtres flottante -->
-    <div class="filter-bar" id="filterBar" role="region" aria-label="Filtres carte">
-      <button id="searchToggleBtn" class="btn btn--ghost btn--compact" title="Rechercher un spot" aria-expanded="false" aria-controls="searchBar">🔍</button>
-      <button id="locateBtn" class="btn btn--compact" title="Me localiser">📍</button>
-      <select id="filterType" class="filter-select" aria-label="Filtrer par type">
-        <option value="">Tous</option>
-        <option value="crag">Falaise</option>
-        <option value="boulder">Bloc</option>
-        <option value="indoor">Salle</option>
-      </select>
-      <button id="toggleFilters" class="btn btn--ghost btn--compact" title="Plus de filtres">⚙️</button>
-      <button id="resetFilters" class="btn btn--ghost btn--compact" title="Réinitialiser les filtres" style="display:none;">↺</button>
+    <!-- Contrôles carte -->
+    <div class="map-controls" id="filterBar" role="region" aria-label="Filtres carte">
+      <button id="searchToggleBtn" class="map-ctrl-btn" title="Rechercher un spot" aria-expanded="false" aria-controls="searchBar">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button id="locateBtn" class="map-ctrl-btn" title="Me localiser">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      </button>
+      <div class="map-ctrl-sep"></div>
+      <button id="toggleFilters" class="map-ctrl-btn map-ctrl-btn--filter" title="Filtres" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        <span>Filtres</span>
+      </button>
+      <button id="resetFilters" class="map-ctrl-btn map-ctrl-btn--reset" title="Réinitialiser les filtres" style="display:none;">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
 
     <!-- Barre de recherche (masquée par défaut) -->
@@ -69,24 +73,38 @@
       <div id="searchResults" class="search-results" aria-live="polite"></div>
     </div>
 
-    <!-- Filtres avancés (masqués par défaut) -->
-    <div class="advanced-filters" id="advancedFilters" style="display:none;">
-      <div class="filter-group">
-        <label for="filterNiveauMin">Niveau minimum</label>
-        <select id="filterNiveauMin" class="filter-select" style="width:100%">
-          <option value="">Tous</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-        </select>
+    <!-- Panneau filtres (hamburger) -->
+    <div class="filter-panel" id="advancedFilters" style="display:none;">
+      <div class="filter-panel__header">
+        <p class="filter-panel__title">Filtres</p>
       </div>
-      <div class="filter-group">
-        <label for="filterDistance">Distance : <span id="distanceValue">Toutes</span></label>
-        <input type="range" id="filterDistance" min="0" max="500" value="500" step="10" style="width:100%" />
+      <div class="filter-panel__body">
+        <div class="filter-panel__row">
+          <label class="filter-panel__label" for="filterType">Type de spot</label>
+          <select id="filterType" class="filter-select" aria-label="Filtrer par type">
+            <option value="">Tous les types</option>
+            <option value="crag">🧗 Falaise</option>
+            <option value="boulder">🪨 Bloc</option>
+            <option value="indoor">🏢 Salle</option>
+          </select>
+        </div>
+        <div class="filter-panel__row">
+          <label class="filter-panel__label" for="filterNiveauMin">Niveau minimum</label>
+          <select id="filterNiveauMin" class="filter-select">
+            <option value="">Tous</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+          </select>
+        </div>
+        <div class="filter-panel__row">
+          <label class="filter-panel__label" for="filterDistance">Distance · <span id="distanceValue">Toutes</span></label>
+          <input type="range" id="filterDistance" min="0" max="500" value="500" step="10" />
+        </div>
       </div>
     </div>
 
