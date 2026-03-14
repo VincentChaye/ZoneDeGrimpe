@@ -95,6 +95,7 @@ function isMapAdmin() { return getMapAuth()?.user?.roles?.includes("admin") ?? f
 function spotCardHTML(s) {
   const dir = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
   const isLoggedIn = !!getMapToken();
+  const isAdmin = isMapAdmin();
 
   // Type
   const typeIcons  = { crag: "🧗", boulder: "🪨", indoor: "🏢" };
@@ -168,6 +169,7 @@ function spotCardHTML(s) {
           ${s.url ? `<a class="btn btn--ghost" href="${s.url}" target="_blank" rel="noopener">📄 Fiche</a>` : ""}
           <button class="btn btn--ghost" onclick="window.shareSpot && shareSpot('${s.id}')">Partager</button>
           ${isLoggedIn ? `<button class="btn btn--primary" onclick="window.editSpot && editSpot('${s.id}')">Modifier</button>` : ""}
+          ${isAdmin ? `<button class="btn btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${s.name.replace(/'/g, "\\'")}')">Supprimer</button>` : ""}
         </div>
       </div>
     </div>
@@ -557,6 +559,25 @@ window.editSpot = function(spotId) {
 
   closeSheet();
   editModal?.showModal();
+};
+
+/* Supprimer un spot (admin uniquement) */
+window.deleteSpot = async function(spotId, spotName) {
+  if (!confirm(`Supprimer le spot "${spotName}" ? Cette action est irréversible.`)) return;
+  const token = getMapToken();
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/spots/${spotId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.error || `Erreur ${res.status}`);
+    closeSheet();
+    allSpots = allSpots.filter(s => s.id !== spotId);
+    renderMarkers();
+  } catch (e) {
+    alert(`Erreur : ${e.message}`);
+  }
 };
 
 // Fermer le modal
