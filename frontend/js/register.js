@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const p = new URLSearchParams(location.search);
     const next = p.get("next");
     // n’autorise que des chemins internes (évite open redirect)
-    return next && next.startsWith("/") ? decodeURIComponent(next) : "./materiel.html";
+    return next && next.startsWith("/") ? decodeURIComponent(next) : "./map.html";
   }
 
   form.addEventListener("submit", async (e) => {

@@ -6,7 +6,6 @@ const APP_SHELL = [
   "./login.html",
   "./register.html",
   "./parametres.html",
-  "./materiel.html",
   "./style/style.css",
   "./js/config.js",
   "./js/api.js",

@@ -24,7 +24,6 @@ form.addEventListener("submit", async (e) => {
     if (!res.ok) throw new Error(json?.error || "login_failed");
     if (!json.token || !json.user?._id) throw new Error("missing_token");
 
-    // Sauvegarde dans la même clé/structure que materiel.js attend
     localStorage.setItem(
       "auth",
       JSON.stringify({
