@@ -1,0 +1,17 @@
+A faire :
+
+
+- avoir sur l'ensemble du site un typographie plus naturel et propre.
+
+- rajouter dans les types Falaises, Blocs, Salles, Magasin.
+
+- trouver un moyen d'ajouter des images à un spots mais trouver un moyen de les stocker car atlas seulement 500mo. 
+
+- Faire un meilleur gestion du materiel avec comme l'ajoue de spots un quiz bien plus agréable pour l'user.
+
+- Enlever conseil de materiel. 
+
+- Pour chaque salles l'user peut aussi y lié un site ou app. 
+
+- pour le profil user pouvoir créé son petit personnage puis avoir les stats du personnage, gamifier completement cette aspect.
+ 
