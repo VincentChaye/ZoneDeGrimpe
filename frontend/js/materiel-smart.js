@@ -467,64 +467,36 @@ function fillFormFromRow(item) {
 }
 
 // === Affichage des cartes ===
+const CATEGORY_ICONS = {
+  "Corde": "🪢", "Dégaine": "🪝", "Casque": "⛑️", "Baudrier": "🧗",
+  "Chausson": "👟", "Friend": "⚙️", "Mousqueton": "🔗", "Sac": "🎒",
+  "Magnésie": "⚪", "Coinceur": "🔩", "Longe": "🪤", "Vêtement": "🧥",
+  "Crochet": "🪝", "Plaquette": "🔩", "Dévisseur": "🔧", "Autre": "📦"
+};
+
 function rowToCard(item) {
-  const name = item?.specs?.name || `${item?.specs?.brand || ""} ${item?.specs?.model || ""}`.trim() || item?.category || "Équipement sans nom";
-  const brand = item?.specs?.brand || "";
-  const model = item?.specs?.model || "";
+  const cat = item?.category || "Autre";
+  const icon = CATEGORY_ICONS[cat] || CATEGORY_ICONS[Object.keys(CATEGORY_ICONS).find(k => cat.toLowerCase().includes(k.toLowerCase())) || "Autre"] || "📦";
+  const name = item?.specs?.name
+    || (`${item?.specs?.brand || ""} ${item?.specs?.model || ""}`.trim())
+    || cat
+    || "?";
+  const shortName = name.length > 10 ? name.substring(0, 10) + "…" : name;
   const condition = item?.lifecycle?.condition || "good";
-  const conditionLabel = MATERIAL_CONFIG.states[condition] || condition;
-  const usage = item?.lifecycle?.usageCount || 0;
-  const purchaseDate = item?.purchase?.date ? new Date(item.purchase.date).toLocaleDateString() : null;
-  const notes = item?.lifecycle?.notes || "";
-  const price = item?.specs?.price ? `${item.specs.price}€` : null;
 
-  // Calcul de l'état d'inspection
-  let inspectionStatus = "";
-  if (item?.lifecycle?.nextInspectionAt) {
-    const nextInspection = new Date(item.lifecycle.nextInspectionAt);
-    const today = new Date();
-    const daysUntil = Math.ceil((nextInspection - today) / (1000 * 60 * 60 * 24));
-
-    if (daysUntil < 0) {
-      inspectionStatus = `<span class="status-warning">⚠️ Inspection en retard</span>`;
-    } else if (daysUntil <= 30) {
-      inspectionStatus = `<span class="status-caution">⚡ Inspection dans ${daysUntil}j</span>`;
-    } else {
-      inspectionStatus = `<span class="status-ok">✅ Inspection OK</span>`;
-    }
-  }
+  // Update gear count stat after render
+  setTimeout(() => {
+    const rows_count = document.getElementById('gearList')?.querySelectorAll('.inv-cell').length;
+    if (window.updateGearCount && rows_count !== undefined) window.updateGearCount(rows_count);
+  }, 50);
 
   return `
-    <article class="card material-card">
-      <div class="card-header">
-        <h3>${escapeHTML(name)}</h3>
-        <span class="category-badge">${escapeHTML(item.category || "")}</span>
-      </div>
-      
-      <div class="card-content">
-        ${brand || model ? `<p class="brand-model">${escapeHTML(brand)} ${escapeHTML(model)}</p>` : ""}
-        
-        <div class="status-row">
-          <span class="condition condition-${condition}">${escapeHTML(conditionLabel)}</span>
-          ${usage > 0 ? `<span class="usage">${usage} utilisations</span>` : ""}
-        </div>
-        
-        ${inspectionStatus ? `<div class="inspection-status">${inspectionStatus}</div>` : ""}
-        
-        <div class="details">
-          ${purchaseDate ? `<span class="detail">📅 ${purchaseDate}</span>` : ""}
-          ${price ? `<span class="detail">💰 ${price}</span>` : ""}
-        </div>
-        
-        ${notes ? `<p class="notes">${escapeHTML(notes)}</p>` : ""}
-      </div>
-      
-      <div class="card-actions">
-        <button class="btn btn--ghost" data-edit="${item._id}">✏️ Modifier</button>
-        <button class="btn btn--danger" data-del="${item._id}">🗑️ Supprimer</button>
-      </div>
-    </article>
-  `;
+    <div class="inv-cell inv-cell--${condition}" title="${escapeHTML(name)}\n${escapeHTML(cat)} · ${condition}">
+      <div class="inv-cell__icon">${icon}</div>
+      <div class="inv-cell__name">${escapeHTML(shortName)}</div>
+      <button class="inv-cell__edit" data-edit="${item._id}" title="Modifier">✎</button>
+      <button class="inv-cell__del" data-del="${item._id}" title="Supprimer">×</button>
+    </div>`;
 }
 
 // === API calls ===
@@ -567,10 +539,7 @@ async function refresh() {
 
     if (listEl) listEl.innerHTML = filtered.length
       ? filtered.map(rowToCard).join("")
-      : `<div class="empty-state">
-          <p>📦 Aucun matériel pour le moment</p>
-          <p>Cliquez sur "➕ Ajouter" pour commencer votre inventaire</p>
-        </div>`;
+      : `<div class="inv-empty"><p>📦</p><p>Aucun matériel pour le moment</p></div>`;
 
     // Attacher les événements
     if (listEl) listEl.querySelectorAll("[data-edit]").forEach(btn => {

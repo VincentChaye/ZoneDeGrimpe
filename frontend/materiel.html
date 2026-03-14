@@ -6,7 +6,7 @@
   <title>ZoneDeGrimpe — Matériel</title>
   <link rel="icon" href="./assets/ZoneDeGrimpeIcon.png" />
   <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#2D5A27" />
+  <meta name="theme-color" content="#5D7052" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="ZoneDeGrimpe" />
   <link rel="apple-touch-icon" href="./assets/ZoneDeGrimpeIcon.png" />
@@ -15,9 +15,9 @@
   <link rel="stylesheet" href="./style/style.css" />
   <link rel="stylesheet" href="./style/materiel.css" />
 </head>
-<body class="theme">
+<body class="theme page-rpg">
 
-  <header class="app-header">
+  <header class="app-header app-header--compact">
     <a class="brand" href="./">
       <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
       <span class="brand__title">ZoneDeGrimpe</span>
@@ -31,145 +31,234 @@
     <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
   </header>
 
-  <section class="banner banner--page">
-    <h1>Mon matériel</h1>
-    <p>Ajoute, édite et suis tes équipements.</p>
-  </section>
+  <!-- Mobile panel tabs (hidden on desktop via CSS) -->
+  <div class="rpg-tabs-nav">
+    <button class="rpg-tab-btn active" data-panel="character">🧗 Grimpeur</button>
+    <button class="rpg-tab-btn" data-panel="inventory">🎒 Équipement</button>
+    <button class="rpg-tab-btn" data-panel="quests">📜 Carnet</button>
+  </div>
 
-  <main class="container" id="main">
-    <nav class="tabs" id="materialTabs" aria-label="Onglets matériel">
-      <button class="tab-btn active" data-tab="inventory">Inventaire</button>
-      <button class="tab-btn" data-tab="maintenance">Maintenance</button>
-      <button class="tab-btn" data-tab="advice">Conseils</button>
-      <button class="tab-btn" data-tab="stats">Stats</button>
-    </nav>
+  <main class="rpg-layout">
+    <!-- LEFT PANEL: Character -->
+    <section class="rpg-panel rpg-panel--left active" id="panel-character">
+      <div class="rpg-panel__header">
+        <h2 class="rpg-panel__title">Mon Grimpeur</h2>
+      </div>
 
-    <!-- Inventaire -->
-    <div class="tab-content active" id="tab-inventory">
-      <div class="toolbar">
-        <input id="gearSearch" class="input" placeholder="Rechercher…" style="flex:1;min-width:0" />
-        <select id="gearTagFilter" class="select" style="flex:1;min-width:0">
+      <!-- Character display area -->
+      <div class="char-stage">
+        <div class="char-scene">
+          <!-- SVG character inline -->
+          <svg id="charSvg" class="char-svg" viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background wall hint -->
+            <rect x="0" y="0" width="16" height="150" rx="3" fill="#8B7355" opacity="0.1"/>
+            <!-- Rope (decorative) -->
+            <path d="M9 0 Q7 30 11 60 Q9 90 7 150" stroke="#C18845" stroke-width="2" stroke-dasharray="4,3" fill="none" opacity="0.3"/>
+            <!-- Rock hold -->
+            <ellipse cx="12" cy="22" rx="6" ry="4" fill="#9B8B77" opacity="0.5"/>
+            <!-- Left arm (reaching up) -->
+            <path d="M38 50 L16 26" stroke-linecap="round" stroke-width="7" style="stroke:var(--skin-color)"/>
+            <circle cx="14" cy="23" r="6" style="fill:var(--skin-color)"/>
+            <!-- Right arm (resting) -->
+            <path d="M62 50 L80 40" stroke-linecap="round" stroke-width="7" style="stroke:var(--skin-color)"/>
+            <circle cx="82" cy="38" r="5" style="fill:var(--skin-color)"/>
+            <!-- Torso -->
+            <rect x="36" y="46" width="28" height="28" rx="6" style="fill:var(--outfit-color)"/>
+            <!-- Harness straps -->
+            <path d="M40 46 L36 62 M60 46 L64 62 M36 60 L64 60" stroke="#E3CD8B" stroke-width="1.5" fill="none" opacity="0.7"/>
+            <!-- Chalk bag -->
+            <rect x="23" y="66" width="11" height="13" rx="3" fill="#F0BE86" opacity="0.9"/>
+            <ellipse cx="28.5" cy="66" rx="5.5" ry="2.5" fill="#E3CD8B"/>
+            <!-- Pants -->
+            <rect x="36" y="73" width="28" height="26" rx="3" style="fill:var(--outfit-color)" opacity="0.85"/>
+            <line x1="50" y1="73" x2="50" y2="99" stroke="rgba(0,0,0,.08)" stroke-width="1.5"/>
+            <!-- Left leg -->
+            <rect x="36" y="98" width="12" height="26" rx="4" style="fill:var(--outfit-color)" opacity="0.9"/>
+            <!-- Right leg -->
+            <rect x="52" y="98" width="12" height="26" rx="4" style="fill:var(--outfit-color)" opacity="0.9"/>
+            <!-- Shoes -->
+            <ellipse cx="42" cy="127" rx="10" ry="5" style="fill:var(--shoes-color)" transform="rotate(-8 42 127)"/>
+            <ellipse cx="58" cy="127" rx="10" ry="5" style="fill:var(--shoes-color)" transform="rotate(8 58 127)"/>
+            <!-- Head -->
+            <circle cx="50" cy="30" r="15" style="fill:var(--skin-color)"/>
+            <!-- Ears -->
+            <ellipse cx="35" cy="30" rx="3.5" ry="4.5" style="fill:var(--skin-color)"/>
+            <ellipse cx="65" cy="30" rx="3.5" ry="4.5" style="fill:var(--skin-color)"/>
+            <!-- Eyes -->
+            <circle cx="44" cy="28" r="2.5" fill="#2C1A0A"/>
+            <circle cx="56" cy="28" r="2.5" fill="#2C1A0A"/>
+            <circle cx="45" cy="27" r="1" fill="rgba(255,255,255,.9)"/>
+            <circle cx="57" cy="27" r="1" fill="rgba(255,255,255,.9)"/>
+            <!-- Smile -->
+            <path d="M44 35 Q50 40 56 35" stroke="#2C1A0A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+            <!-- Helmet None (default: just hair) -->
+            <g id="charHelmetNone">
+              <path d="M35 24 Q36 14 50 13 Q64 14 65 24" style="fill:var(--skin-color)" opacity="0.9"/>
+            </g>
+            <!-- Helmet Beanie (hidden) -->
+            <g id="charHelmetBeanie" style="display:none">
+              <path d="M34 26 Q34 11 50 10 Q66 11 66 26 Z" style="fill:var(--outfit-color)"/>
+              <rect x="33" y="24" width="34" height="4" rx="2" style="fill:var(--outfit-color)" opacity="0.7"/>
+              <circle cx="50" cy="10" r="5" style="fill:var(--outfit-color)"/>
+              <circle cx="50" cy="10" r="3" fill="rgba(255,255,255,.2)"/>
+            </g>
+            <!-- Helmet Climbing (hidden) -->
+            <g id="charHelmetHelmet" style="display:none">
+              <path d="M33 27 Q33 10 50 9 Q67 10 67 27 Z" fill="#E3CD8B"/>
+              <rect x="42" y="11" width="4" height="8" rx="2" fill="rgba(0,0,0,.15)"/>
+              <rect x="50" y="11" width="4" height="8" rx="2" fill="rgba(0,0,0,.15)"/>
+              <rect x="32" y="25" width="36" height="5" rx="2.5" fill="#C18845"/>
+              <path d="M36 28 Q34 35 38 39" stroke="#C18845" stroke-width="1.5" fill="none"/>
+              <path d="M64 28 Q66 35 62 39" stroke="#C18845" stroke-width="1.5" fill="none"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Customization swatches -->
+        <div class="char-options">
+          <div class="char-option-group">
+            <span class="char-option-label">Peau</span>
+            <div class="char-swatches">
+              <button class="swatch swatch--skin active" data-skin="light" style="background:#FDDBB4" title="Claire"></button>
+              <button class="swatch swatch--skin" data-skin="medium" style="background:#C8874A" title="Moyenne"></button>
+              <button class="swatch swatch--skin" data-skin="tan" style="background:#8D5524" title="Hâlée"></button>
+              <button class="swatch swatch--skin" data-skin="dark" style="background:#4A2C0A" title="Foncée"></button>
+            </div>
+          </div>
+          <div class="char-option-group">
+            <span class="char-option-label">Tenue</span>
+            <div class="char-swatches">
+              <button class="swatch swatch--outfit active" data-outfit="olive" style="background:#5D7052" title="Olive"></button>
+              <button class="swatch swatch--outfit" data-outfit="amber" style="background:#C18845" title="Ambre"></button>
+              <button class="swatch swatch--outfit" data-outfit="stone" style="background:#6A645A" title="Pierre"></button>
+              <button class="swatch swatch--outfit" data-outfit="peach" style="background:#F0BE86" title="Sable"></button>
+            </div>
+          </div>
+          <div class="char-option-group">
+            <span class="char-option-label">Casque</span>
+            <div class="char-swatches char-swatches--emoji">
+              <button class="swatch swatch--helmet swatch--text active" data-helmet="none" title="Sans">—</button>
+              <button class="swatch swatch--helmet swatch--text" data-helmet="beanie" title="Bonnet">🧢</button>
+              <button class="swatch swatch--helmet swatch--text" data-helmet="helmet" title="Casque">⛑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="char-stats-panel">
+        <p class="char-stats-title">Statistiques</p>
+        <div class="char-stat-row">
+          <span class="char-stat-label">Niveau</span>
+          <div class="char-level-range">
+            <input type="text" id="charLevelMin" class="level-input" placeholder="5c" maxlength="3" />
+            <span class="level-arrow">→</span>
+            <input type="text" id="charLevelMax" class="level-input" placeholder="7a" maxlength="3" />
+          </div>
+        </div>
+        <div class="char-stat-row">
+          <span class="char-stat-label">Voies</span>
+          <div class="xp-container">
+            <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+            <span class="xp-label" id="xpLabel">0 loggée</span>
+          </div>
+        </div>
+        <div class="char-stat-row">
+          <span class="char-stat-label">Équipements</span>
+          <span class="char-stat-value" id="gearCountStat">—</span>
+        </div>
+        <div class="char-stat-row">
+          <span class="char-stat-label">Projets</span>
+          <span class="char-stat-value" id="questCountStat">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTER PANEL: Inventory -->
+    <section class="rpg-panel rpg-panel--center" id="panel-inventory">
+      <div class="rpg-panel__header">
+        <h2 class="rpg-panel__title">Inventaire</h2>
+        <button class="btn btn--compact" id="addGearBtn">+ Ajouter</button>
+      </div>
+      <div class="inv-controls">
+        <input id="gearSearch" class="inv-search" placeholder="Rechercher…" autocomplete="off" />
+        <select id="gearTagFilter" class="filter-select">
           <option value="">Toutes catégories</option>
         </select>
-        <button type="button" id="addGearBtn" class="btn" aria-label="Ajouter un équipement">+ Ajouter</button>
       </div>
-      <section id="gearList" class="grid"></section>
-    </div>
+      <div class="inv-grid" id="gearList"></div>
+    </section>
 
-    <!-- Maintenance -->
-    <div class="tab-content" id="tab-maintenance">
-      <div class="maintenance-sections">
-        <section class="maintenance-card">
-          <h3>Inspections à échéance</h3>
-          <p>Matériel nécessitant une inspection prochainement.</p>
-          <div class="toolbar">
-            <select id="inspectionDays" class="select">
-              <option value="7">Dans 7 jours</option>
-              <option value="30" selected>Dans 30 jours</option>
-              <option value="90">Dans 90 jours</option>
-            </select>
-            <button id="checkInspectionsBtn" class="btn">Vérifier</button>
-          </div>
-          <div id="inspectionsList" class="results-list"></div>
-        </section>
-
-        <section class="maintenance-card">
-          <h3>Matériel à remplacer</h3>
-          <p>Équipement proche de la fin de vie.</p>
-          <div class="toolbar">
-            <select id="retireThreshold" class="select">
-              <option value="0.7">70% d'usure</option>
-              <option value="0.8" selected>80% d'usure</option>
-              <option value="0.9">90% d'usure</option>
-            </select>
-            <button id="checkRetireBtn" class="btn">Analyser</button>
-          </div>
-          <div id="retireList" class="results-list"></div>
-        </section>
+    <!-- RIGHT PANEL: Quests -->
+    <section class="rpg-panel rpg-panel--right" id="panel-quests">
+      <div class="rpg-panel__header">
+        <h2 class="rpg-panel__title">Carnet</h2>
+        <button class="btn btn--compact" id="addQuestBtn">+ Projet</button>
       </div>
-    </div>
 
-    <!-- Conseils -->
-    <div class="tab-content" id="tab-advice">
-      <div class="advice-sections">
-        <section class="advice-card">
-          <h3>Analyse de votre matériel</h3>
-          <p>Recommandations basées sur votre inventaire.</p>
-          <div class="toolbar">
-            <label style="flex:1;display:flex;flex-direction:column;gap:.35rem">
-              Localisation (optionnel)
-              <div style="display:flex;gap:.4rem">
-                <input id="adviceLat" class="input" placeholder="Latitude" type="number" step="any" />
-                <input id="adviceLng" class="input" placeholder="Longitude" type="number" step="any" />
-                <button id="getLocationBtn" class="btn btn--ghost" title="Utiliser ma position">📍</button>
-              </div>
-            </label>
-            <button id="getMaterialAdviceBtn" class="btn" style="align-self:flex-end">Analyser</button>
-          </div>
-          <div id="materialAdvice" class="advice-results"></div>
-        </section>
-
-        <section class="advice-card">
-          <h3>Spots recommandés</h3>
-          <p>Falaises adaptées à votre niveau et matériel.</p>
-          <div class="toolbar">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;flex:1">
-              <input id="spotsLat" class="input" placeholder="Latitude" type="number" step="any" />
-              <input id="spotsLng" class="input" placeholder="Longitude" type="number" step="any" />
-              <select id="spotsLevel" class="select">
-                <option value="">Niveau min</option>
-                <option>4a</option><option>4b</option><option>4c</option>
-                <option>5a</option><option>5b</option><option>5c</option>
-                <option>6a</option><option>6b</option><option>6c</option>
-                <option>7a</option><option>7b</option><option>7c</option>
-              </select>
-              <select id="spotsExposition" class="select">
-                <option value="">Toutes expositions</option>
-                <option value="N">Nord</option>
-                <option value="NE">Nord-Est</option>
-                <option value="E">Est</option>
-                <option value="SE">Sud-Est</option>
-                <option value="S">Sud</option>
-                <option value="SW">Sud-Ouest</option>
-                <option value="W">Ouest</option>
-                <option value="NW">Nord-Ouest</option>
-              </select>
-            </div>
-            <button id="getSpotsAdviceBtn" class="btn" style="align-self:flex-end">Rechercher</button>
-          </div>
-          <div id="spotsAdvice" class="advice-results"></div>
-        </section>
-      </div>
-    </div>
-
-    <!-- Stats -->
-    <div class="tab-content" id="tab-stats">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <h3>Résumé inventaire</h3>
-          <div id="inventoryStats"></div>
+      <div class="quest-section">
+        <div class="quest-section__header">
+          <span class="quest-section__icon">🎯</span>
+          <h3 class="quest-section__title">Projets</h3>
+          <span class="quest-count" id="activeQuestCount">0</span>
         </div>
-        <div class="stat-card">
-          <h3>Valeur totale</h3>
-          <div id="valueStats"></div>
-        </div>
-        <div class="stat-card">
-          <h3>État général</h3>
-          <div id="conditionStats"></div>
+        <div class="quest-list" id="activeQuests">
+          <div class="quest-empty">Aucun projet pour l'instant</div>
         </div>
       </div>
-    </div>
+
+      <div class="quest-section quest-section--done">
+        <div class="quest-section__header">
+          <span class="quest-section__icon">✅</span>
+          <h3 class="quest-section__title">Voies réalisées</h3>
+          <span class="quest-count quest-count--done" id="completedCount">0</span>
+        </div>
+        <div class="quest-list" id="completedQuests">
+          <div class="quest-empty">Aucune voie loggée</div>
+        </div>
+      </div>
+    </section>
   </main>
 
+  <!-- Gear modal (kept from existing - same IDs required) -->
   <dialog id="gearModal" class="modal">
     <form id="gearForm" class="modal__content"></form>
   </dialog>
 
-  <footer class="app-footer">
+  <!-- Quest modal -->
+  <dialog id="questModal" class="modal">
+    <form id="questForm" class="modal__content">
+      <button type="button" class="modal__close" id="questModalClose" aria-label="Fermer">×</button>
+      <h2>Nouveau projet</h2>
+      <label style="display:block;margin-bottom:.75rem">
+        Voie / Secteur *
+        <input name="routeName" class="input" placeholder="La directissime, Secteur Bleu…" required style="display:block;width:100%;margin-top:.3rem" />
+      </label>
+      <label style="display:block;margin-bottom:.75rem">
+        Spot
+        <input name="spotName" class="input" placeholder="Nom du spot" style="display:block;width:100%;margin-top:.3rem" />
+      </label>
+      <label style="display:block;margin-bottom:.75rem">
+        Cotation visée
+        <input name="grade" class="input" placeholder="7a, 6c+…" maxlength="5" style="display:block;width:100%;margin-top:.3rem" />
+      </label>
+      <label style="display:block;margin-bottom:.75rem">
+        Note
+        <textarea name="notes" class="input" rows="2" placeholder="Infos, beta, tentatives…" style="display:block;width:100%;margin-top:.3rem"></textarea>
+      </label>
+      <menu class="modal__actions" style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;padding:0;list-style:none">
+        <button type="button" class="btn btn--ghost" id="questModalCancel">Annuler</button>
+        <button type="submit" class="btn">Enregistrer</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <footer class="app-footer app-footer--hidden-mobile">
     <p>© <span id="year"></span> ZoneDeGrimpe</p>
   </footer>
 
-  <!-- Bottom Tab Bar (mobile) -->
+  <!-- Bottom Tab Bar (mobile) - same as other pages -->
   <nav class="tab-bar" aria-label="Navigation principale">
     <a href="./index.html" class="tab-bar__item">
       <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -204,6 +293,7 @@
 
   <script type="module" src="./config.js"></script>
   <script type="module" src="./js/ui.js"></script>
+  <script type="module" src="./js/character.js"></script>
   <script type="module" src="./js/materiel-smart.js"></script>
 </body>
 </html>
