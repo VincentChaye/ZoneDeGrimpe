@@ -672,9 +672,69 @@ body.sheet-open::after {
   font-size: .7rem; color: var(--text-2); opacity: .65;
 }
 
-/* Boutons */
-.sc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; }
-.sc-actions .btn { text-align: center; font-size: .82rem; justify-content: center; }
+/* CTA principal — Rejoindre le spot */
+.sc-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  width: 100%;
+  padding: .68rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-ui);
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  cursor: pointer;
+  margin-bottom: .65rem;
+  transition: background .15s, transform .12s var(--spring, cubic-bezier(.34,1.56,.64,1));
+  text-decoration: none;
+}
+.sc-cta:hover { background: #4a5c3e; transform: translateY(-1px); }
+.sc-cta:active { transform: translateY(0); }
+
+/* Actions secondaires — petits boutons pills */
+.sc-action-row {
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: .5rem;
+}
+.sc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  padding: .3rem .7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-ui);
+  font-size: .74rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  line-height: 1.4;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.sc-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(93,112,82,.06);
+}
+.sc-btn--danger {
+  color: #b91c1c;
+  border-color: rgba(185,28,28,.2);
+}
+.sc-btn--danger:hover {
+  border-color: #b91c1c;
+  background: rgba(185,28,28,.06);
+}
 
 /* === Formulaire édition spot === */
 .spot-edit-form .form-group { margin-bottom: 1rem; }

@@ -161,17 +161,31 @@ function spotCardHTML(s) {
         </div>
       </div>
       <div class="sc-body">
-        <div class="sc-stats">
-          ${gradeStat}${orientStat}${voiesStat}${soustypeStat}
-        </div>
+        ${gradeStat || orientStat || voiesStat || soustypeStat ? `<div class="sc-stats">${gradeStat}${orientStat}${voiesStat}${soustypeStat}</div>` : ""}
         ${desc}${audit}
-        <div class="sc-actions">
-          <a class="btn" href="${dir}" target="_blank" rel="noopener">🚗 Itinéraire</a>
-          ${s.url ? `<a class="btn btn--ghost" href="${s.url}" target="_blank" rel="noopener">📄 Fiche</a>` : ""}
-          <button class="btn btn--ghost" onclick="window.shareSpot && shareSpot('${s.id}')">Partager</button>
-          ${isLoggedIn ? `<button class="btn btn--primary" onclick="window.editSpot && editSpot('${s.id}')">Modifier</button>` : ""}
-          ${isAdmin ? `<button class="btn btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${s.name.replace(/'/g, "\\'")}')">Supprimer</button>` : ""}
+        <button class="sc-cta" onclick="window.joinSpot && joinSpot('${s.id}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 4 4-6 4 5"/><path d="M21 21H3"/></svg>
+          Rejoindre le spot
+        </button>
+        <div class="sc-action-row">
+          <a class="sc-btn" href="${dir}" target="_blank" rel="noopener">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Itinéraire
+          </a>
+          <button class="sc-btn" onclick="window.shareSpot && shareSpot('${s.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Partager
+          </button>
+          ${s.url ? `<a class="sc-btn" href="${s.url}" target="_blank" rel="noopener">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Fiche
+          </a>` : ""}
+          ${isLoggedIn ? `<button class="sc-btn" onclick="window.editSpot && editSpot('${s.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Modifier
+          </button>` : ""}
         </div>
+        ${isAdmin ? `<button class="sc-btn sc-btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${s.name.replace(/'/g, "\\'")}')">Supprimer ce spot</button>` : ""}
       </div>
     </div>
   `;
@@ -379,6 +393,11 @@ let currentFilters = {
   niveauMin: '',
   searchQuery: '',
   distance: 500 // Distance max en km (500 = toutes les distances)
+};
+
+/* ---------- Rejoindre le spot (voies — à venir) ---------- */
+window.joinSpot = function(spotId) {
+  showToast("Interface des voies — bientôt disponible 🧗");
 };
 
 /* ---------- Fonction de partage ---------- */
