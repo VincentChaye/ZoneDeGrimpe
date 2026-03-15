@@ -7,7 +7,7 @@
   <meta name="description" content="Cartographier et explorer des zones de grimpe." />
   <link rel="icon" type="image/png" href="./assets/ZoneDeGrimpeIcon.png" />
   <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#2D5A27" />
+  <meta name="theme-color" content="#5D7052" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="ZoneDeGrimpe" />
@@ -29,44 +29,146 @@
     <nav id="nav" class="nav" aria-label="Navigation principale">
       <a class="active" href="./index.html">Accueil</a>
       <a href="./map.html">Carte</a>
-      <a href="./parametres.html">Paramètres</a>
+      <a href="./parametres.html">Profil</a>
     </nav>
-    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le thème">Thème</button>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le theme">Theme</button>
   </header>
 
-  <section class="banner">
-    <img src="./assets/ZoneDeGrimpeIcon.png" alt="" class="banner__logo" />
-    <h1 class="banner__title">Trouve ta prochaine voie</h1>
-    <p class="banner__subtitle">Explore les zones de grimpe, organise ton matériel, règle ton compte.</p>
-    <div class="quick-actions">
-      <a class="card" href="./map.html">
-        <h3>Carte</h3>
-        <p>Spots, filtres, itinéraires</p>
-      </a>
-      <a class="card" href="./parametres.html">
-        <h3>Paramètres</h3>
-        <p>Profil, préférences, sauvegarde</p>
-      </a>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__bg-shapes">
+      <div class="hero__shape hero__shape--1"></div>
+      <div class="hero__shape hero__shape--2"></div>
+      <div class="hero__shape hero__shape--3"></div>
+    </div>
+    <div class="hero__content">
+      <div class="hero__badge">Escalade outdoor & indoor</div>
+      <h1 class="hero__title">Trouve ta<br><span class="hero__accent">prochaine voie</span></h1>
+      <p class="hero__subtitle">Explore les spots d'escalade, decouvre de nouvelles falaises et partage tes meilleurs blocs avec la communaute.</p>
+      <div class="hero__cta-row">
+        <a class="btn hero__btn-primary" href="./map.html">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+          Explorer la carte
+        </a>
+        <a class="btn btn--ghost hero__btn-secondary" href="./register.html">Creer un compte</a>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <img src="./assets/ZoneDeGrimpeIcon.png" alt="" class="hero__logo-float" />
     </div>
   </section>
 
+  <!-- Stats -->
+  <section class="home-stats">
+    <div class="home-stats__inner">
+      <div class="home-stat">
+        <div class="home-stat__icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        </div>
+        <div class="home-stat__value" id="statSpots">--</div>
+        <div class="home-stat__label">Spots recenses</div>
+      </div>
+      <div class="home-stat">
+        <div class="home-stat__icon home-stat__icon--amber">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="home-stat__value" id="statGrimpeurs">--</div>
+        <div class="home-stat__label">Grimpeurs</div>
+      </div>
+      <div class="home-stat">
+        <div class="home-stat__icon home-stat__icon--stone">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        </div>
+        <div class="home-stat__value">3</div>
+        <div class="home-stat__label">Types de spots</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
   <main class="container" id="main">
-    <section class="modules-grid" id="modulesGrid" aria-label="Modules dynamiques">
-      <article class="module">
-        <h2>Annonces</h2>
-        <p>Application en développement.
-          Les données affichées sont fictives. Les fonctionnalités d'authentification,
-          de gestion de matériel et de spots de grimpe sont en cours d'implémentation.
-          <br /><br />
-          Merci de votre compréhension.<br />
-          Vincent et Clément de l'équipe ZoneDeGrimpe.
-        </p>
-      </article>
+    <section class="home-section">
+      <h2 class="section-title">
+        <span class="section-title__line"></span>
+        Fonctionnalites
+        <span class="section-title__line"></span>
+      </h2>
+      <div class="features-grid">
+        <article class="feature-card">
+          <div class="feature-card__icon-wrap">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          </div>
+          <h3>Carte interactive</h3>
+          <p>Explore plus de mille spots d'escalade sur une carte filtrable par type, niveau et distance.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-card__icon-wrap feature-card__icon-wrap--amber">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Fiches detaillees</h3>
+          <p>Chaque spot possede ses niveaux, orientation, description et lien vers l'itineraire GPS.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-card__icon-wrap feature-card__icon-wrap--stone">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          </div>
+          <h3>Communaute</h3>
+          <p>Propose de nouveaux spots, modifie les existants et contribue a enrichir la base de donnees.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Spot types -->
+    <section class="home-section">
+      <h2 class="section-title">
+        <span class="section-title__line"></span>
+        Types de spots
+        <span class="section-title__line"></span>
+      </h2>
+      <div class="spot-types-grid">
+        <a class="spot-type-card" href="./map.html">
+          <span class="spot-type-card__emoji">&#x1F9D7;</span>
+          <h3>Falaise</h3>
+          <p>Voies et grandes voies en plein air</p>
+          <span class="spot-type-card__tag">crag</span>
+        </a>
+        <a class="spot-type-card" href="./map.html">
+          <span class="spot-type-card__emoji">&#x1FAA8;</span>
+          <h3>Bloc</h3>
+          <p>Grimpe sans corde, proche du sol</p>
+          <span class="spot-type-card__tag spot-type-card__tag--amber">boulder</span>
+        </a>
+        <a class="spot-type-card" href="./map.html">
+          <span class="spot-type-card__emoji">&#x1F3E2;</span>
+          <h3>Salle</h3>
+          <p>Escalade indoor, entrainement toute l'annee</p>
+          <span class="spot-type-card__tag spot-type-card__tag--stone">indoor</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Annonce -->
+    <section class="home-section">
+      <div class="announcement-card">
+        <div class="announcement-card__icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <strong>Application en developpement</strong>
+          <p>Les fonctionnalites sont en cours d'implementation. Merci de votre comprehension. &mdash; Vincent et Clement</p>
+        </div>
+      </div>
     </section>
   </main>
 
   <footer class="app-footer">
-    <p>© <span id="year"></span> ZoneDeGrimpe</p>
+    <div class="app-footer__inner">
+      <div class="app-footer__brand">
+        <img src="./assets/ZoneDeGrimpeIcon.png" alt="" width="20" height="20" />
+        <span>ZoneDeGrimpe</span>
+      </div>
+      <p>&copy; <span id="year"></span> ZoneDeGrimpe &mdash; Tous droits reserves</p>
+    </div>
   </footer>
 
   <!-- Bottom Tab Bar (mobile) -->
@@ -95,5 +197,32 @@
   </nav>
 
   <script type="module" src="./js/main.js"></script>
+  <script type="module">
+    // Fetch live stats for the landing page
+    import { API_BASE_URL } from './js/config.js';
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/spots`);
+        if (res.ok) {
+          const spots = await res.json();
+          const el = document.getElementById('statSpots');
+          if (el) el.textContent = spots.length.toLocaleString('fr-FR');
+        }
+      } catch {}
+      try {
+        const auth = JSON.parse(localStorage.getItem('auth') || 'null');
+        if (auth?.token) {
+          const res = await fetch(`${API_BASE_URL}/api/users`, {
+            headers: { Authorization: `Bearer ${auth.token}` }
+          });
+          if (res.ok) {
+            const users = await res.json();
+            const el = document.getElementById('statGrimpeurs');
+            if (el) el.textContent = users.length.toLocaleString('fr-FR');
+          }
+        }
+      } catch {}
+    })();
+  </script>
 </body>
 </html>

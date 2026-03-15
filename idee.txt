@@ -1,17 +1,67 @@
 A faire :
 
 
-- avoir sur l'ensemble du site un typographie plus naturel et propre.
+=== PRIORITE HAUTE ===
+
+- avoir sur l'ensemble du site une typographie plus naturelle et propre.
 
 - rajouter dans les types Falaises, Blocs, Salles, Magasin.
 
-- trouver un moyen d'ajouter des images à un spots mais trouver un moyen de les stocker car atlas seulement 500mo. 
+- trouver un moyen d'ajouter des images a un spot mais trouver un moyen de les stocker car Atlas seulement 500mo.
+  -> Solution possible : stockage externe (Cloudinary gratuit 25GB, ou S3/R2) + URL en base.
 
-- Faire un meilleur gestion du materiel avec comme l'ajoue de spots un quiz bien plus agréable pour l'user.
+- page "Mes Spots" : page dediee montrant les spots visites/bookmarkes, style carnet de grimpe perso.
 
-- Enlever conseil de materiel. 
+- systeme de voies/routes : chaque spot contient des voies individuelles avec nom, cotation et topo.
 
-- Pour chaque salles l'user peut aussi y lié un site ou app. 
+- page profil public : afficher stats d'un grimpeur, niveau, spots proposes.
 
-- pour le profil user pouvoir créé son petit personnage puis avoir les stats du personnage, gamifier completement cette aspect.
- 
+- mode offline (PWA) : mettre en cache les spots pour consultation hors connexion en montagne.
+
+
+=== PRIORITE MOYENNE ===
+
+- avis et notes sur les spots : systeme d'etoiles + commentaires par spot.
+
+- topo sketches : upload de topos dessines a la main ou photo pour chaque voie.
+
+- carnet de grimpe (logbook) : tracker les voies realisees, envois, progression dans le temps.
+
+- widget meteo : afficher meteo actuelle/previsions sur la fiche spot (API open-meteo).
+
+- alertes de proximite : notifier les users quand ils sont pres d'un spot (geofencing).
+
+- fonctionnalites sociales : suivre d'autres grimpeurs, fil d'activite.
+
+- rapport conditions spot : conditions reportees par la communaute (sec, mouille, frequente...).
+
+- filtres avances : filtrer par type de roche, nombre de voies, saison, temps d'approche.
+
+- planificateur de roadtrip : selectionner plusieurs spots et generer un itineraire de grimpe.
+
+- pour chaque salle l'user peut aussi y lier un site ou app.
+
+- pour le profil user pouvoir creer son petit personnage puis avoir les stats du personnage, gamifier completement cet aspect.
+
+
+=== NICE TO HAVE ===
+
+- gamification : badges pour premier log, X spots visites, spots contribues.
+
+- tuiles carte sombre : tuiles Leaflet dark mode quand le theme sombre est actif.
+
+- comparaison de spots : comparer 2-3 spots cote a cote.
+
+- import depuis sources externes : lien avec 27crags, theCrag, Bleau.info.
+
+- multi-langue : support anglais + espagnol.
+
+- app mobile (Capacitor/PWA) : wrapper en app native pour iOS/Android stores.
+
+- systeme de notifications : notifications in-app pour spots approuves, commentaires, etc.
+
+- recherche partenaire d'escalade : trouver des grimpeurs qui vont au meme spot a une date donnee.
+
+- faire un meilleur gestion du materiel avec comme l'ajout de spots un quiz bien plus agreable pour l'user.
+
+- enlever conseil de materiel.
