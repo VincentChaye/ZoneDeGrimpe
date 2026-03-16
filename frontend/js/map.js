@@ -177,7 +177,7 @@ function spotCardHTML(s) {
         ${gradeStat || orientStat || voiesStat || soustypeStat ? `<div class="sc-stats">${gradeStat}${orientStat}${voiesStat}${soustypeStat}</div>` : ""}
         ${desc}${auditNew}
 
-        <button class="sc-cta" onclick="window.enterSpot && enterSpot('${s.id}')">
+        <button class="sc-cta" onclick="window.enterSpot && window.enterSpot('${s.id}')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
           Rentrer dans le spot
         </button>
@@ -412,11 +412,17 @@ let currentFilters = {
 
 /* ---------- Rentrer dans le spot — vue intérieure ---------- */
 window.enterSpot = function(spotId) {
-  const spot = allSpots.find(s => s.id === spotId);
-  if (!spot) return;
-  const isLoggedIn = !!getMapToken();
-  openSheet(spotInteriorHTML(spot, isLoggedIn), null);
-  loadSpotRoutes(spotId);
+  try {
+    const spot = allSpots.find(s => s.id === spotId || String(s.id) === String(spotId));
+    if (!spot) { showToast("Spot introuvable", true); return; }
+    const isLoggedIn = !!getMapToken();
+    const html = spotInteriorHTML(spot, isLoggedIn);
+    openSheet(html, null);
+    loadSpotRoutes(spotId);
+  } catch (err) {
+    console.error("[enterSpot] Error:", err);
+    showToast("Erreur à l'ouverture du spot", true);
+  }
 };
 
 function spotInteriorHTML(s, isLoggedIn) {
@@ -427,7 +433,7 @@ function spotInteriorHTML(s, isLoggedIn) {
   return `
     <div class="spot-interior">
       <div class="si-header">
-        <button class="si-back" onclick="window.backToSpotCard && backToSpotCard('${s.id}')" title="Retour">
+        <button class="si-back" onclick="window.backToSpotCard('${s.id}')" title="Retour">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div class="si-header__info">
@@ -450,7 +456,7 @@ function spotInteriorHTML(s, isLoggedIn) {
         ${isLoggedIn ? `
         <div class="si-add-route">
           <h4 class="si-add-route__title">Ajouter une voie</h4>
-          <form class="si-add-route__form" onsubmit="window.submitRoute && submitRoute(event, '${s.id}')">
+          <form class="si-add-route__form" onsubmit="window.submitRoute(event, '${s.id}')">
             <input class="si-input" type="text" name="name" placeholder="Nom de la voie" required maxlength="120" />
             <div class="si-input-row">
               <input class="si-input" type="text" name="grade" placeholder="Cotation (6a+)" maxlength="10" />

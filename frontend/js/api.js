@@ -63,7 +63,7 @@ function toSpot(s, i) {
     const lat = num(latRaw), lng = num(lngRaw);
     const p = s.properties || s.props || {};
     return {
-      id: p.id ?? p._id ?? s.id ?? `spot-${i}`,
+      id: String(p.id ?? p._id ?? s.id ?? `spot-${i}`),
       name: p.name ?? p.titre ?? "Sans nom",
       type: p.type ?? p.soustype ?? "inconnu",
       soustype: p.soustype ?? null,
@@ -92,7 +92,7 @@ function toSpot(s, i) {
   if (lng == null && s?.lng != null) lng = num(s.lng);
 
   return {
-    id: s.id ?? s._id ?? `spot-${i}`,
+    id: String(s.id ?? s._id ?? `spot-${i}`),
     name: s.name ?? s.titre ?? "Sans nom",
     type: s.type ?? s.soustype ?? "inconnu",
     soustype: s.soustype ?? null,
