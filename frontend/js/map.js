@@ -177,21 +177,9 @@ function spotCardHTML(s) {
         ${gradeStat || orientStat || voiesStat || soustypeStat ? `<div class="sc-stats">${gradeStat}${orientStat}${voiesStat}${soustypeStat}</div>` : ""}
         ${desc}${auditNew}
 
-        <!-- Voies / Routes -->
-        <div class="sc-routes" id="spotRoutes-${s.id}">
-          <div class="sc-routes__header">
-            <span class="sc-routes__title">Voies</span>
-            <span class="sc-routes__count" id="routeCount-${s.id}"></span>
-            ${isLoggedIn ? `<button class="sc-btn sc-btn--sm" onclick="window.addRoute && addRoute('${s.id}')">+ Ajouter</button>` : ""}
-          </div>
-          <div class="sc-routes__list" id="routeList-${s.id}">
-            <span class="sc-routes__loading">Chargement...</span>
-          </div>
-        </div>
-
-        <button class="sc-cta" onclick="window.joinSpot && joinSpot('${s.id}')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 4 4-6 4 5"/><path d="M21 21H3"/></svg>
-          Rejoindre le spot
+        <button class="sc-cta" onclick="window.enterSpot && enterSpot('${s.id}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Rentrer dans le spot
         </button>
         <div class="sc-action-row">
           <a class="sc-btn" href="${dir}" target="_blank" rel="noopener">
@@ -422,9 +410,77 @@ let currentFilters = {
   distance: 500 // Distance max en km (500 = toutes les distances)
 };
 
-/* ---------- Rejoindre le spot (voies — à venir) ---------- */
-window.joinSpot = function(spotId) {
-  showToast("Interface des voies — bientôt disponible 🧗");
+/* ---------- Rentrer dans le spot — vue intérieure ---------- */
+window.enterSpot = function(spotId) {
+  const spot = allSpots.find(s => s.id === spotId);
+  if (!spot) return;
+  const isLoggedIn = !!getMapToken();
+  openSheet(spotInteriorHTML(spot, isLoggedIn), null);
+  loadSpotRoutes(spotId);
+};
+
+function spotInteriorHTML(s, isLoggedIn) {
+  const typeIcons  = { crag: "🧗", boulder: "🪨", indoor: "🏢", shop: "🛒" };
+  const typeLabels = { crag: "Falaise", boulder: "Bloc", indoor: "Salle", shop: "Magasin" };
+  const typeKey = s.type || "crag";
+
+  return `
+    <div class="spot-interior">
+      <div class="si-header">
+        <button class="si-back" onclick="window.backToSpotCard && backToSpotCard('${s.id}')" title="Retour">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="si-header__info">
+          <span class="si-header__icon">${typeIcons[typeKey] || "📍"}</span>
+          <div>
+            <h3 class="si-header__name">${s.name}</h3>
+            <span class="si-header__type">${typeLabels[typeKey] || typeKey}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="si-routes">
+        <div class="si-routes__header">
+          <h4 class="si-routes__title">Voies</h4>
+          <span class="si-routes__count" id="routeCount-${s.id}"></span>
+        </div>
+        <div class="si-routes__list" id="routeList-${s.id}">
+          <span class="sc-routes__loading">Chargement des voies...</span>
+        </div>
+        ${isLoggedIn ? `
+        <div class="si-add-route">
+          <h4 class="si-add-route__title">Ajouter une voie</h4>
+          <form class="si-add-route__form" onsubmit="window.submitRoute && submitRoute(event, '${s.id}')">
+            <input class="si-input" type="text" name="name" placeholder="Nom de la voie" required maxlength="120" />
+            <div class="si-input-row">
+              <input class="si-input" type="text" name="grade" placeholder="Cotation (6a+)" maxlength="10" />
+              <select class="si-select" name="style">
+                <option value="">Style</option>
+                <option value="sport">Sport</option>
+                <option value="trad">Trad</option>
+                <option value="boulder">Bloc</option>
+                <option value="multi">Grande voie</option>
+                <option value="other">Autre</option>
+              </select>
+            </div>
+            <div class="si-input-row">
+              <input class="si-input" type="number" name="height" placeholder="Hauteur (m)" min="1" max="2000" step="1" />
+              <input class="si-input" type="number" name="bolts" placeholder="Points" min="0" max="100" step="1" />
+            </div>
+            <textarea class="si-input si-textarea" name="description" placeholder="Description (optionnel)" maxlength="2000" rows="2"></textarea>
+            <button class="btn si-submit" type="submit">Ajouter la voie</button>
+          </form>
+        </div>
+        ` : `<p class="si-login-hint"><a href="./login.html">Connecte-toi</a> pour ajouter des voies.</p>`}
+      </div>
+    </div>
+  `;
+}
+
+window.backToSpotCard = function(spotId) {
+  const spot = allSpots.find(s => s.id === spotId);
+  if (!spot) return;
+  openSheet(spotCardHTML(spot), spot.id);
 };
 
 /* ---------- Fonction de partage ---------- */
@@ -1413,24 +1469,30 @@ async function loadSpotRoutes(spotId) {
   }
 }
 
-async function addRoute(spotId) {
+async function submitRoute(e, spotId) {
+  e.preventDefault();
   const token = getMapToken();
   if (!token) { showToast("Connecte-toi pour ajouter une voie.", true); return; }
 
-  const name = prompt("Nom de la voie :");
-  if (!name?.trim()) return;
+  const form = e.target;
+  const fd = new FormData(form);
+  const body = { spotId, name: fd.get("name").trim() };
+  if (!body.name) return;
 
-  const grade = prompt("Cotation (ex: 6a+) :", "");
-  const styleChoice = prompt("Style (sport / trad / boulder / multi / other) :", "sport");
-  const heightStr = prompt("Hauteur en mètres (optionnel) :", "");
+  const grade = fd.get("grade")?.trim();
+  const style = fd.get("style")?.trim();
+  const height = parseFloat(fd.get("height"));
+  const bolts = parseInt(fd.get("bolts"), 10);
+  const desc = fd.get("description")?.trim();
 
-  const body = { spotId, name: name.trim() };
-  if (grade?.trim()) body.grade = grade.trim();
-  if (styleChoice?.trim() && ["sport", "trad", "boulder", "multi", "other"].includes(styleChoice.trim())) {
-    body.style = styleChoice.trim();
-  }
-  const h = parseFloat(heightStr);
-  if (Number.isFinite(h) && h > 0) body.height = h;
+  if (grade) body.grade = grade;
+  if (style) body.style = style;
+  if (Number.isFinite(height) && height > 0) body.height = height;
+  if (Number.isFinite(bolts) && bolts >= 0) body.bolts = bolts;
+  if (desc) body.description = desc;
+
+  const btn = form.querySelector(".si-submit");
+  if (btn) { btn.disabled = true; btn.textContent = "Ajout..."; }
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/climbing-routes`, {
@@ -1443,10 +1505,13 @@ async function addRoute(spotId) {
     });
     if (!res.ok) throw new Error("HTTP " + res.status);
     showToast("Voie ajoutée !");
+    form.reset();
     loadSpotRoutes(spotId);
-  } catch (e) {
-    console.error("[addRoute]", e);
+  } catch (err) {
+    console.error("[submitRoute]", err);
     showToast("Erreur lors de l'ajout de la voie.", true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Ajouter la voie"; }
   }
 }
-window.addRoute = addRoute;
+window.submitRoute = submitRoute;
