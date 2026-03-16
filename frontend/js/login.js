@@ -34,7 +34,8 @@ form.addEventListener("submit", async (e) => {
 
     // Redirection vers la page demandée (si ?next=...)
     const next = new URLSearchParams(location.search).get("next");
-    location.href = next ? decodeURIComponent(next) : "./parametres.html";
+    const safeNext = next && decodeURIComponent(next);
+    location.href = (safeNext && safeNext.startsWith("/")) ? safeNext : "./parametres.html";
 
   } catch (e2) {
     console.error("Erreur login:", e2);

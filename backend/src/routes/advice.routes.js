@@ -227,7 +227,8 @@ export function adviceRouter(db) {
         recommandations: recommendations,
       });
     } catch (e) {
-      res.status(500).json({ error: "advice_material_failed", detail: String(e) });
+      console.error("[advice/material]", e);
+      res.status(500).json({ error: "advice_material_failed" });
     }
   });
 
@@ -367,7 +368,8 @@ export function adviceRouter(db) {
         gear_blocked,
       });
     } catch (e) {
-      res.status(500).json({ error: "advice_spots_failed", detail: String(e) });
+      console.error("[advice/spots]", e);
+      res.status(500).json({ error: "advice_spots_failed" });
     }
   });
 

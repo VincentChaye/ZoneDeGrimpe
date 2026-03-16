@@ -84,20 +84,30 @@ export function climbingRoutesRouter(db) {
       res.status(201).json({ ok: true, id: insertedId, route: { ...doc, _id: insertedId } });
     } catch (e) {
       if (e.name === "ZodError") {
-        return res.status(400).json({ error: "invalid_payload", detail: String(e) });
+        return res.status(400).json({ error: "invalid_payload", detail: e.errors?.map(err => err.message).join(", ") });
       }
       console.error(e);
       res.status(500).json({ error: "server_error" });
     }
   });
 
-  // PATCH /api/climbing-routes/:id — Modifier une voie
+  // PATCH /api/climbing-routes/:id — Modifier une voie (admin ou auteur)
   r.patch("/:id", requireAuth, async (req, res) => {
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: "bad_id" });
     }
 
     try {
+      // Vérifier auteur ou admin
+      const existing = await routes.findOne({ _id: new ObjectId(req.params.id) });
+      if (!existing) return res.status(404).json({ error: "not_found" });
+
+      const isAdmin = req.auth.roles?.includes("admin");
+      const isAuthor = existing.createdBy?.uid === req.auth.uid;
+      if (!isAdmin && !isAuthor) {
+        return res.status(403).json({ error: "forbidden" });
+      }
+
       const updates = updateRouteSchema.parse(req.body);
       const displayName = await getDisplayName(req.auth.uid);
 

@@ -1,5 +1,6 @@
 // src/routes/analytics.routes.js
 import { Router } from "express";
+import { requireAdmin } from "../auth.js";
 
 export function analyticsRouter(db) {
   const r = Router();
@@ -21,7 +22,7 @@ export function analyticsRouter(db) {
    * Entrées : q (requête), limit (≤50).
    * Sortie : items triés par pertinence (nom, type, tags, score).
    * =================================================================== */
-  r.get("/spots/textsearch", async (req, res) => {
+  r.get("/spots/textsearch", requireAdmin, async (req, res) => {
     try {
       const q = String(req.query.q ?? "").trim();
       const limit = Math.min(50, parseInt(req.query.limit ?? "20", 10));
@@ -46,7 +47,8 @@ export function analyticsRouter(db) {
       const items = await spots.aggregate(pipeline).toArray();
       res.json({ q, count: items.length, items });
     } catch (e) {
-      res.status(500).json({ error: "textsearch_failed", detail: String(e) });
+      console.error("[analytics/textsearch]", e);
+      res.status(500).json({ error: "textsearch_failed" });
     }
   });
 
@@ -57,7 +59,7 @@ export function analyticsRouter(db) {
    * Règles : non retiré ET nextInspectionAt ≤ now + withinDays.
    * Sortie : items (catégorie, specs, usage, dates) + email via $lookup.
    * =================================================================== */
-  r.get("/gear/inspections/due", async (req, res) => {
+  r.get("/gear/inspections/due", requireAdmin, async (req, res) => {
     try {
       const withinDays = Math.max(1, parseInt(req.query.withinDays ?? "30", 10));
       const now = new Date();
@@ -99,7 +101,8 @@ export function analyticsRouter(db) {
       const items = await userGear.aggregate(pipeline).toArray();
       res.json({ withinDays, count: items.length, items });
     } catch (e) {
-      res.status(500).json({ error: "inspections_due_failed", detail: String(e) });
+      console.error("[analytics/inspections]", e);
+      res.status(500).json({ error: "inspections_due_failed" });
     }
   });
 
@@ -110,7 +113,7 @@ export function analyticsRouter(db) {
    * Logique : $lookup Materiel_Specs → recommendedMaxUsage → usageRatio.
    * Sortie : liste triée par usageRatio desc, avec maxUsage & usageCount.
    * =================================================================== */
-  r.get("/gear/retire-soon", async (req, res) => {
+  r.get("/gear/retire-soon", requireAdmin, async (req, res) => {
     try {
       const thresholdPct = Math.min(0.99, Math.max(0.1, parseFloat(req.query.thresholdPct ?? "0.8")));
 
@@ -156,7 +159,8 @@ export function analyticsRouter(db) {
       const items = await userGear.aggregate(pipeline).toArray();
       res.json({ thresholdPct, count: items.length, items });
     } catch (e) {
-      res.status(500).json({ error: "retire_soon_failed", detail: String(e) });
+      console.error("[analytics/retire-soon]", e);
+      res.status(500).json({ error: "retire_soon_failed" });
     }
   });
 
@@ -166,7 +170,7 @@ export function analyticsRouter(db) {
    * Entrées : from, to (optionnelles).
    * Sortie : series [{ month, count }] triée chronologiquement.
    * =================================================================== */
-  r.get("/spots/leaderboard", async (req, res) => {
+  r.get("/spots/leaderboard", requireAdmin, async (req, res) => {
     try {
       const from = req.query.from ? new Date(req.query.from) : null;
       const to = req.query.to ? new Date(req.query.to) : null;
@@ -190,7 +194,8 @@ export function analyticsRouter(db) {
       const series = await spots.aggregate(pipeline).toArray();
       res.json({ from, to, series });
     } catch (e) {
-      res.status(500).json({ error: "leaderboard_failed", detail: String(e) });
+      console.error("[analytics/leaderboard]", e);
+      res.status(500).json({ error: "leaderboard_failed" });
     }
   });
 

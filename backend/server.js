@@ -19,7 +19,7 @@ import { climbingRoutesRouter } from "./src/routes/climbing-routes.routes.js";
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
 // --- CORS : env + dev defaults
 const devDefaults = [
@@ -44,8 +44,8 @@ function isAllowedOrigin(origin) {
     // Autoriser HTTPS Render et GitHub
     if (
       u.protocol === "https:" &&
-      (u.hostname.endsWith(".onrender.com") ||
-        u.hostname.endsWith(".github.io"))
+      (u.hostname === "zonedegrimpe.onrender.com" ||
+        u.hostname === "vincentchaye.github.io")
     ) {
       return true;
     }

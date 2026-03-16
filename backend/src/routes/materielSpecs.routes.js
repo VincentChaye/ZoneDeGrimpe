@@ -1,6 +1,7 @@
 // src/routes/materielSpecs.routes.js
 import { Router } from "express";
 import { ObjectId } from "mongodb";
+import { requireAuth, requireAdmin } from "../auth.js";
 
 export function materielSpecsRouter(db) {
   const r = Router();
@@ -59,7 +60,7 @@ export function materielSpecsRouter(db) {
   };
 
   // --- Créer une fiche matériel ---
-  r.post("/", async (req, res) => {
+  r.post("/", requireAdmin, async (req, res) => {
     try {
       const payload = validatePayload(req.body ?? {});
       const doc = { ...payload, createdAt: new Date() };
@@ -93,11 +94,11 @@ export function materielSpecsRouter(db) {
       const query = {};
       if (category) query.category = category;
       if (q) {
+        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         query.$or = [
-          { $text: { $search: q } },
-          { brand: { $regex: q, $options: "i" } },
-          { model: { $regex: q, $options: "i" } },
-          { description: { $regex: q, $options: "i" } },
+          { brand: { $regex: escaped, $options: "i" } },
+          { model: { $regex: escaped, $options: "i" } },
+          { description: { $regex: escaped, $options: "i" } },
         ];
       }
 
@@ -122,13 +123,18 @@ export function materielSpecsRouter(db) {
     const { id } = req.params;
     if (!ObjectId.isValid(id)) return res.status(400).json({ error: "bad_id" });
 
-    const doc = await specs.findOne({ _id: new ObjectId(id) }, { projection: SAFE_PROJECTION });
-    if (!doc) return res.status(404).json({ error: "not_found" });
-    res.json(doc);
+    try {
+      const doc = await specs.findOne({ _id: new ObjectId(id) }, { projection: SAFE_PROJECTION });
+      if (!doc) return res.status(404).json({ error: "not_found" });
+      res.json(doc);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "server_error" });
+    }
   });
 
   // --- Mise à jour partielle ---
-  r.patch("/:id", async (req, res) => {
+  r.patch("/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     if (!ObjectId.isValid(id)) return res.status(400).json({ error: "bad_id" });
 
@@ -151,12 +157,17 @@ export function materielSpecsRouter(db) {
   });
 
   // --- Supprimer une fiche ---
-  r.delete("/:id", async (req, res) => {
+  r.delete("/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     if (!ObjectId.isValid(id)) return res.status(400).json({ error: "bad_id" });
 
-    const result = await specs.deleteOne({ _id: new ObjectId(id) });
-    res.json({ deleted: result.deletedCount === 1 });
+    try {
+      const result = await specs.deleteOne({ _id: new ObjectId(id) });
+      res.json({ deleted: result.deletedCount === 1 });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "server_error" });
+    }
   });
 
   return r;

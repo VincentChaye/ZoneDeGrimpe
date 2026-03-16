@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+/* Google Fonts loaded via <link> in HTML for non-blocking render */
 
 /* === Polices personnalisées === */
 @font-face {
@@ -12,13 +12,6 @@
   font-family: "Globet";
   src: url("../assets/fonts/Globet-Bold-FFP.ttf") format("truetype");
   font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roundex";
-  src: url("../assets/fonts/Roundex.otf") format("opentype");
-  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
@@ -356,7 +349,7 @@ h1, h2, h3, h4, h5, h6 {
   position: absolute;
   bottom: 1.25rem;
   left: 50%; transform: translateX(-50%);
-  z-index: 2000;
+  z-index: 1999;
   gap: .4rem;
   white-space: nowrap;
   box-shadow: 0 4px 16px rgba(0,0,0,.2);
@@ -1271,6 +1264,7 @@ select.wizard-input {
   padding: .3rem .85rem;
   border-radius: 99px;
   background: var(--accent-muted);
+  border: 1px solid rgba(93,112,82,.25); /* fallback */
   border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
   color: var(--accent);
   font-size: .72rem; font-weight: 700;
@@ -1443,6 +1437,7 @@ select.wizard-input {
 .feature-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow);
+  border-color: rgba(93,112,82,.3); /* fallback */
   border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
 }
 .feature-card:hover::before { opacity: 1; }
@@ -1623,6 +1618,7 @@ select.wizard-input {
   display: flex; align-items: center; justify-content: center;
   background: var(--accent-muted);
   border-radius: 50%;
+  border: 1px solid rgba(93,112,82,.2); /* fallback */
   border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
 }
 .auth-card__logo img { border-radius: 50%; }

@@ -3,9 +3,19 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { ObjectId } from "mongodb";
+import rateLimit from "express-rate-limit";
+
+const authLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 20, // max 20 tentatives par IP
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: { error: "too_many_requests", detail: "Try again later" },
+});
 
 export function authRouter(db) {
 	const r = Router();
+	r.use(authLimiter);
 	const users = db.collection("users");
 
 	const PUBLIC_PROJECTION = {
@@ -14,7 +24,8 @@ export function authRouter(db) {
 	};
 
 	function sign(uid, roles = ["user"]) {
-		return jwt.sign({ uid, roles }, process.env.JWT_SECRET || "dev_secret", { expiresIn: "7d" });
+		if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set");
+		return jwt.sign({ uid, roles }, process.env.JWT_SECRET, { expiresIn: "7d" });
 	}
 
 // --- REGISTER (conforme au validator users) ---
@@ -23,6 +34,9 @@ r.post("/register", async (req, res) => {
     let { email, password, displayName } = req.body || {};
     if (!email || !password) {
       return res.status(400).json({ error: "missing_fields", detail: "email_and_password_required" });
+    }
+    if (typeof password !== "string" || password.length < 8 || password.length > 128) {
+      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_8_to_128_chars" });
     }
 
     email = String(email).trim().toLowerCase();
@@ -35,7 +49,7 @@ r.post("/register", async (req, res) => {
 
     // MIGRATION : l’utilisateur existe mais SANS passwordHash → initialiser mdp
     if (existing && !existing.passwordHash) {
-      const passwordHash = bcrypt.hashSync(password, 10);
+      const passwordHash = await bcrypt.hash(password, 10);
       await users.updateOne(
         { _id: existing._id },
         {
@@ -70,7 +84,7 @@ r.post("/register", async (req, res) => {
     }
 
     // INSERT conforme au validator
-    const passwordHash = bcrypt.hashSync(password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
     const doc = {
       email,
       passwordHash,                    // required: string
@@ -117,7 +131,7 @@ r.post("/login", async (req, res) => {
       return res.status(401).json({ error: "invalid_credentials" });
     }
 
-    const ok = bcrypt.compareSync(password, user.passwordHash); // ✅ sync
+    const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ error: "invalid_credentials" });
 
     const token = sign(user._id.toString(), user.roles || ["user"]);

@@ -20,8 +20,11 @@ function setCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch {
-    // Quota dépassé (Safari mobile ~5MB) → on vide et on réessaie
-    try { localStorage.clear(); localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch { /* silencieux */ }
+    // Quota dépassé (Safari mobile ~5MB) → on vide le cache spots seulement
+    try {
+      Object.keys(localStorage).forEach(k => { if (k.startsWith("cache_")) localStorage.removeItem(k); });
+      localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+    } catch { /* silencieux */ }
   }
 }
 
@@ -166,7 +169,7 @@ async function tryFetch(url) {
 /* ---------- fetch paginé ---------- */
 export async function fetchSpots({
   useCache = true,
-  pageSize = 10000,
+  pageSize = 5000,
   extraParams = { format: "geojson" },
 } = {}) {
   if (useCache) {

@@ -141,10 +141,15 @@ export function userMaterielRouter(db) {
     const { id } = req.params;
     if (!ObjectId.isValid(id)) return res.status(400).json({ error: "bad_id" });
 
-    const uid = new ObjectId(req.auth.uid);
-    const doc = await matos.findOne({ _id: new ObjectId(id), userId: uid }, { projection: SAFE_PROJECTION });
-    if (!doc) return res.status(404).json({ error: "not_found" });
-    return res.json(doc);
+    try {
+      const uid = new ObjectId(req.auth.uid);
+      const doc = await matos.findOne({ _id: new ObjectId(id), userId: uid }, { projection: SAFE_PROJECTION });
+      if (!doc) return res.status(404).json({ error: "not_found" });
+      return res.json(doc);
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
   });
 
   // --------------------------------------------------------------------
@@ -190,9 +195,14 @@ export function userMaterielRouter(db) {
     const { id } = req.params;
     if (!ObjectId.isValid(id)) return res.status(400).json({ error: "bad_id" });
 
-    const uid = new ObjectId(req.auth.uid);
-    const result = await matos.deleteOne({ _id: new ObjectId(id), userId: uid });
-    return res.json({ deleted: result.deletedCount === 1 });
+    try {
+      const uid = new ObjectId(req.auth.uid);
+      const result = await matos.deleteOne({ _id: new ObjectId(id), userId: uid });
+      return res.json({ deleted: result.deletedCount === 1 });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
   });
 
   // --------------------------------------------------------------------
@@ -211,10 +221,16 @@ export function userMaterielRouter(db) {
       }
 
       const increment = action === "increment" ? 1 : -1;
-      
+
+      // Prevent negative values on decrement
+      const filter = { _id: new ObjectId(id), userId: uid };
+      if (action === "decrement") {
+        filter["lifecycle.usageCount"] = { $gte: 1 };
+      }
+
       const result = await matos.updateOne(
-        { _id: new ObjectId(id), userId: uid },
-        { 
+        filter,
+        {
           $inc: { "lifecycle.usageCount": increment },
           $set: { "meta.updatedAt": new Date() }
         }

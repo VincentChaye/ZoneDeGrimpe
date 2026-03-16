@@ -26,8 +26,11 @@ export async function connectToDb(uri, dbName) {
       // Index n'existe pas, c'est OK
     }
     
-    // Créer l'index sur le champ 'location'
+    // Créer les index
     await collection.createIndex({ location: "2dsphere" });
+    await collection.createIndex({ status: 1, location: "2dsphere" }).catch(() => {});
+    await collection.createIndex({ "submittedBy.uid": 1 }).catch(() => {});
+    await collection.createIndex({ "createdBy.uid": 1 }).catch(() => {});
     console.log(`Connecté à MongoDB (${dbName}), index 2dsphere sur 'location' OK`);
 
     return { client, db };

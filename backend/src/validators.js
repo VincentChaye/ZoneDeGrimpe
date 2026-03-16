@@ -25,36 +25,13 @@ export const createSpotSchema = z.object({
   niveau_min : z.string().max(10).nullable().optional(),
   niveau_max : z.string().max(10).nullable().optional(),
   orientation: z.enum(["N","S","E","O","NE","SE","SO","NO"]).nullable().optional(),
-  id_voix    : z.array(z.any()).default([]),
+  id_voix    : z.array(z.string()).default([]),
   url        : z.string().url().nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
   info_complementaires: z.object({
     rock       : z.string().max(50).nullable().optional(),
     orientation: z.string().max(10).nullable().optional(),
   }).nullable().optional(),
-});
-
-/** Query pour GET /api/spots (bbox + limit) */
-export const listQuerySchema = z
-  .object({
-    minLng: z.coerce.number().min(-180).max(180).optional(),
-    minLat: z.coerce.number().min(-90).max(90).optional(),
-    maxLng: z.coerce.number().min(-180).max(180).optional(),
-    maxLat: z.coerce.number().min(-90).max(90).optional(),
-    limit: z.coerce.number().int().min(1).max(5000).default(1000),
-  })
-  .refine(
-    (q) =>
-      [q.minLng, q.minLat, q.maxLng, q.maxLat].every((v) => v === undefined) ||
-      [q.minLng, q.minLat, q.maxLng, q.maxLat].every((v) => v !== undefined),
-    { message: "bbox incomplète : fournir minLng,minLat,maxLng,maxLat ou rien" }
-  );
-
-/** Query pour GET /api/spots/near */
-export const nearQuerySchema = z.object({
-  lng: z.coerce.number().min(-180).max(180),
-  lat: z.coerce.number().min(-90).max(90),
-  radius: z.coerce.number().int().min(1).max(100000).default(5000), // en mètres
 });
 
 /** :id Mongo (24 hex) – utile si tu veux valider avant ObjectId() */

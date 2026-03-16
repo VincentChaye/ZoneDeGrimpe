@@ -199,9 +199,14 @@ export function usersRouter(db) {
     }
   });
 
-  // --- GET /api/users/:id ---
+  // --- GET /api/users/:id --- (self ou admin uniquement)
   r.get("/:id", requireAuth, async (req, res) => {
     try {
+      const isAdmin = req.auth.roles?.includes("admin");
+      const isSelf = req.auth.uid === req.params.id;
+      if (!isAdmin && !isSelf) {
+        return res.status(403).json({ error: "forbidden" });
+      }
       const doc = await users.findOne({ _id: new ObjectId(req.params.id) }, { projection: SAFE_PROJECTION });
       if (!doc) return res.status(404).json({ error: "not_found" });
       return res.json(doc);
@@ -289,6 +294,7 @@ function sanitizePartialUpdate(body = {}, isAdmin = false) {
   }
   if (body.avatarUrl !== undefined) {
     if (body.avatarUrl !== null && typeof body.avatarUrl !== "string") throw new Error("Invalid 'avatarUrl'");
+    if (body.avatarUrl && !/^https?:\/\/.+/.test(body.avatarUrl)) throw new Error("Invalid 'avatarUrl': must be http(s) URL");
     set.avatarUrl = body.avatarUrl;
   }
   if (body.phone !== undefined) {
@@ -297,10 +303,16 @@ function sanitizePartialUpdate(body = {}, isAdmin = false) {
   }
   if (body.preferences !== undefined) {
     if (typeof body.preferences !== "object" || Array.isArray(body.preferences)) throw new Error("Invalid 'preferences'");
+    const json = JSON.stringify(body.preferences);
+    if (json.length > 5000) throw new Error("preferences too large");
+    if (json.includes('"$')) throw new Error("Invalid key in preferences");
     set.preferences = body.preferences;
   }
   if (body.profile !== undefined) {
     if (typeof body.profile !== "object" || Array.isArray(body.profile)) throw new Error("Invalid 'profile'");
+    const json = JSON.stringify(body.profile);
+    if (json.length > 5000) throw new Error("profile too large");
+    if (json.includes('"$')) throw new Error("Invalid key in profile");
     set.profile = body.profile;
   }
   return set;

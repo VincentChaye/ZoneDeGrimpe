@@ -119,16 +119,21 @@ async function onEditPhone() {
   const value = prompt("Nouveau numéro de téléphone :", current === "—" ? "" : current);
   if (value == null) return;
 
-  const r = await fetch(apiUrl("/users/me"), {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
-    },
-    body: JSON.stringify({ phone: value.trim() || null }),
-  });
-  await handleHttp(r);
-  fill(await r.json());
+  el.editPhoneBtn.disabled = true;
+  try {
+    const r = await fetch(apiUrl("/users/me"), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ phone: value.trim() || null }),
+    });
+    await handleHttp(r);
+    fill(await r.json());
+  } finally {
+    el.editPhoneBtn.disabled = false;
+  }
 }
 
 async function onEditAvatar() {
@@ -136,16 +141,21 @@ async function onEditAvatar() {
   const value = prompt("URL de l’avatar (image publique) :", current || "");
   if (value == null) return;
 
-  const r = await fetch(apiUrl("/users/me"), {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
-    },
-    body: JSON.stringify({ avatarUrl: value.trim() || null }),
-  });
-  await handleHttp(r);
-  fill(await r.json());
+  el.editAvatarBtn.disabled = true;
+  try {
+    const r = await fetch(apiUrl("/users/me"), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ avatarUrl: value.trim() || null }),
+    });
+    await handleHttp(r);
+    fill(await r.json());
+  } finally {
+    el.editAvatarBtn.disabled = false;
+  }
 }
 
 async function onEditLevel() {
@@ -166,16 +176,21 @@ async function onEditLevel() {
     return;
   }
 
-  const r = await fetch(apiUrl("/users/me"), {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
-    },
-    body: JSON.stringify({ level: lvl }),
-  });
-  await handleHttp(r);
-  fill(await r.json());
+  el.editLevelBtn.disabled = true;
+  try {
+    const r = await fetch(apiUrl("/users/me"), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ level: lvl }),
+    });
+    await handleHttp(r);
+    fill(await r.json());
+  } finally {
+    el.editLevelBtn.disabled = false;
+  }
 }
 
 function onLogout() {
@@ -243,14 +258,19 @@ async function onDeleteAccount() {
     return;
   }
 
-  const r = await fetch(apiUrl(`/users/${uid}`), {
-    method: "DELETE",
-    headers: { "Authorization": `Bearer ${getToken()}` }
-  });
-  await handleHttp(r);
+  try {
+    const r = await fetch(apiUrl(`/users/${uid}`), {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${getToken()}` }
+    });
+    await handleHttp(r);
 
-  setAuth(null);
-  alert("Votre compte a été supprimé.");
-  location.href = "./register.html";
+    setAuth(null);
+    alert("Votre compte a été supprimé.");
+    location.href = "./register.html";
+  } catch (e) {
+    console.error("Delete account error:", e);
+    alert("Erreur lors de la suppression du compte.");
+  }
 }
 

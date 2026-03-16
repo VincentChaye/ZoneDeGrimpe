@@ -1,4 +1,4 @@
-const CACHE = "zdg-v3";
+const CACHE = "zdg-__SHA__";
 const API_CACHE = "zdg-api-v1";
 const TILES_CACHE = "zdg-tiles-v1";
 
@@ -13,6 +13,7 @@ const APP_SHELL = [
   "./profil.html",
   "./style/style.css",
   "./style/parametres.css",
+  "./config.js",
   "./js/config.js",
   "./js/api.js",
   "./js/map.js",
@@ -133,15 +134,29 @@ async function staleWhileRevalidate(request) {
 
   const fetchPromise = fetch(request).then(async res => {
     if (res.ok) {
-      await cache.put(request, res.clone());
+      // Store with timestamp header for expiration check
+      const clone = res.clone();
+      const headers = new Headers(clone.headers);
+      headers.set("sw-cached-at", String(Date.now()));
+      const body = await clone.blob();
+      await cache.put(request, new Response(body, { status: clone.status, statusText: clone.statusText, headers }));
     }
     return res;
   }).catch(() => null);
 
-  // Return cached if available, otherwise wait for network
+  // Return cached if available and not too old, otherwise wait for network
   if (cached) {
-    // Still trigger background update
-    fetchPromise.catch(() => {});
+    const cachedAt = Number(cached.headers.get("sw-cached-at") || 0);
+    const isExpired = cachedAt && (Date.now() - cachedAt > API_MAX_AGE);
+
+    if (!isExpired) {
+      // Still trigger background update
+      fetchPromise.catch(() => {});
+      return cached;
+    }
+    // Expired: wait for network, fallback to stale cache
+    const networkRes = await fetchPromise;
+    if (networkRes) return networkRes;
     return cached;
   }
 

@@ -29,6 +29,7 @@
 .admin-badge {
   display: inline-flex; align-items: center;
   background: var(--accent-muted); color: var(--accent);
+  border: 1px solid rgba(93,112,82,.3); /* fallback */
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   font-size: .62rem; font-weight: 700;
   padding: .18rem .55rem; border-radius: 99px;
@@ -160,10 +161,13 @@
 .status-badge--rejected { background: rgba(215,58,42,.1);   color: var(--c-danger);  border: 1px solid rgba(215,58,42,.25); }
 .status-badge--active   { background: rgba(42,122,59,.1);   color: var(--c-success); border: 1px solid rgba(42,122,59,.25); }
 .status-badge--banned   { background: rgba(215,58,42,.1);   color: var(--c-danger);  border: 1px solid rgba(215,58,42,.25); }
-.status-badge--admin    { background: var(--accent-muted);  color: var(--accent);    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+.status-badge--admin    { background: var(--accent-muted);  color: var(--accent);    border: 1px solid rgba(93,112,82,.3); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
 .status-badge--user     { background: var(--surface-2);     color: var(--text-2);    border: 1px solid var(--border); }
 
 /* ── Boutons (override style.css) ──────────────────────────────────────────── */
+/* NOTE: .btn--danger is intentionally overridden here (transparent bg, red text)
+   vs style.css (solid red bg, white text). Admin pages load admin.css after
+   style.css, so this override applies only on admin pages. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: .35rem; padding: .5rem 1rem;
@@ -246,7 +250,7 @@
 }
 .type-chip--crag    { background: rgba(26,111,168,.1);  color: var(--c-info);    border: 1px solid rgba(26,111,168,.25); }
 .type-chip--boulder { background: rgba(168,108,0,.1);   color: var(--c-warning); border: 1px solid rgba(168,108,0,.25); }
-.type-chip--indoor  { background: var(--accent-muted);  color: var(--accent);    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+.type-chip--indoor  { background: var(--accent-muted);  color: var(--accent);    border: 1px solid rgba(93,112,82,.3); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
 
 /* ── Grouper par user ──────────────────────────────────────────────────────── */
 .user-group { margin-bottom: 1.25rem; }

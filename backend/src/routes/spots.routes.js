@@ -70,7 +70,10 @@ export function spotsRouter(db) {
       const { insertedId } = await spots.insertOne(doc);
       res.status(201).json({ ok: true, id: insertedId, status: doc.status });
     } catch (e) {
-      res.status(400).json({ error: "invalid_payload", detail: String(e) });
+      const detail = e.name === "ZodError"
+        ? e.errors?.map((err) => `${err.path.join(".")}: ${err.message}`).join(", ")
+        : "invalid_payload";
+      res.status(400).json({ error: "invalid_payload", detail });
     }
   });
 
@@ -134,8 +137,8 @@ export function spotsRouter(db) {
 
     const lngNum = parseFloat(lng);
     const latNum = parseFloat(lat);
-    const radNum = parseFloat(radius);
-    const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 100, 20000));
+    const radNum = Math.min(parseFloat(radius), 100000);
+    const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 100, 5000));
 
     try {
       const docs = await spots
@@ -170,7 +173,7 @@ export function spotsRouter(db) {
   r.get("/", async (req, res) => {
     try {
       const { minLng, minLat, maxLng, maxLat, limit = 1000, format = "geojson" } = req.query;
-      const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 1000, 20000));
+      const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 1000, 5000));
 
       let geoFilter = {};
       if (minLng != null && minLat != null && maxLng != null && maxLat != null) {
@@ -210,7 +213,7 @@ export function spotsRouter(db) {
       const sk  = Math.max(0, parseInt(skip, 10) || 0);
 
       const filter = {};
-      if (name) filter.name = { $regex: name.trim(), $options: "i" };
+      if (name) filter.name = { $regex: name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
       if (status === "approved") filter.status = { $nin: ["pending", "rejected"] };
       else if (status) filter.status = status;
 
@@ -237,7 +240,7 @@ export function spotsRouter(db) {
       return res.status(400).json({ error: "bad_id" });
     }
     try {
-      const doc = await spots.findOne({ _id: new ObjectId(req.params.id) });
+      const doc = await spots.findOne({ _id: new ObjectId(req.params.id), ...PUBLIC_FILTER });
       if (!doc) return res.status(404).json({ error: "not_found" });
       res.json(doc);
     } catch (e) {
@@ -375,6 +378,7 @@ function toFlat(d) {
     id_voix: d.id_voix ?? [],
     location: d.location ?? null,
     url: d.url ?? null,
+    description: d.description ?? null,
     info_complementaires: d.info_complementaires ?? null,
     orientation: d.orientation ?? null,
     status: d.status ?? null,
@@ -399,6 +403,7 @@ function toFeature(d) {
       niveau_max: d.niveau_max ?? null,
       id_voix: d.id_voix ?? [],
       url: d.url ?? null,
+      description: d.description ?? null,
       info_complementaires: d.info_complementaires ?? null,
       orientation: d.orientation ?? null,
       status: d.status ?? null,

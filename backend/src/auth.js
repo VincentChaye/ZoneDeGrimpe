@@ -6,7 +6,11 @@ export function requireAuth(req, res, next) {
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ error: "unauthorized" });
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET || "dev_secret");
+    if (!process.env.JWT_SECRET) {
+      console.error("FATAL: JWT_SECRET is not set");
+      return res.status(500).json({ error: "server_misconfigured" });
+    }
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
 
     const uid = payload?.uid;
     if (!uid) return res.status(401).json({ error: "unauthorized" });

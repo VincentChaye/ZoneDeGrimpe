@@ -6,7 +6,7 @@ import { requireAuth, requireAdmin } from "../auth.js";
 const changesSchema = z
   .object({
     name:        z.string().min(1).max(120).optional(),
-    type:        z.enum(["crag", "boulder", "indoor"]).optional(),
+    type:        z.enum(["crag", "boulder", "indoor", "shop"]).optional(),
     soustype:    z.enum(["diff", "bloc"]).nullable().optional(),
     niveau_min:  z.string().max(10).nullable().optional(),
     niveau_max:  z.string().max(10).nullable().optional(),
@@ -119,16 +119,18 @@ export function spotEditsRouter(db) {
       if (!edit) return res.status(404).json({ error: "Demande introuvable ou déjà traitée" });
 
       const displayName = await getDisplayName(req.auth.uid);
-      await Promise.all([
-        spots.updateOne(
-          { _id: edit.spotId },
-          { $set: { ...edit.changes, updatedAt: new Date(), updatedBy: { uid: req.auth.uid, displayName } } }
-        ),
-        spotEdits.updateOne(
-          { _id: editId },
-          { $set: { status: "approved", updatedAt: new Date(), reviewedBy: { uid: req.auth.uid, displayName } } }
-        ),
-      ]);
+      // Atomic check: re-verify pending status to prevent double-approve
+      const editUpdate = await spotEdits.updateOne(
+        { _id: editId, status: "pending" },
+        { $set: { status: "approved", updatedAt: new Date(), reviewedBy: { uid: req.auth.uid, displayName } } }
+      );
+      if (editUpdate.modifiedCount === 0) {
+        return res.status(409).json({ error: "already_processed" });
+      }
+      await spots.updateOne(
+        { _id: edit.spotId },
+        { $set: { ...edit.changes, updatedAt: new Date(), updatedBy: { uid: req.auth.uid, displayName } } }
+      );
       res.json({ status: "approved" });
     } catch (e) {
       res.status(500).json({ error: "Erreur serveur" });

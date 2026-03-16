@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="ZoneDeGrimpe — Cartographie des spots d'escalade en France." />
   <title>ZoneDeGrimpe — Carte</title>
   <link rel="icon" href="./assets/ZoneDeGrimpeIcon.png" />
   <link rel="manifest" href="./manifest.json" />
@@ -13,8 +14,9 @@
   <link rel="apple-touch-icon" href="./assets/ZoneDeGrimpeIcon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="./style/style.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-o/2yZuJZWGJ4s/adjxVW71SCMY/rqNkaTvSWGFJDBlyJnahLAgv4r1QL3hl1i7X5" crossorigin="anonymous" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 </head>
@@ -193,11 +195,11 @@
 
               <div class="coords-grid">
                 <div>
-                  <label style="display:block;margin-bottom:.3rem;font-size:.8rem;color:var(--text-2)">Latitude</label>
+                  <label for="pLat" style="display:block;margin-bottom:.3rem;font-size:.8rem;color:var(--text-2)">Latitude</label>
                   <input class="wizard-input" type="number" id="pLat" step="any" placeholder="46.5182" />
                 </div>
                 <div>
-                  <label style="display:block;margin-bottom:.3rem;font-size:.8rem;color:var(--text-2)">Longitude</label>
+                  <label for="pLng" style="display:block;margin-bottom:.3rem;font-size:.8rem;color:var(--text-2)">Longitude</label>
                   <input class="wizard-input" type="number" id="pLng" step="any" placeholder="6.6327" />
                 </div>
               </div>
@@ -415,7 +417,7 @@
   </footer>
 
   <!-- Bottom Tab Bar (mobile) -->
-  <nav class="tab-bar" aria-label="Navigation principale">
+  <nav class="tab-bar" aria-label="Navigation mobile">
     <a href="./index.html" class="tab-bar__item">
       <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
@@ -445,7 +447,7 @@
     </a>
   </nav>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz3tPoW4Y02DSvOiGZ3p5VjTzFnSPiKAlN8OVfFyFABrMe3MT5+cO7l" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script type="module" src="./js/map.js"></script>
 </body>

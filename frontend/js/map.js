@@ -201,7 +201,7 @@ function spotCardHTML(s) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             Partager
           </button>
-          ${s.url ? `<a class="sc-btn" href="${s.url}" target="_blank" rel="noopener">
+          ${s.url && /^https?:\/\//.test(s.url) ? `<a class="sc-btn" href="${esc(s.url)}" target="_blank" rel="noopener">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             Fiche
           </a>` : ""}
@@ -412,7 +412,7 @@ function parseGradeToNumber(grade) {
 
 /* ---------- Variables globales pour filtrage et recherche ---------- */
 let allSpots = [];
-let allMarkers = [];
+let allMarkers = new Map(); // spotId → marker
 let userPosition = null; // Position de l'utilisateur pour calculer les distances
 let currentFilters = {
   type: '',
@@ -694,7 +694,8 @@ window.deleteSpot = async function(spotId, spotName) {
     if (!res.ok) throw new Error(json?.error || `Erreur ${res.status}`);
     closeSheet();
     allSpots = allSpots.filter(s => s.id !== spotId);
-    renderMarkers();
+    allMarkers.delete(spotId);
+    filterSpots();
   } catch (e) {
     alert(`Erreur : ${e.message}`);
   }
@@ -890,7 +891,7 @@ function updateMapMarkers(spotsToShow) {
   cluster.clearLayers();
   
   spotsToShow.forEach((s) => {
-    const marker = allMarkers.find(m => m.spotId === s.id);
+    const marker = allMarkers.get(s.id);
     if (marker) {
       cluster.addLayer(marker);
     }
@@ -941,12 +942,12 @@ searchInput?.addEventListener('input', (e) => {
   
   searchTimeout = setTimeout(() => {
     currentFilters.searchQuery = query;
-    const results = allSpots.filter(s => 
+    filterSpots();
+    // Display dropdown results from already-filtered spots
+    const results = allSpots.filter(s =>
       s.name.toLowerCase().includes(query.toLowerCase())
     ).slice(0, 10);
-    
     displaySearchResults(results);
-    filterSpots();
   }, 300);
 });
 
@@ -1128,7 +1129,7 @@ function validateStep(step) {
     if (!name) { setErr("errStep1", "Le nom du spot est obligatoire."); return false; }
     setErr("errStep1", "");
     wizardData.name = name;
-    wizardData.type = document.querySelector(".type-card.active")?.dataset.type || "crag";
+    wizardData.type = document.querySelector("#proposeModal .type-card.active")?.dataset.type || "crag";
     return true;
   }
   if (step === 2) {
@@ -1153,7 +1154,7 @@ function validateStep(step) {
     wizardData.niveau_min = document.getElementById("pNiveauMin")?.value || "";
     wizardData.niveau_max = document.getElementById("pNiveauMax")?.value || "";
     wizardData.description = document.getElementById("pDescription")?.value.trim() || "";
-    wizardData.orientation = document.querySelector(".compass-btn.active")?.dataset.dir || null;
+    wizardData.orientation = document.querySelector("#proposeModal .compass-btn.active")?.dataset.dir || null;
     return true;
   }
   return true;
@@ -1165,14 +1166,14 @@ function buildRecap() {
   const recap = document.getElementById("recapCard");
   if (!recap) return;
   recap.innerHTML = `
-    <div class="recap-row"><span class="recap-row__label">Nom</span><span class="recap-row__value">${wizardData.name}</span></div>
-    <div class="recap-row"><span class="recap-row__label">Type</span><span class="recap-row__value">${typeIcons[wizardData.type] || wizardData.type}</span></div>
-    <div class="recap-row"><span class="recap-row__label">Latitude</span><span class="recap-row__value">${wizardData.lat?.toFixed(6)}</span></div>
-    <div class="recap-row"><span class="recap-row__label">Longitude</span><span class="recap-row__value">${wizardData.lng?.toFixed(6)}</span></div>
-    ${wizardData.niveau_min ? `<div class="recap-row"><span class="recap-row__label">Niveau min</span><span class="recap-row__value">${wizardData.niveau_min}</span></div>` : ""}
-    ${wizardData.niveau_max ? `<div class="recap-row"><span class="recap-row__label">Niveau max</span><span class="recap-row__value">${wizardData.niveau_max}</span></div>` : ""}
-    ${wizardData.orientation ? `<div class="recap-row"><span class="recap-row__label">Orientation</span><span class="recap-row__value">${wizardData.orientation}</span></div>` : ""}
-    ${wizardData.description ? `<div class="recap-row"><span class="recap-row__label">Description</span><span class="recap-row__value" style="font-size:.82rem">${wizardData.description}</span></div>` : ""}
+    <div class="recap-row"><span class="recap-row__label">Nom</span><span class="recap-row__value">${esc(wizardData.name)}</span></div>
+    <div class="recap-row"><span class="recap-row__label">Type</span><span class="recap-row__value">${esc(typeIcons[wizardData.type] || wizardData.type)}</span></div>
+    <div class="recap-row"><span class="recap-row__label">Latitude</span><span class="recap-row__value">${esc(String(wizardData.lat?.toFixed(6)))}</span></div>
+    <div class="recap-row"><span class="recap-row__label">Longitude</span><span class="recap-row__value">${esc(String(wizardData.lng?.toFixed(6)))}</span></div>
+    ${wizardData.niveau_min ? `<div class="recap-row"><span class="recap-row__label">Niveau min</span><span class="recap-row__value">${esc(wizardData.niveau_min)}</span></div>` : ""}
+    ${wizardData.niveau_max ? `<div class="recap-row"><span class="recap-row__label">Niveau max</span><span class="recap-row__value">${esc(wizardData.niveau_max)}</span></div>` : ""}
+    ${wizardData.orientation ? `<div class="recap-row"><span class="recap-row__label">Orientation</span><span class="recap-row__value">${esc(wizardData.orientation)}</span></div>` : ""}
+    ${wizardData.description ? `<div class="recap-row"><span class="recap-row__label">Description</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.description)}</span></div>` : ""}
     <div class="recap-row">
       <span class="recap-row__label" style="font-size:.8rem">${isMapAdmin() ? "✅ Sera approuvé immédiatement" : "⏳ Soumis à validation admin"}</span>
     </div>
@@ -1384,7 +1385,7 @@ const mapLoading = document.getElementById("mapLoading");
       });
       m.spotId = s.id;
       m.on("click", () => openSheet(spotCardHTML(s), s.id));
-      allMarkers.push(m);
+      allMarkers.set(s.id, m);
       cluster.addLayer(m);
     });
 
@@ -1470,12 +1471,12 @@ async function loadSpotRoutes(spotId) {
     }
 
     listEl.innerHTML = routes.map(r => {
-      const grade = r.grade ? `<span class="sc-route__grade">${r.grade}</span>` : "";
-      const style = r.style ? `<span class="sc-route__style">${STYLE_LABELS[r.style] || r.style}</span>` : "";
-      const height = r.height ? `<span class="sc-route__height">${r.height}m</span>` : "";
+      const grade = r.grade ? `<span class="sc-route__grade">${esc(r.grade)}</span>` : "";
+      const style = r.style ? `<span class="sc-route__style">${esc(STYLE_LABELS[r.style] || r.style)}</span>` : "";
+      const height = r.height ? `<span class="sc-route__height">${esc(String(r.height))}m</span>` : "";
       return `
         <div class="sc-route">
-          <span class="sc-route__name">${r.name}</span>
+          <span class="sc-route__name">${esc(r.name)}</span>
           <div class="sc-route__meta">${grade}${style}${height}</div>
         </div>
       `;
