@@ -78,10 +78,10 @@
       </div>
       <div class="home-stat">
         <div class="home-stat__icon home-stat__icon--stone">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
         </div>
-        <div class="home-stat__value">4</div>
-        <div class="home-stat__label">Types de spots</div>
+        <div class="home-stat__value">France</div>
+        <div class="home-stat__label">Couverture</div>
       </div>
     </div>
   </section>
@@ -116,41 +116,6 @@
           <h3>Communaute</h3>
           <p>Propose de nouveaux spots, modifie les existants et contribue a enrichir la base de donnees.</p>
         </article>
-      </div>
-    </section>
-
-    <!-- Spot types -->
-    <section class="home-section">
-      <h2 class="section-title">
-        <span class="section-title__line"></span>
-        Types de spots
-        <span class="section-title__line"></span>
-      </h2>
-      <div class="spot-types-grid">
-        <a class="spot-type-card" href="./map.html">
-          <span class="spot-type-card__emoji">&#x1F9D7;</span>
-          <h3>Falaise</h3>
-          <p>Voies et grandes voies en plein air</p>
-          <span class="spot-type-card__tag">crag</span>
-        </a>
-        <a class="spot-type-card" href="./map.html">
-          <span class="spot-type-card__emoji">&#x1FAA8;</span>
-          <h3>Bloc</h3>
-          <p>Grimpe sans corde, proche du sol</p>
-          <span class="spot-type-card__tag spot-type-card__tag--amber">boulder</span>
-        </a>
-        <a class="spot-type-card" href="./map.html">
-          <span class="spot-type-card__emoji">&#x1F3E2;</span>
-          <h3>Salle</h3>
-          <p>Escalade indoor, entrainement toute l'annee</p>
-          <span class="spot-type-card__tag spot-type-card__tag--stone">indoor</span>
-        </a>
-        <a class="spot-type-card" href="./map.html">
-          <span class="spot-type-card__emoji">&#x1F6D2;</span>
-          <h3>Magasin</h3>
-          <p>Boutiques et shops d'equipement d'escalade</p>
-          <span class="spot-type-card__tag spot-type-card__tag--amber">shop</span>
-        </a>
       </div>
     </section>
 
@@ -211,28 +176,26 @@
 
   <script type="module" src="./js/main.js"></script>
   <script type="module">
-    // Fetch live stats for the landing page
     import { API_BASE_URL } from './js/config.js';
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/spots`);
+        const res = await fetch(`${API_BASE_URL}/api/spots?format=geojson`);
         if (res.ok) {
-          const spots = await res.json();
+          const json = await res.json();
+          const count = Array.isArray(json) ? json.length
+            : json?.features?.length
+            ?? json?.data?.length
+            ?? 0;
           const el = document.getElementById('statSpots');
-          if (el) el.textContent = spots.length.toLocaleString('fr-FR');
+          if (el && count) el.textContent = count.toLocaleString('fr-FR');
         }
       } catch {}
       try {
-        const auth = JSON.parse(localStorage.getItem('auth') || 'null');
-        if (auth?.token) {
-          const res = await fetch(`${API_BASE_URL}/api/users`, {
-            headers: { Authorization: `Bearer ${auth.token}` }
-          });
-          if (res.ok) {
-            const users = await res.json();
-            const el = document.getElementById('statGrimpeurs');
-            if (el) el.textContent = users.length.toLocaleString('fr-FR');
-          }
+        const res = await fetch(`${API_BASE_URL}/api/users/count`);
+        if (res.ok) {
+          const { count } = await res.json();
+          const el = document.getElementById('statGrimpeurs');
+          if (el && count) el.textContent = count.toLocaleString('fr-FR');
         }
       } catch {}
     })();

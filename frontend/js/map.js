@@ -89,6 +89,17 @@ document.addEventListener("click", (e) => {
   }
 });
 
+/* ---------- HTML escape ---------- */
+function esc(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /* ---------- Helpers auth ---------- */
 function getMapAuth() {
   try { return JSON.parse(localStorage.getItem("auth") || "null"); } catch { return null; }
@@ -140,7 +151,7 @@ function spotCardHTML(s) {
     ? `<span class="sc-stat">🔖 ${s.soustype}</span>` : "";
 
   const desc = s.description
-    ? `<p class="sc-desc">${s.description}</p>` : "";
+    ? `<p class="sc-desc">${esc(s.description)}</p>` : "";
 
   // Audit
   const createdBy = s.createdBy?.displayName || s.submittedBy?.displayName;
@@ -163,7 +174,7 @@ function spotCardHTML(s) {
       <div class="sc-banner" data-type="${typeKey}">
         <span class="sc-banner__icon">${typeIcon}</span>
         <div class="sc-banner__info">
-          <h3 class="sc-name">${s.name}</h3>
+          <h3 class="sc-name">${esc(s.name)}</h3>
           <div class="sc-meta">
             <span class="sc-type-label">${typeLabel}</span>
             ${gradeText ? `<span class="sc-grade-badge" data-level="${gradeLevel}">${gradeText}</span>` : ""}
@@ -199,7 +210,7 @@ function spotCardHTML(s) {
             Modifier
           </button>` : ""}
         </div>
-        ${isAdmin ? `<button class="sc-btn sc-btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${s.name.replace(/'/g, "\\'")}')">Supprimer ce spot</button>` : ""}
+        ${isAdmin ? `<button class="sc-btn sc-btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${esc(s.name)}')">Supprimer ce spot</button>` : ""}
       </div>
     </div>
   `;
@@ -439,7 +450,7 @@ function spotInteriorHTML(s, isLoggedIn) {
         <div class="si-header__info">
           <span class="si-header__icon">${typeIcons[typeKey] || "📍"}</span>
           <div>
-            <h3 class="si-header__name">${s.name}</h3>
+            <h3 class="si-header__name">${esc(s.name)}</h3>
             <span class="si-header__type">${typeLabels[typeKey] || typeKey}</span>
           </div>
         </div>
@@ -952,7 +963,7 @@ function displaySearchResults(results) {
     return `
       <div class="search-result" data-spot-id="${s.id}">
         <span class="search-result-icon">${icon}</span>
-        <span class="search-result-name">${s.name}</span>
+        <span class="search-result-name">${esc(s.name)}</span>
         <span class="search-result-type">${s.type || ''}</span>
       </div>
     `;

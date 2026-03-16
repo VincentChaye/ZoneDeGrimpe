@@ -1,4 +1,4 @@
-const CACHE = "zdg-v2";
+const CACHE = "zdg-v3";
 const API_CACHE = "zdg-api-v1";
 const TILES_CACHE = "zdg-tiles-v1";
 

@@ -96,6 +96,16 @@ export function usersRouter(db) {
     }
   });
 
+  // --- GET /api/users/count (public) ---
+  r.get("/count", async (_req, res) => {
+    try {
+      const count = await users.countDocuments();
+      return res.json({ count });
+    } catch {
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
   // --- GET /api/users (admin uniquement) ---
   r.get("/", requireAdmin, async (req, res) => {
     try {
