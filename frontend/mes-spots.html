@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZoneDeGrimpe — Mes Spots</title>
+  <link rel="icon" href="./assets/ZoneDeGrimpeIcon.png" />
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#5D7052" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="ZoneDeGrimpe" />
+  <link rel="apple-touch-icon" href="./assets/ZoneDeGrimpeIcon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="./style/style.css" />
+  <style>
+    .mes-spots { padding: 1.5rem 0 6rem; }
+    .mes-spots__hero {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .mes-spots__hero h1 {
+      font-family: var(--font-heading);
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      color: var(--text);
+    }
+    .mes-spots__hero p {
+      color: var(--text-2);
+      margin-top: .4rem;
+      font-size: .92rem;
+    }
+    .mes-spots__tabs {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .5rem;
+    }
+    .mes-spots__tab {
+      background: none;
+      border: none;
+      padding: .5rem 1rem;
+      font: inherit;
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--text-2);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all .2s var(--ease);
+    }
+    .mes-spots__tab.active {
+      background: var(--accent-muted);
+      color: var(--accent);
+    }
+    .mes-spots__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .mes-spot-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      transition: all .25s var(--ease);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .mes-spot-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+    }
+    .mes-spot-card__header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .mes-spot-card__emoji {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .mes-spot-card__info {
+      flex: 1;
+      min-width: 0;
+    }
+    .mes-spot-card__name {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mes-spot-card__meta {
+      font-size: .78rem;
+      color: var(--text-2);
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-top: .15rem;
+    }
+    .mes-spot-card__grade {
+      display: inline-block;
+      padding: .1rem .45rem;
+      border-radius: 99px;
+      font-size: .72rem;
+      font-weight: 700;
+      background: var(--accent-muted);
+      color: var(--accent);
+    }
+    .mes-spot-card__unbookmark {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-2);
+      padding: .25rem;
+      border-radius: var(--radius-sm);
+      transition: color .2s;
+      flex-shrink: 0;
+    }
+    .mes-spot-card__unbookmark:hover { color: #dc2626; }
+    .mes-spot-card__date {
+      font-size: .72rem;
+      color: var(--text-2);
+    }
+    .mes-spots__empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-2);
+    }
+    .mes-spots__empty-icon { font-size: 3rem; margin-bottom: .75rem; }
+    .mes-spots__empty p { margin: .3rem 0; }
+    .mes-spots__login {
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+    .mes-spots__login h2 { margin-bottom: .5rem; }
+    .mes-spots__login p { color: var(--text-2); margin-bottom: 1rem; }
+  </style>
+</head>
+<body class="theme">
+
+  <header class="app-header">
+    <a class="brand" href="./">
+      <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
+      <span class="brand__title">ZoneDeGrimpe</span>
+    </a>
+    <nav id="nav" class="nav" aria-label="Navigation principale">
+      <a href="./index.html">Accueil</a>
+      <a href="./map.html">Carte</a>
+      <a class="active" href="./mes-spots.html">Mes Spots</a>
+      <a href="./parametres.html">Profil</a>
+    </nav>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le theme">Theme</button>
+  </header>
+
+  <!-- Not logged in -->
+  <div class="container mes-spots__login" id="loginPrompt" hidden>
+    <h2>Mes Spots</h2>
+    <p>Connecte-toi pour sauvegarder tes spots favoris et suivre ta progression.</p>
+    <a class="btn" href="./login.html?next=mes-spots.html">Se connecter</a>
+  </div>
+
+  <!-- Main content -->
+  <main class="container mes-spots" id="mesSpotsRoot" hidden>
+    <div class="mes-spots__hero">
+      <h1>Mes Spots</h1>
+      <p>Tes spots sauvegardes et proposes</p>
+    </div>
+
+    <div class="mes-spots__tabs">
+      <button class="mes-spots__tab active" data-tab="bookmarks">Favoris</button>
+      <button class="mes-spots__tab" data-tab="submitted">Mes propositions</button>
+    </div>
+
+    <div id="tabBookmarks">
+      <div class="mes-spots__grid" id="bookmarksGrid"></div>
+    </div>
+
+    <div id="tabSubmitted" hidden>
+      <div class="mes-spots__grid" id="submittedGrid"></div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="app-footer__inner">
+      <p>&copy; <span id="year"></span> ZoneDeGrimpe</p>
+    </div>
+  </footer>
+
+  <!-- Bottom Tab Bar (mobile) -->
+  <nav class="tab-bar" aria-label="Navigation principale">
+    <a href="./index.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      <span>Accueil</span>
+    </a>
+    <a href="./map.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="10" r="3"/>
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      </svg>
+      <span>Carte</span>
+    </a>
+    <a href="./mes-spots.html" class="tab-bar__item active" aria-current="page">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+      </svg>
+      <span>Mes Spots</span>
+    </a>
+    <a href="./parametres.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/>
+      </svg>
+      <span>Profil</span>
+    </a>
+  </nav>
+
+  <script src="./config.js"></script>
+  <script type="module" src="./js/ui.js"></script>
+  <script type="module">
+    const API_BASE_URL = window.APP_CONFIG?.API_URL || "http://localhost:3000";
+
+    function getAuth() {
+      try { return JSON.parse(localStorage.getItem("auth") || "null"); } catch { return null; }
+    }
+    function getToken() { return getAuth()?.token || ""; }
+
+    const typeIcons  = { crag: "\u{1F9D7}", boulder: "\u{1FAA8}", indoor: "\u{1F3E2}", shop: "\u{1F6D2}" };
+    const typeLabels = { crag: "Falaise", boulder: "Bloc", indoor: "Salle", shop: "Magasin" };
+    const STATUS_LABELS = { pending: "En attente", approved: "Approuve", rejected: "Rejete" };
+    const STATUS_COLORS = { pending: "#92400e", approved: "#065f46", rejected: "#991b1b" };
+    const STATUS_BG = { pending: "#fef3c7", approved: "#d1fae5", rejected: "#fee2e2" };
+
+    const token = getToken();
+    if (!token) {
+      document.getElementById("loginPrompt").hidden = false;
+    } else {
+      document.getElementById("mesSpotsRoot").hidden = false;
+      loadBookmarks();
+      loadSubmissions();
+    }
+
+    // Tabs
+    document.querySelectorAll(".mes-spots__tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".mes-spots__tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const t = tab.dataset.tab;
+        document.getElementById("tabBookmarks").hidden = t !== "bookmarks";
+        document.getElementById("tabSubmitted").hidden = t !== "submitted";
+      });
+    });
+
+    async function loadBookmarks() {
+      const grid = document.getElementById("bookmarksGrid");
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/bookmarks`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const items = await res.json();
+
+        if (!items.length) {
+          grid.innerHTML = `<div class="mes-spots__empty" style="grid-column:1/-1">
+            <div class="mes-spots__empty-icon">\u{1F516}</div>
+            <p><strong>Aucun spot sauvegarde</strong></p>
+            <p>Sauvegarde des spots depuis la carte pour les retrouver ici.</p>
+            <a class="btn" href="./map.html" style="margin-top:1rem">Explorer la carte</a>
+          </div>`;
+          return;
+        }
+
+        grid.innerHTML = items.map(s => {
+          const loc = s.location?.coordinates;
+          const typeKey = s.type || "crag";
+          const icon = typeIcons[typeKey] || "\u{1F4CD}";
+          const label = typeLabels[typeKey] || typeKey;
+          const grade = (s.niveau_min || s.niveau_max) ? `${s.niveau_min || "?"} - ${s.niveau_max || "?"}` : "";
+          const date = s.bookmarkedAt ? new Date(s.bookmarkedAt).toLocaleDateString("fr-FR") : "";
+          const spotId = s._id;
+          return `
+            <div class="mes-spot-card" onclick="location.href='./map.html?spot=${spotId}'">
+              <div class="mes-spot-card__header">
+                <span class="mes-spot-card__emoji">${icon}</span>
+                <div class="mes-spot-card__info">
+                  <div class="mes-spot-card__name">${esc(s.name)}</div>
+                  <div class="mes-spot-card__meta">
+                    <span>${label}</span>
+                    ${grade ? `<span class="mes-spot-card__grade">${grade}</span>` : ""}
+                  </div>
+                </div>
+                <button class="mes-spot-card__unbookmark" onclick="event.stopPropagation(); removeBookmark('${spotId}')" title="Retirer des favoris">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                </button>
+              </div>
+              ${s.description ? `<p style="font-size:.82rem;color:var(--text-2);margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(s.description)}</p>` : ""}
+              ${date ? `<span class="mes-spot-card__date">Sauvegarde le ${date}</span>` : ""}
+            </div>
+          `;
+        }).join("");
+      } catch (e) {
+        console.error(e);
+        grid.innerHTML = `<div class="mes-spots__empty" style="grid-column:1/-1"><p>Erreur de chargement.</p></div>`;
+      }
+    }
+
+    async function loadSubmissions() {
+      const grid = document.getElementById("submittedGrid");
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/spots/my-submissions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const items = await res.json();
+
+        if (!items.length) {
+          grid.innerHTML = `<div class="mes-spots__empty" style="grid-column:1/-1">
+            <div class="mes-spots__empty-icon">\u{1F4DD}</div>
+            <p><strong>Aucun spot propose</strong></p>
+            <p>Propose un spot depuis la carte pour le voir apparaitre ici.</p>
+            <a class="btn" href="./map.html" style="margin-top:1rem">Proposer un spot</a>
+          </div>`;
+          return;
+        }
+
+        grid.innerHTML = items.map(s => {
+          const typeKey = s.type || "crag";
+          const icon = typeIcons[typeKey] || "\u{1F4CD}";
+          const st = s.status || "approved";
+          const date = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : "";
+          const spotId = s._id;
+          return `
+            <div class="mes-spot-card" onclick="location.href='./map.html?spot=${spotId}'">
+              <div class="mes-spot-card__header">
+                <span class="mes-spot-card__emoji">${icon}</span>
+                <div class="mes-spot-card__info">
+                  <div class="mes-spot-card__name">${esc(s.name)}</div>
+                  <div class="mes-spot-card__meta">
+                    <span>${typeLabels[typeKey] || typeKey}</span>
+                    <span>${date}</span>
+                  </div>
+                </div>
+                <span style="padding:.15rem .55rem;border-radius:99px;font-size:.72rem;font-weight:700;background:${STATUS_BG[st]};color:${STATUS_COLORS[st]};white-space:nowrap;flex-shrink:0">${STATUS_LABELS[st] || st}</span>
+              </div>
+              ${s.rejectedReason ? `<p style="font-size:.78rem;color:#991b1b;margin:0">Raison : ${esc(s.rejectedReason)}</p>` : ""}
+            </div>
+          `;
+        }).join("");
+      } catch (e) {
+        console.error(e);
+        grid.innerHTML = `<div class="mes-spots__empty" style="grid-column:1/-1"><p>Erreur de chargement.</p></div>`;
+      }
+    }
+
+    window.removeBookmark = async function(spotId) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/bookmarks/${spotId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        loadBookmarks();
+      } catch (e) {
+        console.error(e);
+        alert("Erreur lors de la suppression du favori.");
+      }
+    };
+
+    function esc(str) {
+      return String(str ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>

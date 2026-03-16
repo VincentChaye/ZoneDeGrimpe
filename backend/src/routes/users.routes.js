@@ -141,6 +141,54 @@ export function usersRouter(db) {
     }
   });
 
+  // --- GET /api/users/:id/public --- Profil public (sans auth)
+  r.get("/:id/public", async (req, res) => {
+    try {
+      const uid = req.params.id;
+      if (!ObjectId.isValid(uid)) return res.status(400).json({ error: "bad_id" });
+
+      const doc = await users.findOne(
+        { _id: new ObjectId(uid) },
+        { projection: { displayName: 1, avatarUrl: 1, profile: 1, roles: 1, "security.createdAt": 1 } }
+      );
+      if (!doc) return res.status(404).json({ error: "not_found" });
+
+      // Compter les spots proposés par cet utilisateur
+      const spots = db.collection("climbing_spot");
+      const spotsCount = await spots.countDocuments({
+        $or: [
+          { "createdBy.uid": uid },
+          { "submittedBy.uid": uid },
+        ],
+        status: { $nin: ["pending", "rejected"] },
+      });
+
+      const spotsApproved = await spots.countDocuments({
+        $or: [
+          { "createdBy.uid": uid },
+          { "submittedBy.uid": uid },
+        ],
+        status: "approved",
+      });
+
+      return res.json({
+        _id: doc._id,
+        displayName: doc.displayName,
+        avatarUrl: doc.avatarUrl || null,
+        level: doc.profile?.level || "debutant",
+        roles: doc.roles || ["user"],
+        memberSince: doc.security?.createdAt || null,
+        stats: {
+          spotsContributed: spotsCount,
+          spotsApproved: spotsApproved,
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
   // --- GET /api/users/:id ---
   r.get("/:id", requireAuth, async (req, res) => {
     try {

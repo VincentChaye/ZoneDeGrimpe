@@ -11,6 +11,8 @@ import { materielSpecsRouter } from "./src/routes/materielSpecs.routes.js";
 import { analyticsRouter } from "./src/routes/analytics.routes.js";
 import { adviceRouter } from "./src/routes/advice.routes.js";
 import { spotEditsRouter } from "./src/routes/spot-edits.routes.js";
+import { bookmarksRouter } from "./src/routes/bookmarks.routes.js";
+import { climbingRoutesRouter } from "./src/routes/climbing-routes.routes.js";
 
 
 
@@ -101,6 +103,8 @@ if (hasUri) {
   app.use("/api/analytics", analyticsRouter(db));
   app.use("/api/advice", adviceRouter(db));
   app.use("/api/spot-edits", spotEditsRouter(db));
+  app.use("/api/bookmarks", bookmarksRouter(db));
+  app.use("/api/climbing-routes", climbingRoutesRouter(db));
 
   console.log("MongoDB mode activé");
 } else {

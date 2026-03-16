@@ -3,20 +3,26 @@ A faire :
 
 === PRIORITE HAUTE ===
 
-- avoir sur l'ensemble du site une typographie plus naturelle et propre.
+- [FAIT] avoir sur l'ensemble du site une typographie plus naturelle et propre.
+  -> Fonts: Outfit (headings) + Inter (body/ui)
 
-- rajouter dans les types Falaises, Blocs, Salles, Magasin.
+- [FAIT] rajouter dans les types Falaises, Blocs, Salles, Magasin.
+  -> Type "shop" ajoute (backend validators + frontend partout)
 
 - trouver un moyen d'ajouter des images a un spot mais trouver un moyen de les stocker car Atlas seulement 500mo.
   -> Solution possible : stockage externe (Cloudinary gratuit 25GB, ou S3/R2) + URL en base.
 
-- page "Mes Spots" : page dediee montrant les spots visites/bookmarkes, style carnet de grimpe perso.
+- [FAIT] page "Mes Spots" : page dediee montrant les spots visites/bookmarkes, style carnet de grimpe perso.
+  -> mes-spots.html + API bookmarks (POST/DELETE/GET /api/bookmarks)
 
-- systeme de voies/routes : chaque spot contient des voies individuelles avec nom, cotation et topo.
+- [FAIT] systeme de voies/routes : chaque spot contient des voies individuelles avec nom, cotation et topo.
+  -> API climbing-routes (CRUD) + affichage dans fiche spot + ajout depuis la carte
 
-- page profil public : afficher stats d'un grimpeur, niveau, spots proposes.
+- [FAIT] page profil public : afficher stats d'un grimpeur, niveau, spots proposes.
+  -> profil.html + GET /api/users/:id/public
 
-- mode offline (PWA) : mettre en cache les spots pour consultation hors connexion en montagne.
+- [FAIT] mode offline (PWA) : mettre en cache les spots pour consultation hors connexion en montagne.
+  -> Service worker: stale-while-revalidate pour spots, cache tuiles carte, cache fonts
 
 
 === PRIORITE MOYENNE ===

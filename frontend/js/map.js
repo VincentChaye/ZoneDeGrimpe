@@ -55,12 +55,17 @@ function enableMapInteractions() {
   map.doubleClickZoom.enable();
 }
 
-function openSheet(html) {
+function openSheet(html, spotId) {
   if (!sheet || !sheetContent) return;
   sheetContent.innerHTML = html;
   sheet.setAttribute("aria-hidden", "false");
   document.body.classList.add("sheet-open");
   disableMapInteractions();
+  // Load routes + bookmark status after render
+  if (spotId) {
+    loadSpotRoutes(spotId);
+    checkBookmarkStatus(spotId);
+  }
 }
 
 function closeSheet() {
@@ -98,8 +103,8 @@ function spotCardHTML(s) {
   const isAdmin = isMapAdmin();
 
   // Type
-  const typeIcons  = { crag: "🧗", boulder: "🪨", indoor: "🏢" };
-  const typeLabels = { crag: "Falaise", boulder: "Bloc", indoor: "Salle" };
+  const typeIcons  = { crag: "🧗", boulder: "🪨", indoor: "🏢", shop: "🛒" };
+  const typeLabels = { crag: "Falaise", boulder: "Bloc", indoor: "Salle", shop: "Magasin" };
   const typeKey    = s.type || "crag";
   const typeIcon   = typeIcons[typeKey]  || "📍";
   const typeLabel  = typeLabels[typeKey] || s.type || "Inconnu";
@@ -142,9 +147,14 @@ function spotCardHTML(s) {
   const updatedBy = s.updatedBy?.displayName;
   const createdAt = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : null;
   const updatedAt = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("fr-FR") : null;
-  const audit = (createdBy || updatedBy) ? `
+  // Profil public du contributeur
+  const creatorId = s.createdBy?.uid || s.submittedBy?.uid;
+  const creatorLink = creatorId
+    ? `<a class="sc-audit-link" href="./profil.html?id=${creatorId}">${createdBy || "Contributeur"}</a>` : (createdBy || "");
+
+  const auditNew = (createdBy || updatedBy) ? `
     <p class="sc-audit">
-      ${createdBy ? `✏️ ${createdBy}${createdAt ? ` · ${createdAt}` : ""}` : ""}
+      ${creatorId ? `✏️ ${creatorLink}${createdAt ? ` · ${createdAt}` : ""}` : (createdBy ? `✏️ ${createdBy}${createdAt ? ` · ${createdAt}` : ""}` : "")}
       ${updatedBy ? ` &nbsp;·&nbsp; 🔄 ${updatedBy}${updatedAt ? ` · ${updatedAt}` : ""}` : ""}
     </p>` : "";
 
@@ -159,10 +169,26 @@ function spotCardHTML(s) {
             ${gradeText ? `<span class="sc-grade-badge" data-level="${gradeLevel}">${gradeText}</span>` : ""}
           </div>
         </div>
+        ${isLoggedIn ? `<button class="sc-bookmark" onclick="window.toggleBookmark && toggleBookmark('${s.id}')" title="Sauvegarder" data-spot-id="${s.id}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>` : ""}
       </div>
       <div class="sc-body">
         ${gradeStat || orientStat || voiesStat || soustypeStat ? `<div class="sc-stats">${gradeStat}${orientStat}${voiesStat}${soustypeStat}</div>` : ""}
-        ${desc}${audit}
+        ${desc}${auditNew}
+
+        <!-- Voies / Routes -->
+        <div class="sc-routes" id="spotRoutes-${s.id}">
+          <div class="sc-routes__header">
+            <span class="sc-routes__title">Voies</span>
+            <span class="sc-routes__count" id="routeCount-${s.id}"></span>
+            ${isLoggedIn ? `<button class="sc-btn sc-btn--sm" onclick="window.addRoute && addRoute('${s.id}')">+ Ajouter</button>` : ""}
+          </div>
+          <div class="sc-routes__list" id="routeList-${s.id}">
+            <span class="sc-routes__loading">Chargement...</span>
+          </div>
+        </div>
+
         <button class="sc-cta" onclick="window.joinSpot && joinSpot('${s.id}')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 4 4-6 4 5"/><path d="M21 21H3"/></svg>
           Rejoindre le spot
@@ -345,6 +371,7 @@ function makeCliffIcon(spot, size = 38) {
     'crag': '🧗',
     'boulder': '🪨',
     'indoor': '🏢',
+    'shop': '🛒',
     'default': '📍'
   };
   
@@ -489,7 +516,7 @@ function validateEditStep(step) {
 }
 
 function buildEditRecap() {
-  const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle" };
+  const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle", shop: "🛒 Magasin" };
   const recap = document.getElementById("eRecapCard");
   if (!recap || !editWizardOrig) return;
 
@@ -885,7 +912,7 @@ function focusSpot(spotId) {
   if (!spot) return;
   
   map.setView([spot.lat, spot.lng], 14, { animate: true });
-  openSheet(spotCardHTML(spot));
+  openSheet(spotCardHTML(spot), spot.id);
 }
 
 // Fermer la search bar si on clique en dehors
@@ -1061,7 +1088,7 @@ function validateStep(step) {
 
 // Construction du récapitulatif
 function buildRecap() {
-  const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle" };
+  const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle", shop: "🛒 Magasin" };
   const recap = document.getElementById("recapCard");
   if (!recap) return;
   recap.innerHTML = `
@@ -1283,7 +1310,7 @@ const mapLoading = document.getElementById("mapLoading");
         title: s.name,
       });
       m.spotId = s.id;
-      m.on("click", () => openSheet(spotCardHTML(s)));
+      m.on("click", () => openSheet(spotCardHTML(s), s.id));
       allMarkers.push(m);
       cluster.addLayer(m);
     });
@@ -1309,3 +1336,117 @@ const mapLoading = document.getElementById("mapLoading");
     if (mapLoading) mapLoading.style.display = "none";
   }
 })();
+
+/* ---------- Bookmarks ---------- */
+async function toggleBookmark(spotId) {
+  const token = getMapToken();
+  if (!token) { showToast("Connecte-toi pour sauvegarder des spots.", true); return; }
+
+  const btn = document.querySelector(`.sc-bookmark[data-spot-id="${spotId}"]`);
+  const isBookmarked = btn?.classList.contains("sc-bookmark--active");
+
+  try {
+    const method = isBookmarked ? "DELETE" : "POST";
+    const res = await fetch(`${API_BASE_URL}/api/bookmarks/${spotId}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+
+    if (btn) btn.classList.toggle("sc-bookmark--active");
+    showToast(isBookmarked ? "Spot retiré des favoris" : "Spot sauvegardé !");
+  } catch (e) {
+    console.error("[bookmark]", e);
+    showToast("Erreur lors de la sauvegarde.", true);
+  }
+}
+window.toggleBookmark = toggleBookmark;
+
+async function checkBookmarkStatus(spotId) {
+  const token = getMapToken();
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/bookmarks/check/${spotId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const { bookmarked } = await res.json();
+    const btn = document.querySelector(`.sc-bookmark[data-spot-id="${spotId}"]`);
+    if (btn && bookmarked) btn.classList.add("sc-bookmark--active");
+  } catch {}
+}
+
+/* ---------- Voies / Routes ---------- */
+const STYLE_LABELS = { sport: "Sport", trad: "Trad", boulder: "Bloc", multi: "Grande voie", other: "Autre" };
+
+async function loadSpotRoutes(spotId) {
+  const listEl = document.getElementById(`routeList-${spotId}`);
+  const countEl = document.getElementById(`routeCount-${spotId}`);
+  if (!listEl) return;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/climbing-routes/spot/${spotId}`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const routes = await res.json();
+
+    if (countEl) countEl.textContent = routes.length ? `(${routes.length})` : "";
+
+    if (!routes.length) {
+      listEl.innerHTML = `<span class="sc-routes__empty">Aucune voie enregistrée</span>`;
+      return;
+    }
+
+    listEl.innerHTML = routes.map(r => {
+      const grade = r.grade ? `<span class="sc-route__grade">${r.grade}</span>` : "";
+      const style = r.style ? `<span class="sc-route__style">${STYLE_LABELS[r.style] || r.style}</span>` : "";
+      const height = r.height ? `<span class="sc-route__height">${r.height}m</span>` : "";
+      return `
+        <div class="sc-route">
+          <span class="sc-route__name">${r.name}</span>
+          <div class="sc-route__meta">${grade}${style}${height}</div>
+        </div>
+      `;
+    }).join("");
+  } catch (e) {
+    console.error("[routes]", e);
+    listEl.innerHTML = `<span class="sc-routes__empty">Erreur de chargement</span>`;
+  }
+}
+
+async function addRoute(spotId) {
+  const token = getMapToken();
+  if (!token) { showToast("Connecte-toi pour ajouter une voie.", true); return; }
+
+  const name = prompt("Nom de la voie :");
+  if (!name?.trim()) return;
+
+  const grade = prompt("Cotation (ex: 6a+) :", "");
+  const styleChoice = prompt("Style (sport / trad / boulder / multi / other) :", "sport");
+  const heightStr = prompt("Hauteur en mètres (optionnel) :", "");
+
+  const body = { spotId, name: name.trim() };
+  if (grade?.trim()) body.grade = grade.trim();
+  if (styleChoice?.trim() && ["sport", "trad", "boulder", "multi", "other"].includes(styleChoice.trim())) {
+    body.style = styleChoice.trim();
+  }
+  const h = parseFloat(heightStr);
+  if (Number.isFinite(h) && h > 0) body.height = h;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/climbing-routes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    showToast("Voie ajoutée !");
+    loadSpotRoutes(spotId);
+  } catch (e) {
+    console.error("[addRoute]", e);
+    showToast("Erreur lors de l'ajout de la voie.", true);
+  }
+}
+window.addRoute = addRoute;

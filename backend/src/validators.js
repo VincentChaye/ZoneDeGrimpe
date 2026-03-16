@@ -20,7 +20,7 @@ export const pointSchema = z.object({
 export const createSpotSchema = z.object({
   name       : z.string().min(1).max(120),
   location   : pointSchema,                          // GeoJSON Point {type,coordinates:[lng,lat]}
-  type       : z.enum(["crag", "boulder", "indoor"]).default("crag"),
+  type       : z.enum(["crag", "boulder", "indoor", "shop"]).default("crag"),
   soustype   : z.enum(["diff", "bloc"]).nullable().optional(),
   niveau_min : z.string().max(10).nullable().optional(),
   niveau_max : z.string().max(10).nullable().optional(),
@@ -65,7 +65,7 @@ export const idParamSchema = z.object({
 /** Schema pour la mise à jour partielle d'un spot (PATCH) */
 export const updateSpotSchema = z.object({
   name       : z.string().min(1).max(120).optional(),
-  type       : z.enum(["crag", "boulder", "indoor"]).optional(),
+  type       : z.enum(["crag", "boulder", "indoor", "shop"]).optional(),
   soustype   : z.enum(["diff", "bloc"]).nullable().optional(),
   niveau_min : z.string().max(10).nullable().optional(),
   niveau_max : z.string().max(10).nullable().optional(),
