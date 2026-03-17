@@ -48,6 +48,9 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
+  // Ignorer les requêtes non-HTTP (extensions Chrome, etc.)
+  if (!e.request.url.startsWith("http")) return;
+
   const url = new URL(e.request.url);
 
   // ---- Map tiles: cache-first with limit ----
