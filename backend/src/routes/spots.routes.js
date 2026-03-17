@@ -191,7 +191,7 @@ export function spotsRouter(db) {
   r.get("/", async (req, res) => {
     try {
       const { minLng, minLat, maxLng, maxLat, limit = 1000, format = "geojson" } = req.query;
-      const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 1000, 5000));
+      const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 5000, 20000));
 
       let geoFilter = {};
       if (minLng != null && minLat != null && maxLng != null && maxLat != null) {
