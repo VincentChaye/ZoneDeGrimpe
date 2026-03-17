@@ -57,13 +57,14 @@ self.addEventListener("fetch", e => {
         if (cached) return cached;
         return fetch(e.request).then(async res => {
           if (res.ok) {
+            const clone = res.clone();
             const cache = await caches.open(TILES_CACHE);
             // Evict old tiles if too many
             const keys = await cache.keys();
             if (keys.length > MAX_TILES) {
               await cache.delete(keys[0]);
             }
-            cache.put(e.request, res.clone());
+            cache.put(e.request, clone);
           }
           return res;
         }).catch(() => new Response("", { status: 503 }));
@@ -104,7 +105,8 @@ self.addEventListener("fetch", e => {
         if (cached) return cached;
         return fetch(e.request).then(res => {
           if (res.ok) {
-            caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+            const clone = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
           }
           return res;
         }).catch(() => new Response("", { status: 503 }));
@@ -119,7 +121,8 @@ self.addEventListener("fetch", e => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
         if (res.ok && e.request.method === "GET") {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
       }).catch(() => caches.match("./index.html"));
