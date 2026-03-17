@@ -254,6 +254,11 @@ h1, h2, h3, h4, h5, h6 {
 .btn--danger  { background: #dc2626; border-color: #b91c1c; }
 .btn--danger:hover { background: #b91c1c; }
 
+/* En mode sombre, l'accent est clair (#E3CD8B) → texte foncé pour rester lisible */
+:root[data-theme="dark"] .btn          { color: #1A1612; }
+:root[data-theme="dark"] .btn--primary { color: #1A1612; }
+:root[data-theme="dark"] .btn--ghost   { color: var(--text); }
+
 /* === Inputs === */
 .input, .select, textarea {
   width: 100%;
