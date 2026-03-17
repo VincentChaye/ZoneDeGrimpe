@@ -168,6 +168,19 @@ export function spotsRouter(db) {
   });
 
   // ================================================================
+  // GET /count — Nombre total de spots approuvés — public
+  // ================================================================
+  r.get("/count", async (req, res) => {
+    try {
+      const count = await spots.countDocuments(PUBLIC_FILTER);
+      res.json({ count });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
   // GET / — Liste (bbox ou tout) — public, approved only
   // ================================================================
   r.get("/", async (req, res) => {

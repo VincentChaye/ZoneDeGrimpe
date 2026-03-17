@@ -180,13 +180,9 @@
     import { API_BASE_URL } from './js/config.js';
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/spots?format=geojson`);
+        const res = await fetch(`${API_BASE_URL}/api/spots/count`);
         if (res.ok) {
-          const json = await res.json();
-          const count = Array.isArray(json) ? json.length
-            : json?.features?.length
-            ?? json?.data?.length
-            ?? 0;
+          const { count } = await res.json();
           const el = document.getElementById('statSpots');
           if (el && count) el.textContent = count.toLocaleString('fr-FR');
         }
