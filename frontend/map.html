@@ -128,7 +128,7 @@
 
         <!-- Barre de progression -->
         <div class="wizard__progress">
-          <div class="wizard__progress-fill" id="wizardProgressFill" style="width:25%"></div>
+          <div class="wizard__progress-fill" id="wizardProgressFill" style="width:20%"></div>
         </div>
 
         <!-- Indicateur étapes -->
@@ -137,15 +137,16 @@
           <div class="wizard__dot" id="dot2"></div>
           <div class="wizard__dot" id="dot3"></div>
           <div class="wizard__dot" id="dot4"></div>
+          <div class="wizard__dot" id="dot5"></div>
         </div>
 
-        <!-- Slides -->
+        <!-- Slides (5 étapes → track 500%, chaque slide 20%) -->
         <div class="wizard__slides">
-          <div class="wizard__track" id="wizardTrack">
+          <div class="wizard__track" id="wizardTrack" style="width:500%">
 
             <!-- Étape 1 : Nom + Type -->
-            <div class="wizard__slide">
-              <p class="wizard__step-label">Étape 1 · 4</p>
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 1 · 5</p>
               <h2 class="wizard__slide-title">Quel spot ?</h2>
               <p class="wizard__slide-sub">Commençons par l'essentiel</p>
 
@@ -174,8 +175,8 @@
             </div>
 
             <!-- Étape 2 : Localisation -->
-            <div class="wizard__slide">
-              <p class="wizard__step-label">Étape 2 · 4</p>
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 2 · 5</p>
               <h2 class="wizard__slide-title">Où est-il ?</h2>
               <p class="wizard__slide-sub">Utilise ta position ou saisis les coordonnées</p>
 
@@ -206,11 +207,20 @@
               <p class="wizard-error" id="errStep2"></p>
             </div>
 
-            <!-- Étape 3 : Détails -->
-            <div class="wizard__slide">
-              <p class="wizard__step-label">Étape 3 · 4</p>
-              <h2 class="wizard__slide-title">Les détails</h2>
+            <!-- Étape 3 : Niveaux, orientation, soustype, description -->
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 3 · 5</p>
+              <h2 class="wizard__slide-title">Grimpe</h2>
               <p class="wizard__slide-sub">Tout est optionnel — remplis ce que tu sais</p>
+
+              <!-- Soustype -->
+              <div>
+                <label class="wizard-label">Style</label>
+                <div class="soustype-btns">
+                  <button class="soustype-btn" data-soustype="diff" type="button">Voie (diff)</button>
+                  <button class="soustype-btn" data-soustype="bloc" type="button">Bloc</button>
+                </div>
+              </div>
 
               <!-- Niveaux -->
               <div>
@@ -250,9 +260,63 @@
               </div>
             </div>
 
-            <!-- Étape 4 : Récapitulatif -->
-            <div class="wizard__slide">
-              <p class="wizard__step-label">Étape 4 · 4</p>
+            <!-- Étape 4 : Infos pratiques -->
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 4 · 5</p>
+              <h2 class="wizard__slide-title">Infos pratiques</h2>
+              <p class="wizard__slide-sub">Tout est optionnel</p>
+
+              <!-- Type de rocher -->
+              <div>
+                <label class="wizard-label" for="pRock">Type de rocher</label>
+                <select class="wizard-input" id="pRock">
+                  <option value="">— Choisir —</option>
+                  <option value="calcaire">Calcaire</option>
+                  <option value="granite">Granite</option>
+                  <option value="grès">Grès</option>
+                  <option value="conglomérat">Conglomérat</option>
+                  <option value="porphyre">Porphyre</option>
+                  <option value="gneiss">Gneiss</option>
+                  <option value="quartzite">Quartzite</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+
+              <!-- Équipement -->
+              <div>
+                <label class="wizard-label" for="pEquipement">Équipement</label>
+                <select class="wizard-input" id="pEquipement">
+                  <option value="">— Choisir —</option>
+                  <option value="spit">Spit / Résine</option>
+                  <option value="piton">Piton</option>
+                  <option value="mixte">Mixte</option>
+                  <option value="non_equipe">Non équipé</option>
+                </select>
+              </div>
+
+              <!-- Hauteur -->
+              <div>
+                <label class="wizard-label" for="pHauteur">Hauteur (m)</label>
+                <input class="wizard-input" type="number" id="pHauteur" min="1" max="1000" placeholder="Ex : 25" />
+              </div>
+
+              <!-- Accès -->
+              <div>
+                <label class="wizard-label" for="pAcces">Accès / Parking</label>
+                <textarea class="wizard-input" id="pAcces" rows="3" maxlength="1000"
+                  placeholder="Parking sur la D12, 10 min à pied…"></textarea>
+              </div>
+
+              <!-- URL -->
+              <div>
+                <label class="wizard-label" for="pUrl">Site web (optionnel)</label>
+                <input class="wizard-input" type="url" id="pUrl" placeholder="https://…" />
+              </div>
+            </div>
+
+            <!-- Étape 5 : Récapitulatif -->
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 5 · 5</p>
               <h2 class="wizard__slide-title">Récapitulatif</h2>
               <p class="wizard__slide-sub">Vérifie avant d'envoyer</p>
               <div class="recap-card" id="recapCard">
@@ -285,23 +349,24 @@
 
         <!-- Progression -->
         <div class="wizard__progress">
-          <div class="wizard__progress-fill" id="eWizardProgressFill" style="width:33%"></div>
+          <div class="wizard__progress-fill" id="eWizardProgressFill" style="width:25%"></div>
         </div>
 
-        <!-- Indicateur étapes (3 dots) -->
+        <!-- Indicateur étapes (4 dots) -->
         <div class="wizard__steps">
           <div class="wizard__dot active" id="eDot1"></div>
           <div class="wizard__dot" id="eDot2"></div>
           <div class="wizard__dot" id="eDot3"></div>
+          <div class="wizard__dot" id="eDot4"></div>
         </div>
 
-        <!-- Slides (3 étapes → track 300%, chaque slide 33.333%) -->
+        <!-- Slides (4 étapes → track 400%, chaque slide 25%) -->
         <div class="wizard__slides">
-          <div class="wizard__track" id="eWizardTrack" style="width:300%">
+          <div class="wizard__track" id="eWizardTrack" style="width:400%">
 
             <!-- Étape 1 : Nom + Type -->
-            <div class="wizard__slide" style="width:33.333%">
-              <p class="wizard__step-label">Étape 1 · 3</p>
+            <div class="wizard__slide" style="width:25%">
+              <p class="wizard__step-label">Étape 1 · 4</p>
               <h2 class="wizard__slide-title">Nom & Type</h2>
               <p class="wizard__slide-sub">Modifie si nécessaire</p>
 
@@ -329,11 +394,20 @@
               <p class="wizard-error" id="errEditStep1"></p>
             </div>
 
-            <!-- Étape 2 : Détails -->
-            <div class="wizard__slide" style="width:33.333%">
-              <p class="wizard__step-label">Étape 2 · 3</p>
-              <h2 class="wizard__slide-title">Les détails</h2>
+            <!-- Étape 2 : Grimpe -->
+            <div class="wizard__slide" style="width:25%">
+              <p class="wizard__step-label">Étape 2 · 4</p>
+              <h2 class="wizard__slide-title">Grimpe</h2>
               <p class="wizard__slide-sub">Tout est optionnel</p>
+
+              <!-- Soustype -->
+              <div>
+                <label class="wizard-label">Style</label>
+                <div class="soustype-btns">
+                  <button class="soustype-btn" data-soustype="diff" data-wizard="edit" type="button">Voie (diff)</button>
+                  <button class="soustype-btn" data-soustype="bloc" data-wizard="edit" type="button">Bloc</button>
+                </div>
+              </div>
 
               <!-- Niveaux -->
               <div>
@@ -373,9 +447,63 @@
               </div>
             </div>
 
-            <!-- Étape 3 : Récap + diff -->
-            <div class="wizard__slide" style="width:33.333%">
-              <p class="wizard__step-label">Étape 3 · 3</p>
+            <!-- Étape 3 : Infos pratiques -->
+            <div class="wizard__slide" style="width:25%">
+              <p class="wizard__step-label">Étape 3 · 4</p>
+              <h2 class="wizard__slide-title">Infos pratiques</h2>
+              <p class="wizard__slide-sub">Tout est optionnel</p>
+
+              <!-- Type de rocher -->
+              <div>
+                <label class="wizard-label" for="eRock">Type de rocher</label>
+                <select class="wizard-input" id="eRock">
+                  <option value="">— Choisir —</option>
+                  <option value="calcaire">Calcaire</option>
+                  <option value="granite">Granite</option>
+                  <option value="grès">Grès</option>
+                  <option value="conglomérat">Conglomérat</option>
+                  <option value="porphyre">Porphyre</option>
+                  <option value="gneiss">Gneiss</option>
+                  <option value="quartzite">Quartzite</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+
+              <!-- Équipement -->
+              <div>
+                <label class="wizard-label" for="eEquipement">Équipement</label>
+                <select class="wizard-input" id="eEquipement">
+                  <option value="">— Choisir —</option>
+                  <option value="spit">Spit / Résine</option>
+                  <option value="piton">Piton</option>
+                  <option value="mixte">Mixte</option>
+                  <option value="non_equipe">Non équipé</option>
+                </select>
+              </div>
+
+              <!-- Hauteur -->
+              <div>
+                <label class="wizard-label" for="eHauteur">Hauteur (m)</label>
+                <input class="wizard-input" type="number" id="eHauteur" min="1" max="1000" placeholder="Ex : 25" />
+              </div>
+
+              <!-- Accès -->
+              <div>
+                <label class="wizard-label" for="eAcces">Accès / Parking</label>
+                <textarea class="wizard-input" id="eAcces" rows="3" maxlength="1000"
+                  placeholder="Parking sur la D12, 10 min à pied…"></textarea>
+              </div>
+
+              <!-- URL -->
+              <div>
+                <label class="wizard-label" for="eUrl">Site web (optionnel)</label>
+                <input class="wizard-input" type="url" id="eUrl" placeholder="https://…" />
+              </div>
+            </div>
+
+            <!-- Étape 4 : Récap + diff -->
+            <div class="wizard__slide" style="width:25%">
+              <p class="wizard__step-label">Étape 4 · 4</p>
               <h2 class="wizard__slide-title">Récapitulatif</h2>
               <p class="wizard__slide-sub">Vérifie tes changements avant d'envoyer</p>
               <div class="recap-card" id="eRecapCard">

@@ -28,6 +28,9 @@ export const createSpotSchema = z.object({
   id_voix    : z.array(z.string()).default([]),
   url        : z.string().url().nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
+  acces      : z.string().max(1000).nullable().optional(),
+  equipement : z.enum(["spit","piton","mixte","non_equipe"]).nullable().optional(),
+  hauteur    : z.number().int().positive().max(1000).nullable().optional(),
   info_complementaires: z.object({
     rock       : z.string().max(50).nullable().optional(),
     orientation: z.string().max(10).nullable().optional(),
@@ -49,6 +52,13 @@ export const updateSpotSchema = z.object({
   orientation: z.enum(["N","S","E","O","NE","SE","SO","NO"]).nullable().optional(),
   url        : z.string().url().nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
+  acces      : z.string().max(1000).nullable().optional(),
+  equipement : z.enum(["spit","piton","mixte","non_equipe"]).nullable().optional(),
+  hauteur    : z.number().int().positive().max(1000).nullable().optional(),
+  info_complementaires: z.object({
+    rock       : z.string().max(50).nullable().optional(),
+    orientation: z.string().max(10).nullable().optional(),
+  }).nullable().optional(),
 }).refine(
   (data) => Object.keys(data).length > 0,
   { message: "Au moins un champ doit être fourni pour la mise à jour" }

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { createSpotSchema, updateSpotSchema } from "../validators.js";
 import { requireAuth, requireAdmin } from "../auth.js";
+import { upload, cloudinary } from "../upload.js";
 
 export function spotsRouter(db) {
   const r = Router();
@@ -28,6 +29,10 @@ export function spotsRouter(db) {
     createdAt: 1,
     updatedBy: 1,
     updatedAt: 1,
+    acces: 1,
+    equipement: 1,
+    hauteur: 1,
+    photos: 1,
   };
 
   // Filtre spots publics : approved ou sans status (spots OSM importés)
@@ -369,6 +374,90 @@ export function spotsRouter(db) {
       res.json({ deleted: result.deletedCount === 1 });
     } catch (e) {
       console.error(e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
+  // POST /:id/photos — Ajouter des photos à un spot (utilisateur connecté)
+  // Max 5 fichiers par upload, max 10 photos par spot
+  // ================================================================
+  r.post("/:id/photos", requireAuth, upload.array("photos", 5), async (req, res) => {
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: "bad_id" });
+    }
+    if (!req.files?.length) {
+      return res.status(400).json({ error: "no_files" });
+    }
+    try {
+      const spot = await spots.findOne({ _id: new ObjectId(req.params.id) });
+      if (!spot) return res.status(404).json({ error: "not_found" });
+
+      const isAdmin = req.auth.roles?.includes("admin");
+      const isOwner = spot.createdBy?.uid === req.auth.uid;
+      if (!isAdmin && !isOwner) {
+        // Supprimer les fichiers déjà uploadés sur Cloudinary
+        await Promise.all(req.files.map(f => cloudinary.uploader.destroy(f.filename)));
+        return res.status(403).json({ error: "forbidden" });
+      }
+
+      const currentCount = spot.photos?.length ?? 0;
+      if (currentCount + req.files.length > 10) {
+        await Promise.all(req.files.map(f => cloudinary.uploader.destroy(f.filename)));
+        return res.status(400).json({ error: "too_many_photos", max: 10, current: currentCount });
+      }
+
+      const displayName = await getDisplayName(req.auth.uid);
+      const newPhotos = req.files.map(f => ({
+        _id: new ObjectId(),
+        url: f.path,
+        publicId: f.filename,
+        uploadedBy: { uid: req.auth.uid, displayName },
+        uploadedAt: new Date(),
+      }));
+
+      await spots.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $push: { photos: { $each: newPhotos } } }
+      );
+
+      res.status(201).json({ ok: true, photos: newPhotos });
+    } catch (e) {
+      console.error("[POST /spots/:id/photos]", e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
+  // DELETE /:id/photos/:photoId — Supprimer une photo d'un spot
+  // Propriétaire de la photo ou admin
+  // ================================================================
+  r.delete("/:id/photos/:photoId", requireAuth, async (req, res) => {
+    if (!ObjectId.isValid(req.params.id) || !ObjectId.isValid(req.params.photoId)) {
+      return res.status(400).json({ error: "bad_id" });
+    }
+    try {
+      const spot = await spots.findOne({ _id: new ObjectId(req.params.id) });
+      if (!spot) return res.status(404).json({ error: "not_found" });
+
+      const photo = spot.photos?.find(p => p._id.toString() === req.params.photoId);
+      if (!photo) return res.status(404).json({ error: "photo_not_found" });
+
+      const isAdmin = req.auth.roles?.includes("admin");
+      const isUploader = photo.uploadedBy?.uid === req.auth.uid;
+      if (!isAdmin && !isUploader) {
+        return res.status(403).json({ error: "forbidden" });
+      }
+
+      await cloudinary.uploader.destroy(photo.publicId);
+      await spots.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $pull: { photos: { _id: new ObjectId(req.params.photoId) } } }
+      );
+
+      res.json({ ok: true });
+    } catch (e) {
+      console.error("[DELETE /spots/:id/photos/:photoId]", e);
       res.status(500).json({ error: "server_error" });
     }
   });

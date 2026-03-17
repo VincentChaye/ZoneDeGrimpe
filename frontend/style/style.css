@@ -635,6 +635,60 @@ body.sheet-open::after {
   border-left: 2px solid var(--amber, #C18845);
 }
 
+/* Accès */
+.sc-acces {
+  margin: 0 0 .85rem;
+  padding: .55rem .9rem;
+  font-size: .82rem; line-height: 1.55; color: var(--text-2);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--accent);
+}
+
+/* Galerie photos */
+.sc-photos {
+  display: flex;
+  gap: .4rem;
+  overflow-x: auto;
+  margin-bottom: .85rem;
+  scrollbar-width: none;
+}
+.sc-photos::-webkit-scrollbar { display: none; }
+.sc-photo {
+  flex-shrink: 0;
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  cursor: zoom-in;
+  transition: opacity .15s;
+}
+.sc-photo:hover { opacity: .85; }
+
+/* Soustype buttons (wizard) */
+.soustype-btns {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+.soustype-btn {
+  flex: 1;
+  padding: .5rem .75rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: .88rem;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.soustype-btn.active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-muted);
+  font-weight: 600;
+}
+
 /* Audit */
 .sc-audit {
   margin: 0 0 .85rem;
@@ -664,6 +718,7 @@ body.sheet-open::after {
 }
 .sc-cta:hover { background: #4a5c3e; transform: translateY(-1px); }
 .sc-cta:active { transform: translateY(0); }
+:root[data-theme="dark"] .sc-cta { color: #1A1612; }
 
 /* Actions secondaires — petits boutons pills */
 .sc-action-row {

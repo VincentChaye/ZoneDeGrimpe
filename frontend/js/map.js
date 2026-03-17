@@ -149,9 +149,23 @@ function spotCardHTML(s) {
     ? `<span class="sc-stat">🪢 ${s.id_voix.length} voie${s.id_voix.length > 1 ? "s" : ""}</span>` : "";
   const soustypeStat = s.soustype
     ? `<span class="sc-stat">🔖 ${s.soustype}</span>` : "";
+  const rockStat = s.info_complementaires?.rock
+    ? `<span class="sc-stat">🪨 ${esc(s.info_complementaires.rock)}</span>` : "";
+  const equipMap = { spit: "Spit", piton: "Piton", mixte: "Mixte", non_equipe: "Non équipé" };
+  const equipStat = s.equipement
+    ? `<span class="sc-stat">🔩 ${equipMap[s.equipement] || s.equipement}</span>` : "";
+  const hauteurStat = s.hauteur
+    ? `<span class="sc-stat">📏 ${s.hauteur} m</span>` : "";
 
   const desc = s.description
     ? `<p class="sc-desc">${esc(s.description)}</p>` : "";
+  const acces = s.acces
+    ? `<p class="sc-acces"><strong>Accès :</strong> ${esc(s.acces)}</p>` : "";
+
+  // Photos
+  const photos = s.photos?.length
+    ? `<div class="sc-photos">${s.photos.map(p => `<img src="${esc(p.url)}" class="sc-photo" alt="Photo du spot" onclick="window.openPhoto && openPhoto('${esc(p.url)}')">`).join("")}</div>`
+    : "";
 
   // Audit
   const createdBy = s.createdBy?.displayName || s.submittedBy?.displayName;
@@ -185,8 +199,8 @@ function spotCardHTML(s) {
         </button>` : ""}
       </div>
       <div class="sc-body">
-        ${gradeStat || orientStat || voiesStat || soustypeStat ? `<div class="sc-stats">${gradeStat}${orientStat}${voiesStat}${soustypeStat}</div>` : ""}
-        ${desc}${auditNew}
+        ${gradeStat || orientStat || voiesStat || soustypeStat || rockStat || equipStat || hauteurStat ? `<div class="sc-stats">${gradeStat}${orientStat}${voiesStat}${soustypeStat}${rockStat}${equipStat}${hauteurStat}</div>` : ""}
+        ${photos}${desc}${acces}${auditNew}
 
         <button class="sc-cta" onclick="window.enterSpot && window.enterSpot('${s.id}')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
@@ -208,6 +222,10 @@ function spotCardHTML(s) {
           ${isLoggedIn ? `<button class="sc-btn" onclick="window.editSpot && editSpot('${s.id}')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Modifier
+          </button>` : ""}
+          ${isLoggedIn ? `<button class="sc-btn" onclick="window.openPhotoUpload && openPhotoUpload('${s.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Photos
           </button>` : ""}
         </div>
         ${isAdmin ? `<button class="sc-btn sc-btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${esc(s.name)}')">Supprimer ce spot</button>` : ""}
@@ -528,14 +546,14 @@ const editModal = document.getElementById("editModal");
 let editWizardStep    = 1;
 let editWizardSpotId  = null;
 let editWizardOrig    = null; // valeurs actuelles du spot
-let editWizardData    = { name: "", type: "crag", orientation: null, niveau_min: "", niveau_max: "", description: "" };
+let editWizardData    = { name: "", type: "crag", soustype: null, orientation: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
 
 const eWizardTrack       = document.getElementById("eWizardTrack");
 const eWizardProgressFill = document.getElementById("eWizardProgressFill");
 const eWizardNextBtn     = document.getElementById("eWizardNextBtn");
 const eWizardBackBtn     = document.getElementById("eWizardBackBtn");
 const eWizardCloseBtn    = document.getElementById("eWizardCloseBtn");
-const eDots = [1, 2, 3].map(i => document.getElementById(`eDot${i}`));
+const eDots = [1, 2, 3, 4].map(i => document.getElementById(`eDot${i}`));
 
 function populateEditLevelSelects() {
   const minSel = document.getElementById("eNiveauMin");
@@ -547,9 +565,9 @@ function populateEditLevelSelects() {
 }
 
 function updateEditWizardUI() {
-  const TOTAL = 3;
+  const TOTAL = 4;
   if (eWizardProgressFill) eWizardProgressFill.style.width = `${(editWizardStep / TOTAL) * 100}%`;
-  if (eWizardTrack) eWizardTrack.style.transform = `translateX(-${(editWizardStep - 1) * 33.333}%)`;
+  if (eWizardTrack) eWizardTrack.style.transform = `translateX(-${(editWizardStep - 1) * 25}%)`;
 
   eDots.forEach((d, i) => {
     if (!d) return;
@@ -579,10 +597,19 @@ function validateEditStep(step) {
     return true;
   }
   if (step === 2) {
+    editWizardData.soustype    = document.querySelector("#editModal .soustype-btn.active")?.dataset.soustype || null;
     editWizardData.niveau_min  = document.getElementById("eNiveauMin")?.value || "";
     editWizardData.niveau_max  = document.getElementById("eNiveauMax")?.value || "";
     editWizardData.description = document.getElementById("eDescription")?.value.trim() || "";
     editWizardData.orientation = document.querySelector("#editModal .compass-btn.active")?.dataset.dir || null;
+    return true;
+  }
+  if (step === 3) {
+    editWizardData.rock       = document.getElementById("eRock")?.value || "";
+    editWizardData.equipement = document.getElementById("eEquipement")?.value || "";
+    editWizardData.hauteur    = document.getElementById("eHauteur")?.value || "";
+    editWizardData.acces      = document.getElementById("eAcces")?.value.trim() || "";
+    editWizardData.url        = document.getElementById("eUrl")?.value.trim() || "";
     return true;
   }
   return true;
@@ -590,13 +617,14 @@ function validateEditStep(step) {
 
 function buildEditRecap() {
   const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle", shop: "🛒 Magasin" };
+  const equipLabels = { spit: "Spit / Résine", piton: "Piton", mixte: "Mixte", non_equipe: "Non équipé" };
   const recap = document.getElementById("eRecapCard");
   if (!recap || !editWizardOrig) return;
 
   const orig = editWizardOrig;
 
-  function diffRow(label, key, displayFn) {
-    const newVal    = editWizardData[key] || null;
+  function diffRow(label, key, displayFn, newValOverride) {
+    const newVal    = newValOverride !== undefined ? newValOverride : (editWizardData[key] || null);
     const oldVal    = orig[key] || null;
     const newDisplay = displayFn ? displayFn(newVal) : (newVal || "—");
     const oldDisplay = displayFn ? displayFn(oldVal) : (oldVal || "—");
@@ -613,10 +641,16 @@ function buildEditRecap() {
   recap.innerHTML = `
     ${diffRow("Nom", "name")}
     ${diffRow("Type", "type", v => typeIcons[v] || v || "—")}
+    ${diffRow("Style", "soustype")}
     ${diffRow("Niveau min", "niveau_min")}
     ${diffRow("Niveau max", "niveau_max")}
     ${diffRow("Orientation", "orientation")}
     ${diffRow("Description", "description")}
+    ${diffRow("Rocher", "rock", null, editWizardData.rock || null)}
+    ${diffRow("Équipement", "equipement", v => equipLabels[v] || v || "—")}
+    ${diffRow("Hauteur (m)", "hauteur")}
+    ${diffRow("Accès", "acces")}
+    ${diffRow("Site web", "url")}
     <div class="recap-row">
       <span class="recap-row__label" style="font-size:.8rem">
         ${isMapAdmin() ? "✅ Appliqué immédiatement" : "⏳ Soumis à validation admin"}
@@ -627,7 +661,7 @@ function buildEditRecap() {
 
 function resetEditWizard() {
   editWizardStep = 1;
-  editWizardData = { name: "", type: "crag", orientation: null, niveau_min: "", niveau_max: "", description: "" };
+  editWizardData = { name: "", type: "crag", soustype: null, orientation: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
   ["errEditStep1", "errEditStep3"].forEach(id => setEditErr(id, ""));
   if (eWizardNextBtn) { eWizardNextBtn.style.display = ""; eWizardNextBtn.disabled = false; eWizardNextBtn.textContent = "Suivant →"; }
   const footer = document.getElementById("eWizardFooter");
@@ -649,10 +683,16 @@ window.editSpot = function(spotId) {
   // Pré-remplir les données
   editWizardData.name        = spot.name || "";
   editWizardData.type        = spot.type || "crag";
+  editWizardData.soustype    = spot.soustype || null;
   editWizardData.orientation = spot.orientation || null;
   editWizardData.niveau_min  = spot.niveau_min || "";
   editWizardData.niveau_max  = spot.niveau_max || "";
   editWizardData.description = spot.description || "";
+  editWizardData.rock        = spot.info_complementaires?.rock || "";
+  editWizardData.equipement  = spot.equipement || "";
+  editWizardData.hauteur     = spot.hauteur ? String(spot.hauteur) : "";
+  editWizardData.acces       = spot.acces || "";
+  editWizardData.url         = spot.url || "";
 
   // Appliquer aux inputs
   const nameInput = document.getElementById("eName");
@@ -660,6 +700,11 @@ window.editSpot = function(spotId) {
 
   document.querySelectorAll("#editModal .type-card").forEach(c => {
     c.classList.toggle("active", c.dataset.type === editWizardData.type);
+  });
+
+  // Soustype
+  document.querySelectorAll("#editModal .soustype-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.soustype === editWizardData.soustype);
   });
 
   // Niveaux (après que les selects soient peuplés)
@@ -676,6 +721,17 @@ window.editSpot = function(spotId) {
   document.querySelectorAll("#editModal .compass-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.dir === editWizardData.orientation);
   });
+
+  const rockSel = document.getElementById("eRock");
+  if (rockSel) rockSel.value = editWizardData.rock;
+  const equipSel = document.getElementById("eEquipement");
+  if (equipSel) equipSel.value = editWizardData.equipement;
+  const hauteurInput = document.getElementById("eHauteur");
+  if (hauteurInput) hauteurInput.value = editWizardData.hauteur;
+  const accesInput = document.getElementById("eAcces");
+  if (accesInput) accesInput.value = editWizardData.acces;
+  const urlInput = document.getElementById("eUrl");
+  if (urlInput) urlInput.value = editWizardData.url;
 
   closeSheet();
   editModal?.showModal();
@@ -721,13 +777,22 @@ document.querySelectorAll("#editModal .compass-btn").forEach(btn => {
   });
 });
 
+// Soustype (edit modal)
+document.querySelectorAll("#editModal .soustype-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const isActive = btn.classList.contains("active");
+    document.querySelectorAll("#editModal .soustype-btn").forEach(b => b.classList.remove("active"));
+    if (!isActive) btn.classList.add("active");
+  });
+});
+
 // Navigation : Suivant
 eWizardNextBtn?.addEventListener("click", async () => {
   if (!validateEditStep(editWizardStep)) return;
 
-  if (editWizardStep < 3) {
+  if (editWizardStep < 4) {
     editWizardStep++;
-    if (editWizardStep === 3) buildEditRecap();
+    if (editWizardStep === 4) buildEditRecap();
     updateEditWizardUI();
     return;
   }
@@ -752,6 +817,8 @@ eWizardNextBtn?.addEventListener("click", async () => {
     changes.name = editWizardData.name;
   if ((editWizardData.type || "crag") !== (orig.type || "crag"))
     changes.type = editWizardData.type;
+  if ((editWizardData.soustype || null) !== (orig.soustype || null))
+    changes.soustype = editWizardData.soustype;
   if ((editWizardData.orientation || null) !== (orig.orientation || null))
     changes.orientation = editWizardData.orientation;
   if ((editWizardData.niveau_min || "") !== (orig.niveau_min || ""))
@@ -760,6 +827,18 @@ eWizardNextBtn?.addEventListener("click", async () => {
     changes.niveau_max = editWizardData.niveau_max || null;
   if ((editWizardData.description || "") !== (orig.description || ""))
     changes.description = editWizardData.description || null;
+  const origRock = orig.info_complementaires?.rock || "";
+  if ((editWizardData.rock || "") !== origRock)
+    changes.info_complementaires = { rock: editWizardData.rock || null };
+  if ((editWizardData.equipement || "") !== (orig.equipement || ""))
+    changes.equipement = editWizardData.equipement || null;
+  const origHauteur = orig.hauteur ? String(orig.hauteur) : "";
+  if ((editWizardData.hauteur || "") !== origHauteur)
+    changes.hauteur = editWizardData.hauteur ? parseInt(editWizardData.hauteur, 10) : null;
+  if ((editWizardData.acces || "") !== (orig.acces || ""))
+    changes.acces = editWizardData.acces || null;
+  if ((editWizardData.url || "") !== (orig.url || ""))
+    changes.url = editWizardData.url || null;
 
   if (Object.keys(changes).length === 0) {
     setEditErr("errEditStep3", "Aucune modification détectée.");
@@ -1072,7 +1151,7 @@ const GRADES = [
 
 // État du wizard
 let wizardStep = 1;
-let wizardData = { name: "", type: "crag", lat: null, lng: null, orientation: null, niveau_min: "", niveau_max: "", description: "" };
+let wizardData = { name: "", type: "crag", lat: null, lng: null, orientation: null, soustype: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
 
 // DOM wizard
 const wizardTrack = document.getElementById("wizardTrack");
@@ -1080,7 +1159,7 @@ const wizardProgressFill = document.getElementById("wizardProgressFill");
 const wizardNextBtn = document.getElementById("wizardNextBtn");
 const wizardBackBtn = document.getElementById("wizardBackBtn");
 const wizardCloseBtn = document.getElementById("wizardCloseBtn");
-const dots = [1,2,3,4].map(i => document.getElementById(`dot${i}`));
+const dots = [1,2,3,4,5].map(i => document.getElementById(`dot${i}`));
 
 // Peupler les selects de niveaux
 function populateLevelSelects() {
@@ -1094,10 +1173,10 @@ function populateLevelSelects() {
 
 // Mise à jour de l'UI de navigation
 function updateWizardUI() {
-  const TOTAL = 4;
+  const TOTAL = 5;
   const pct = (wizardStep / TOTAL) * 100;
   if (wizardProgressFill) wizardProgressFill.style.width = `${pct}%`;
-  if (wizardTrack) wizardTrack.style.transform = `translateX(-${(wizardStep - 1) * 25}%)`;
+  if (wizardTrack) wizardTrack.style.transform = `translateX(-${(wizardStep - 1) * 20}%)`;
 
   dots.forEach((d, i) => {
     if (!d) return;
@@ -1107,13 +1186,8 @@ function updateWizardUI() {
 
   if (wizardBackBtn) wizardBackBtn.style.display = wizardStep > 1 ? "block" : "none";
   if (wizardNextBtn) {
-    if (wizardStep < TOTAL) {
-      wizardNextBtn.textContent = "Suivant →";
-      wizardNextBtn.disabled = false;
-    } else {
-      wizardNextBtn.textContent = "Envoyer la demande";
-      wizardNextBtn.disabled = false;
-    }
+    wizardNextBtn.textContent = wizardStep < TOTAL ? "Suivant →" : "Envoyer la demande";
+    wizardNextBtn.disabled = false;
   }
 }
 
@@ -1151,10 +1225,19 @@ function validateStep(step) {
     return true;
   }
   if (step === 3) {
-    wizardData.niveau_min = document.getElementById("pNiveauMin")?.value || "";
-    wizardData.niveau_max = document.getElementById("pNiveauMax")?.value || "";
+    wizardData.soustype    = document.querySelector("#proposeModal .soustype-btn.active")?.dataset.soustype || null;
+    wizardData.niveau_min  = document.getElementById("pNiveauMin")?.value || "";
+    wizardData.niveau_max  = document.getElementById("pNiveauMax")?.value || "";
     wizardData.description = document.getElementById("pDescription")?.value.trim() || "";
     wizardData.orientation = document.querySelector("#proposeModal .compass-btn.active")?.dataset.dir || null;
+    return true;
+  }
+  if (step === 4) {
+    wizardData.rock       = document.getElementById("pRock")?.value || "";
+    wizardData.equipement = document.getElementById("pEquipement")?.value || "";
+    wizardData.hauteur    = document.getElementById("pHauteur")?.value || "";
+    wizardData.acces      = document.getElementById("pAcces")?.value.trim() || "";
+    wizardData.url        = document.getElementById("pUrl")?.value.trim() || "";
     return true;
   }
   return true;
@@ -1163,6 +1246,7 @@ function validateStep(step) {
 // Construction du récapitulatif
 function buildRecap() {
   const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle", shop: "🛒 Magasin" };
+  const equipLabels = { spit: "Spit / Résine", piton: "Piton", mixte: "Mixte", non_equipe: "Non équipé" };
   const recap = document.getElementById("recapCard");
   if (!recap) return;
   recap.innerHTML = `
@@ -1170,10 +1254,16 @@ function buildRecap() {
     <div class="recap-row"><span class="recap-row__label">Type</span><span class="recap-row__value">${esc(typeIcons[wizardData.type] || wizardData.type)}</span></div>
     <div class="recap-row"><span class="recap-row__label">Latitude</span><span class="recap-row__value">${esc(String(wizardData.lat?.toFixed(6)))}</span></div>
     <div class="recap-row"><span class="recap-row__label">Longitude</span><span class="recap-row__value">${esc(String(wizardData.lng?.toFixed(6)))}</span></div>
+    ${wizardData.soustype ? `<div class="recap-row"><span class="recap-row__label">Style</span><span class="recap-row__value">${esc(wizardData.soustype)}</span></div>` : ""}
     ${wizardData.niveau_min ? `<div class="recap-row"><span class="recap-row__label">Niveau min</span><span class="recap-row__value">${esc(wizardData.niveau_min)}</span></div>` : ""}
     ${wizardData.niveau_max ? `<div class="recap-row"><span class="recap-row__label">Niveau max</span><span class="recap-row__value">${esc(wizardData.niveau_max)}</span></div>` : ""}
     ${wizardData.orientation ? `<div class="recap-row"><span class="recap-row__label">Orientation</span><span class="recap-row__value">${esc(wizardData.orientation)}</span></div>` : ""}
     ${wizardData.description ? `<div class="recap-row"><span class="recap-row__label">Description</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.description)}</span></div>` : ""}
+    ${wizardData.rock ? `<div class="recap-row"><span class="recap-row__label">Rocher</span><span class="recap-row__value">${esc(wizardData.rock)}</span></div>` : ""}
+    ${wizardData.equipement ? `<div class="recap-row"><span class="recap-row__label">Équipement</span><span class="recap-row__value">${esc(equipLabels[wizardData.equipement] || wizardData.equipement)}</span></div>` : ""}
+    ${wizardData.hauteur ? `<div class="recap-row"><span class="recap-row__label">Hauteur</span><span class="recap-row__value">${esc(wizardData.hauteur)} m</span></div>` : ""}
+    ${wizardData.acces ? `<div class="recap-row"><span class="recap-row__label">Accès</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.acces)}</span></div>` : ""}
+    ${wizardData.url ? `<div class="recap-row"><span class="recap-row__label">Site web</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.url)}</span></div>` : ""}
     <div class="recap-row">
       <span class="recap-row__label" style="font-size:.8rem">${isMapAdmin() ? "✅ Sera approuvé immédiatement" : "⏳ Soumis à validation admin"}</span>
     </div>
@@ -1183,19 +1273,17 @@ function buildRecap() {
 // Réinitialiser le wizard
 function resetWizard() {
   wizardStep = 1;
-  wizardData = { name: "", type: "crag", lat: null, lng: null, orientation: null, niveau_min: "", niveau_max: "", description: "" };
-  document.getElementById("pName") && (document.getElementById("pName").value = "");
-  document.getElementById("pLat") && (document.getElementById("pLat").value = "");
-  document.getElementById("pLng") && (document.getElementById("pLng").value = "");
-  document.getElementById("pNiveauMin") && (document.getElementById("pNiveauMin").value = "");
-  document.getElementById("pNiveauMax") && (document.getElementById("pNiveauMax").value = "");
-  document.getElementById("pDescription") && (document.getElementById("pDescription").value = "");
-  document.querySelectorAll(".type-card").forEach((c, i) => c.classList.toggle("active", i === 0));
-  document.querySelectorAll(".compass-btn").forEach(b => b.classList.remove("active"));
+  wizardData = { name: "", type: "crag", lat: null, lng: null, orientation: null, soustype: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
+  ["pName","pLat","pLng","pNiveauMin","pNiveauMax","pDescription","pRock","pEquipement","pHauteur","pAcces","pUrl"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  document.querySelectorAll("#proposeModal .type-card").forEach((c, i) => c.classList.toggle("active", i === 0));
+  document.querySelectorAll("#proposeModal .compass-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#proposeModal .soustype-btn").forEach(b => b.classList.remove("active"));
   const cp = document.getElementById("coordsText");
   if (cp) cp.textContent = "Position non définie";
   ["errStep1","errStep2","errStep4"].forEach(id => setErr(id, ""));
-  // Nettoyer le bouton "Fermer" ajouté après succès
   if (wizardNextBtn) { wizardNextBtn.style.display = ""; wizardNextBtn.disabled = false; wizardNextBtn.textContent = "Suivant →"; }
   const footer = document.querySelector(".wizard__footer");
   footer?.querySelectorAll("button:not(#wizardNextBtn):not(#wizardBackBtn)").forEach(b => b.remove());
@@ -1226,6 +1314,15 @@ document.querySelectorAll("#proposeModal .compass-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll("#proposeModal .compass-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
+  });
+});
+
+// Soustype (propose modal)
+document.querySelectorAll("#proposeModal .soustype-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const isActive = btn.classList.contains("active");
+    document.querySelectorAll("#proposeModal .soustype-btn").forEach(b => b.classList.remove("active"));
+    if (!isActive) btn.classList.add("active"); // toggle off si re-clic
   });
 });
 
@@ -1261,9 +1358,9 @@ document.getElementById("pLocateBtn")?.addEventListener("click", () => {
 wizardNextBtn?.addEventListener("click", async () => {
   if (!validateStep(wizardStep)) return;
 
-  if (wizardStep < 4) {
+  if (wizardStep < 5) {
     wizardStep++;
-    if (wizardStep === 4) buildRecap();
+    if (wizardStep === 5) buildRecap();
     updateWizardUI();
     return;
   }
@@ -1286,10 +1383,16 @@ wizardNextBtn?.addEventListener("click", async () => {
     type: wizardData.type,
     location: { type: "Point", coordinates: [wizardData.lng, wizardData.lat] },
   };
+  if (wizardData.soustype)    payload.soustype    = wizardData.soustype;
   if (wizardData.orientation) payload.orientation = wizardData.orientation;
-  if (wizardData.niveau_min) payload.niveau_min = wizardData.niveau_min;
-  if (wizardData.niveau_max) payload.niveau_max = wizardData.niveau_max;
+  if (wizardData.niveau_min)  payload.niveau_min  = wizardData.niveau_min;
+  if (wizardData.niveau_max)  payload.niveau_max  = wizardData.niveau_max;
   if (wizardData.description) payload.description = wizardData.description;
+  if (wizardData.rock)        payload.info_complementaires = { rock: wizardData.rock };
+  if (wizardData.equipement)  payload.equipement  = wizardData.equipement;
+  if (wizardData.hauteur)     payload.hauteur     = parseInt(wizardData.hauteur, 10);
+  if (wizardData.acces)       payload.acces       = wizardData.acces;
+  if (wizardData.url)         payload.url         = wizardData.url;
 
   console.log("[wizard] Envoi spot →", JSON.stringify(payload));
 
@@ -1532,4 +1635,66 @@ async function submitRoute(e, spotId) {
     if (btn) { btn.disabled = false; btn.textContent = "Ajouter la voie"; }
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Photo viewer (plein écran simple)                                    */
+/* ------------------------------------------------------------------ */
+window.openPhoto = function(url) {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out";
+  const img = document.createElement("img");
+  img.src = url;
+  img.style.cssText = "max-width:95vw;max-height:92vh;border-radius:6px;object-fit:contain";
+  overlay.appendChild(img);
+  overlay.addEventListener("click", () => overlay.remove());
+  document.body.appendChild(overlay);
+};
+
+/* ------------------------------------------------------------------ */
+/* Upload photos                                                        */
+/* ------------------------------------------------------------------ */
+window.openPhotoUpload = function(spotId) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/jpeg,image/png,image/webp";
+  input.multiple = true;
+  input.style.display = "none";
+  document.body.appendChild(input);
+
+  input.addEventListener("change", async () => {
+    const files = Array.from(input.files || []);
+    if (!files.length) { input.remove(); return; }
+    if (files.length > 5) { showToast("Maximum 5 photos par upload.", true); input.remove(); return; }
+
+    const token = getMapToken();
+    if (!token) { showToast("Tu dois être connecté.", true); input.remove(); return; }
+
+    showToast("Upload en cours…");
+    const formData = new FormData();
+    files.forEach(f => formData.append("photos", f));
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/spots/${spotId}/photos`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || `Erreur ${res.status}`);
+      showToast(`${json.photos?.length || files.length} photo(s) ajoutée(s) !`);
+      // Mettre à jour les photos dans allSpots sans recharger toute la page
+      const idx = allSpots.findIndex(s => s.id === spotId);
+      if (idx !== -1 && json.photos) {
+        allSpots[idx].photos = [...(allSpots[idx].photos || []), ...json.photos];
+      }
+      closeSheet();
+    } catch (err) {
+      showToast("Erreur upload : " + err.message, true);
+    } finally {
+      input.remove();
+    }
+  });
+
+  input.click();
+};
 window.submitRoute = submitRoute;

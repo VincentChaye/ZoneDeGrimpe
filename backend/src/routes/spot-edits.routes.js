@@ -13,6 +13,13 @@ const changesSchema = z
     orientation: z.enum(["N","NE","E","SE","S","SO","O","NO"]).nullable().optional(),
     description: z.string().max(2000).nullable().optional(),
     url:         z.string().url().nullable().optional(),
+    acces:       z.string().max(1000).nullable().optional(),
+    equipement:  z.enum(["spit","piton","mixte","non_equipe"]).nullable().optional(),
+    hauteur:     z.number().int().positive().max(1000).nullable().optional(),
+    info_complementaires: z.object({
+      rock:        z.string().max(50).nullable().optional(),
+      orientation: z.string().max(10).nullable().optional(),
+    }).nullable().optional(),
   })
   .refine((obj) => Object.keys(obj).length > 0, { message: "Au moins un champ est requis" });
 
