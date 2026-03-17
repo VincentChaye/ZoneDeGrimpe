@@ -665,6 +665,39 @@ body.sheet-open::after {
 }
 .sc-photo:hover { opacity: .85; }
 
+/* Zone de drop photos (wizard) */
+.photo-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  width: 100%;
+  padding: 1.5rem 1rem;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: .88rem;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+  margin-bottom: .75rem;
+}
+.photo-drop:hover { border-color: var(--accent); color: var(--text); }
+
+.photo-preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-bottom: .5rem;
+}
+.photo-preview-thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+}
+
 /* Soustype buttons (wizard) */
 .soustype-btns {
   display: flex;

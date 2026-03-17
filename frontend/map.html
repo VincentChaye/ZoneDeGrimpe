@@ -128,7 +128,7 @@
 
         <!-- Barre de progression -->
         <div class="wizard__progress">
-          <div class="wizard__progress-fill" id="wizardProgressFill" style="width:20%"></div>
+          <div class="wizard__progress-fill" id="wizardProgressFill" style="width:16.66%"></div>
         </div>
 
         <!-- Indicateur étapes -->
@@ -138,15 +138,16 @@
           <div class="wizard__dot" id="dot3"></div>
           <div class="wizard__dot" id="dot4"></div>
           <div class="wizard__dot" id="dot5"></div>
+          <div class="wizard__dot" id="dot6"></div>
         </div>
 
-        <!-- Slides (5 étapes → track 500%, chaque slide 20%) -->
+        <!-- Slides (6 étapes → track 600%, chaque slide 16.666%) -->
         <div class="wizard__slides">
-          <div class="wizard__track" id="wizardTrack" style="width:500%">
+          <div class="wizard__track" id="wizardTrack" style="width:600%">
 
             <!-- Étape 1 : Nom + Type -->
-            <div class="wizard__slide" style="width:20%">
-              <p class="wizard__step-label">Étape 1 · 5</p>
+            <div class="wizard__slide" style="width:16.666%">
+              <p class="wizard__step-label">Étape 1 · 6</p>
               <h2 class="wizard__slide-title">Quel spot ?</h2>
               <p class="wizard__slide-sub">Commençons par l'essentiel</p>
 
@@ -175,8 +176,8 @@
             </div>
 
             <!-- Étape 2 : Localisation -->
-            <div class="wizard__slide" style="width:20%">
-              <p class="wizard__step-label">Étape 2 · 5</p>
+            <div class="wizard__slide" style="width:16.666%">
+              <p class="wizard__step-label">Étape 2 · 6</p>
               <h2 class="wizard__slide-title">Où est-il ?</h2>
               <p class="wizard__slide-sub">Utilise ta position ou saisis les coordonnées</p>
 
@@ -208,8 +209,8 @@
             </div>
 
             <!-- Étape 3 : Niveaux, orientation, soustype, description -->
-            <div class="wizard__slide" style="width:20%">
-              <p class="wizard__step-label">Étape 3 · 5</p>
+            <div class="wizard__slide" style="width:16.666%">
+              <p class="wizard__step-label">Étape 3 · 6</p>
               <h2 class="wizard__slide-title">Grimpe</h2>
               <p class="wizard__slide-sub">Tout est optionnel — remplis ce que tu sais</p>
 
@@ -261,8 +262,8 @@
             </div>
 
             <!-- Étape 4 : Infos pratiques -->
-            <div class="wizard__slide" style="width:20%">
-              <p class="wizard__step-label">Étape 4 · 5</p>
+            <div class="wizard__slide" style="width:16.666%">
+              <p class="wizard__step-label">Étape 4 · 6</p>
               <h2 class="wizard__slide-title">Infos pratiques</h2>
               <p class="wizard__slide-sub">Tout est optionnel</p>
 
@@ -314,9 +315,23 @@
               </div>
             </div>
 
-            <!-- Étape 5 : Récapitulatif -->
-            <div class="wizard__slide" style="width:20%">
-              <p class="wizard__step-label">Étape 5 · 5</p>
+            <!-- Étape 5 : Photos -->
+            <div class="wizard__slide" style="width:16.666%">
+              <p class="wizard__step-label">Étape 5 · 6</p>
+              <h2 class="wizard__slide-title">Photos</h2>
+              <p class="wizard__slide-sub">Optionnel — jusqu'à 5 photos (jpg, png, webp, 10 Mo max)</p>
+
+              <label class="photo-drop" id="pPhotoDropZone">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>Clique ou glisse des photos ici</span>
+                <input type="file" id="pPhotoInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none" />
+              </label>
+              <div class="photo-preview-grid" id="pPhotoPreviewGrid"></div>
+            </div>
+
+            <!-- Étape 6 : Récapitulatif -->
+            <div class="wizard__slide" style="width:16.666%">
+              <p class="wizard__step-label">Étape 6 · 6</p>
               <h2 class="wizard__slide-title">Récapitulatif</h2>
               <p class="wizard__slide-sub">Vérifie avant d'envoyer</p>
               <div class="recap-card" id="recapCard">
@@ -349,24 +364,25 @@
 
         <!-- Progression -->
         <div class="wizard__progress">
-          <div class="wizard__progress-fill" id="eWizardProgressFill" style="width:25%"></div>
+          <div class="wizard__progress-fill" id="eWizardProgressFill" style="width:20%"></div>
         </div>
 
-        <!-- Indicateur étapes (4 dots) -->
+        <!-- Indicateur étapes (5 dots) -->
         <div class="wizard__steps">
           <div class="wizard__dot active" id="eDot1"></div>
           <div class="wizard__dot" id="eDot2"></div>
           <div class="wizard__dot" id="eDot3"></div>
           <div class="wizard__dot" id="eDot4"></div>
+          <div class="wizard__dot" id="eDot5"></div>
         </div>
 
-        <!-- Slides (4 étapes → track 400%, chaque slide 25%) -->
+        <!-- Slides (5 étapes → track 500%, chaque slide 20%) -->
         <div class="wizard__slides">
-          <div class="wizard__track" id="eWizardTrack" style="width:400%">
+          <div class="wizard__track" id="eWizardTrack" style="width:500%">
 
             <!-- Étape 1 : Nom + Type -->
-            <div class="wizard__slide" style="width:25%">
-              <p class="wizard__step-label">Étape 1 · 4</p>
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 1 · 5</p>
               <h2 class="wizard__slide-title">Nom & Type</h2>
               <p class="wizard__slide-sub">Modifie si nécessaire</p>
 
@@ -395,8 +411,8 @@
             </div>
 
             <!-- Étape 2 : Grimpe -->
-            <div class="wizard__slide" style="width:25%">
-              <p class="wizard__step-label">Étape 2 · 4</p>
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 2 · 5</p>
               <h2 class="wizard__slide-title">Grimpe</h2>
               <p class="wizard__slide-sub">Tout est optionnel</p>
 
@@ -448,8 +464,8 @@
             </div>
 
             <!-- Étape 3 : Infos pratiques -->
-            <div class="wizard__slide" style="width:25%">
-              <p class="wizard__step-label">Étape 3 · 4</p>
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 3 · 5</p>
               <h2 class="wizard__slide-title">Infos pratiques</h2>
               <p class="wizard__slide-sub">Tout est optionnel</p>
 
@@ -501,9 +517,24 @@
               </div>
             </div>
 
-            <!-- Étape 4 : Récap + diff -->
-            <div class="wizard__slide" style="width:25%">
-              <p class="wizard__step-label">Étape 4 · 4</p>
+            <!-- Étape 4 : Photos -->
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 4 · 5</p>
+              <h2 class="wizard__slide-title">Photos</h2>
+              <p class="wizard__slide-sub">Optionnel — jusqu'à 5 photos (jpg, png, webp, 10 Mo max)</p>
+
+              <label class="photo-drop" id="ePhotoDropZone">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>Clique ou glisse des photos ici</span>
+                <input type="file" id="ePhotoInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none" />
+              </label>
+              <div class="photo-preview-grid" id="ePhotoPreviewGrid"></div>
+              <p class="wizard-error" id="errEditStep4"></p>
+            </div>
+
+            <!-- Étape 5 : Récap + diff -->
+            <div class="wizard__slide" style="width:20%">
+              <p class="wizard__step-label">Étape 5 · 5</p>
               <h2 class="wizard__slide-title">Récapitulatif</h2>
               <p class="wizard__slide-sub">Vérifie tes changements avant d'envoyer</p>
               <div class="recap-card" id="eRecapCard">

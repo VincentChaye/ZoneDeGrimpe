@@ -223,10 +223,6 @@ function spotCardHTML(s) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Modifier
           </button>` : ""}
-          ${isLoggedIn ? `<button class="sc-btn" onclick="window.openPhotoUpload && openPhotoUpload('${s.id}')">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Photos
-          </button>` : ""}
         </div>
         ${isAdmin ? `<button class="sc-btn sc-btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${esc(s.name)}')">Supprimer ce spot</button>` : ""}
       </div>
@@ -547,13 +543,14 @@ let editWizardStep    = 1;
 let editWizardSpotId  = null;
 let editWizardOrig    = null; // valeurs actuelles du spot
 let editWizardData    = { name: "", type: "crag", soustype: null, orientation: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
+let editWizardPhotos  = [];
 
 const eWizardTrack       = document.getElementById("eWizardTrack");
 const eWizardProgressFill = document.getElementById("eWizardProgressFill");
 const eWizardNextBtn     = document.getElementById("eWizardNextBtn");
 const eWizardBackBtn     = document.getElementById("eWizardBackBtn");
 const eWizardCloseBtn    = document.getElementById("eWizardCloseBtn");
-const eDots = [1, 2, 3, 4].map(i => document.getElementById(`eDot${i}`));
+const eDots = [1, 2, 3, 4, 5].map(i => document.getElementById(`eDot${i}`));
 
 function populateEditLevelSelects() {
   const minSel = document.getElementById("eNiveauMin");
@@ -565,9 +562,9 @@ function populateEditLevelSelects() {
 }
 
 function updateEditWizardUI() {
-  const TOTAL = 4;
+  const TOTAL = 5;
   if (eWizardProgressFill) eWizardProgressFill.style.width = `${(editWizardStep / TOTAL) * 100}%`;
-  if (eWizardTrack) eWizardTrack.style.transform = `translateX(-${(editWizardStep - 1) * 25}%)`;
+  if (eWizardTrack) eWizardTrack.style.transform = `translateX(-${(editWizardStep - 1) * 20}%)`;
 
   eDots.forEach((d, i) => {
     if (!d) return;
@@ -610,6 +607,10 @@ function validateEditStep(step) {
     editWizardData.hauteur    = document.getElementById("eHauteur")?.value || "";
     editWizardData.acces      = document.getElementById("eAcces")?.value.trim() || "";
     editWizardData.url        = document.getElementById("eUrl")?.value.trim() || "";
+    return true;
+  }
+  if (step === 4) {
+    editWizardPhotos = Array.from(document.getElementById("ePhotoInput")?.files || []);
     return true;
   }
   return true;
@@ -662,7 +663,12 @@ function buildEditRecap() {
 function resetEditWizard() {
   editWizardStep = 1;
   editWizardData = { name: "", type: "crag", soustype: null, orientation: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
-  ["errEditStep1", "errEditStep3"].forEach(id => setEditErr(id, ""));
+  editWizardPhotos = [];
+  const ePreview = document.getElementById("ePhotoPreviewGrid");
+  if (ePreview) ePreview.innerHTML = "";
+  const eInput = document.getElementById("ePhotoInput");
+  if (eInput) eInput.value = "";
+  ["errEditStep1", "errEditStep3", "errEditStep4"].forEach(id => setEditErr(id, ""));
   if (eWizardNextBtn) { eWizardNextBtn.style.display = ""; eWizardNextBtn.disabled = false; eWizardNextBtn.textContent = "Suivant →"; }
   const footer = document.getElementById("eWizardFooter");
   footer?.querySelectorAll("button:not(#eWizardNextBtn):not(#eWizardBackBtn)").forEach(b => b.remove());
@@ -790,9 +796,9 @@ document.querySelectorAll("#editModal .soustype-btn").forEach(btn => {
 eWizardNextBtn?.addEventListener("click", async () => {
   if (!validateEditStep(editWizardStep)) return;
 
-  if (editWizardStep < 4) {
+  if (editWizardStep < 5) {
     editWizardStep++;
-    if (editWizardStep === 4) buildEditRecap();
+    if (editWizardStep === 5) buildEditRecap();
     updateEditWizardUI();
     return;
   }
@@ -858,6 +864,24 @@ eWizardNextBtn?.addEventListener("click", async () => {
     let json;
     try { json = JSON.parse(text); } catch { json = {}; }
     if (!res.ok) throw new Error(json?.detail || json?.error || `Erreur ${res.status}`);
+
+    // Upload des photos si sélectionnées
+    if (editWizardPhotos.length) {
+      const formData = new FormData();
+      editWizardPhotos.forEach(f => formData.append("photos", f));
+      const photoRes = await fetch(`${API_BASE_URL}/api/spots/${editWizardSpotId}/photos`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }).catch(() => null);
+      if (photoRes?.ok) {
+        const photoJson = await photoRes.json().catch(() => ({}));
+        const idx = allSpots.findIndex(s => s.id === editWizardSpotId);
+        if (idx !== -1 && photoJson.photos) {
+          allSpots[idx].photos = [...(allSpots[idx].photos || []), ...photoJson.photos];
+        }
+      }
+    }
 
     const isAdmin = isMapAdmin();
     const recapCard = document.getElementById("eRecapCard");
@@ -1152,6 +1176,7 @@ const GRADES = [
 // État du wizard
 let wizardStep = 1;
 let wizardData = { name: "", type: "crag", lat: null, lng: null, orientation: null, soustype: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
+let wizardPhotos = []; // fichiers sélectionnés dans l'étape photos
 
 // DOM wizard
 const wizardTrack = document.getElementById("wizardTrack");
@@ -1159,7 +1184,7 @@ const wizardProgressFill = document.getElementById("wizardProgressFill");
 const wizardNextBtn = document.getElementById("wizardNextBtn");
 const wizardBackBtn = document.getElementById("wizardBackBtn");
 const wizardCloseBtn = document.getElementById("wizardCloseBtn");
-const dots = [1,2,3,4,5].map(i => document.getElementById(`dot${i}`));
+const dots = [1,2,3,4,5,6].map(i => document.getElementById(`dot${i}`));
 
 // Peupler les selects de niveaux
 function populateLevelSelects() {
@@ -1173,10 +1198,10 @@ function populateLevelSelects() {
 
 // Mise à jour de l'UI de navigation
 function updateWizardUI() {
-  const TOTAL = 5;
+  const TOTAL = 6;
   const pct = (wizardStep / TOTAL) * 100;
   if (wizardProgressFill) wizardProgressFill.style.width = `${pct}%`;
-  if (wizardTrack) wizardTrack.style.transform = `translateX(-${(wizardStep - 1) * 20}%)`;
+  if (wizardTrack) wizardTrack.style.transform = `translateX(-${(wizardStep - 1) * (100/6)}%)`;
 
   dots.forEach((d, i) => {
     if (!d) return;
@@ -1187,6 +1212,7 @@ function updateWizardUI() {
   if (wizardBackBtn) wizardBackBtn.style.display = wizardStep > 1 ? "block" : "none";
   if (wizardNextBtn) {
     wizardNextBtn.textContent = wizardStep < TOTAL ? "Suivant →" : "Envoyer la demande";
+    wizardNextBtn.style.display = "";
     wizardNextBtn.disabled = false;
   }
 }
@@ -1240,6 +1266,11 @@ function validateStep(step) {
     wizardData.url        = document.getElementById("pUrl")?.value.trim() || "";
     return true;
   }
+  if (step === 5) {
+    // Photos — optionnel, juste collecter les fichiers
+    wizardPhotos = Array.from(document.getElementById("pPhotoInput")?.files || []);
+    return true;
+  }
   return true;
 }
 
@@ -1274,13 +1305,16 @@ function buildRecap() {
 function resetWizard() {
   wizardStep = 1;
   wizardData = { name: "", type: "crag", lat: null, lng: null, orientation: null, soustype: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
-  ["pName","pLat","pLng","pNiveauMin","pNiveauMax","pDescription","pRock","pEquipement","pHauteur","pAcces","pUrl"].forEach(id => {
+  wizardPhotos = [];
+  ["pName","pLat","pLng","pNiveauMin","pNiveauMax","pDescription","pRock","pEquipement","pHauteur","pAcces","pUrl","pPhotoInput"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
   document.querySelectorAll("#proposeModal .type-card").forEach((c, i) => c.classList.toggle("active", i === 0));
   document.querySelectorAll("#proposeModal .compass-btn").forEach(b => b.classList.remove("active"));
   document.querySelectorAll("#proposeModal .soustype-btn").forEach(b => b.classList.remove("active"));
+  const previewGrid = document.getElementById("pPhotoPreviewGrid");
+  if (previewGrid) previewGrid.innerHTML = "";
   const cp = document.getElementById("coordsText");
   if (cp) cp.textContent = "Position non définie";
   ["errStep1","errStep2","errStep4"].forEach(id => setErr(id, ""));
@@ -1326,6 +1360,32 @@ document.querySelectorAll("#proposeModal .soustype-btn").forEach(btn => {
   });
 });
 
+// Preview photos (propose)
+document.getElementById("pPhotoInput")?.addEventListener("change", (e) => {
+  const grid = document.getElementById("pPhotoPreviewGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  Array.from(e.target.files).slice(0, 5).forEach(file => {
+    const img = document.createElement("img");
+    img.className = "photo-preview-thumb";
+    img.src = URL.createObjectURL(file);
+    grid.appendChild(img);
+  });
+});
+
+// Preview photos (edit)
+document.getElementById("ePhotoInput")?.addEventListener("change", (e) => {
+  const grid = document.getElementById("ePhotoPreviewGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  Array.from(e.target.files).slice(0, 5).forEach(file => {
+    const img = document.createElement("img");
+    img.className = "photo-preview-thumb";
+    img.src = URL.createObjectURL(file);
+    grid.appendChild(img);
+  });
+});
+
 // Géolocalisation dans le wizard
 document.getElementById("pLocateBtn")?.addEventListener("click", () => {
   const btn = document.getElementById("pLocateBtn");
@@ -1358,9 +1418,9 @@ document.getElementById("pLocateBtn")?.addEventListener("click", () => {
 wizardNextBtn?.addEventListener("click", async () => {
   if (!validateStep(wizardStep)) return;
 
-  if (wizardStep < 5) {
+  if (wizardStep < 6) {
     wizardStep++;
-    if (wizardStep === 5) buildRecap();
+    if (wizardStep === 6) buildRecap();
     updateWizardUI();
     return;
   }
@@ -1413,6 +1473,17 @@ wizardNextBtn?.addEventListener("click", async () => {
     try { json = JSON.parse(text); } catch { json = {}; }
 
     if (!res.ok) throw new Error(json?.detail || json?.error || `Erreur ${res.status}`);
+
+    // Upload des photos si sélectionnées
+    if (wizardPhotos.length && json.id) {
+      const formData = new FormData();
+      wizardPhotos.forEach(f => formData.append("photos", f));
+      await fetch(`${API_BASE_URL}/api/spots/${json.id}/photos`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }).catch(() => {}); // photos non bloquantes
+    }
 
     // Afficher un écran de succès dans le wizard
     const isAdmin = isMapAdmin();
