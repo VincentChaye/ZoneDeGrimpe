@@ -190,8 +190,9 @@ export function spotsRouter(db) {
   // ================================================================
   r.get("/", async (req, res) => {
     try {
-      const { minLng, minLat, maxLng, maxLat, limit = 1000, format = "geojson" } = req.query;
+      const { minLng, minLat, maxLng, maxLat, limit = 1000, skip = 0, format = "geojson" } = req.query;
       const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 5000, 20000));
+      const skipNum = Math.max(0, parseInt(skip, 10) || 0);
 
       let geoFilter = {};
       if (minLng != null && minLat != null && maxLng != null && maxLat != null) {
@@ -211,7 +212,7 @@ export function spotsRouter(db) {
       }
 
       const query = { ...PUBLIC_FILTER, ...geoFilter };
-      const docs = await spots.find(query, { projection: MAP_PROJECTION }).limit(limNum).toArray();
+      const docs = await spots.find(query, { projection: MAP_PROJECTION }).skip(skipNum).limit(limNum).toArray();
 
       if (format === "flat") return res.json(docs.map(toFlat));
       return res.json({ type: "FeatureCollection", features: docs.map(toFeature) });
