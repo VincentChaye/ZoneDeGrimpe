@@ -162,10 +162,19 @@ function spotCardHTML(s) {
   const acces = s.acces
     ? `<p class="sc-acces"><strong>Accès :</strong> ${esc(s.acces)}</p>` : "";
 
-  // Photos
-  const photos = s.photos?.length
-    ? `<div class="sc-photos">${s.photos.map(p => `<img src="${esc(p.url)}" class="sc-photo" alt="Photo du spot" onclick="window.openPhoto && openPhoto('${esc(p.url)}')">`).join("")}</div>`
-    : "";
+  // Photos — carrousel
+  const photoList = s.photos || [];
+  const photos = photoList.length
+    ? `<div class="sc-photos-carousel" data-spot-id="${s.id}" data-index="0">
+        <div class="sc-photos-track">${photoList.map((p,i) => `<img src="${esc(p.url)}" alt="Photo ${i+1}" onclick="window.openPhotoViewer && openPhotoViewer('${s.id}', ${i})">`).join("")}</div>
+        ${photoList.length > 1 ? `
+          <button class="sc-photos-nav sc-photos-nav--prev" onclick="window.slidePhoto && slidePhoto('${s.id}', -1)">‹</button>
+          <button class="sc-photos-nav sc-photos-nav--next" onclick="window.slidePhoto && slidePhoto('${s.id}', 1)">›</button>
+          <div class="sc-photos-dots">${photoList.map((_,i) => `<span class="sc-photos-dot${i===0?' active':''}"></span>`).join("")}</div>` : ""}
+        <span class="sc-photos-counter">1/${photoList.length}</span>
+        ${isLoggedIn ? `<button class="sc-photos-add" onclick="window.openPhotoUpload && openPhotoUpload('${s.id}')" title="Ajouter des photos">+</button>` : ""}
+      </div>`
+    : (isLoggedIn ? `<button class="sc-btn" style="margin-bottom:.75rem;width:100%" onclick="window.openPhotoUpload && openPhotoUpload('${s.id}')">📷 Ajouter des photos</button>` : "");
 
   // Audit
   const createdBy = s.createdBy?.displayName || s.submittedBy?.displayName;
@@ -1707,16 +1716,118 @@ async function submitRoute(e, spotId) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Photo viewer (plein écran simple)                                    */
+/* Carrousel : navigation                                               */
 /* ------------------------------------------------------------------ */
+window.slidePhoto = function(spotId, dir) {
+  const carousel = document.querySelector(`.sc-photos-carousel[data-spot-id="${spotId}"]`);
+  if (!carousel) return;
+  const track = carousel.querySelector(".sc-photos-track");
+  const total = track.children.length;
+  let idx = parseInt(carousel.dataset.index || "0", 10) + dir;
+  if (idx < 0) idx = total - 1;
+  if (idx >= total) idx = 0;
+  carousel.dataset.index = idx;
+  track.style.transform = `translateX(-${idx * 100}%)`;
+  const counter = carousel.querySelector(".sc-photos-counter");
+  if (counter) counter.textContent = `${idx + 1}/${total}`;
+  const dots = carousel.querySelectorAll(".sc-photos-dot");
+  dots.forEach((d, i) => d.classList.toggle("active", i === idx));
+};
+
+/* Swipe tactile sur carrousels */
+document.addEventListener("touchstart", function(e) {
+  const carousel = e.target.closest(".sc-photos-carousel");
+  if (!carousel) return;
+  carousel._touchX = e.touches[0].clientX;
+}, { passive: true });
+document.addEventListener("touchend", function(e) {
+  const carousel = e.target.closest(".sc-photos-carousel");
+  if (!carousel || carousel._touchX == null) return;
+  const diff = carousel._touchX - e.changedTouches[0].clientX;
+  carousel._touchX = null;
+  if (Math.abs(diff) < 40) return;
+  const spotId = carousel.dataset.spotId;
+  window.slidePhoto(spotId, diff > 0 ? 1 : -1);
+});
+
+/* ------------------------------------------------------------------ */
+/* Photo viewer plein écran avec navigation                             */
+/* ------------------------------------------------------------------ */
+window.openPhotoViewer = function(spotId, startIndex) {
+  const spot = allSpots.find(s => s.id === spotId);
+  const photos = spot?.photos || [];
+  if (!photos.length) return;
+  let idx = startIndex || 0;
+
+  const overlay = document.createElement("div");
+  overlay.className = "photo-viewer-overlay";
+
+  const img = document.createElement("img");
+  img.src = photos[idx].url;
+
+  const close = document.createElement("button");
+  close.className = "photo-viewer-close";
+  close.innerHTML = "✕";
+  close.onclick = () => overlay.remove();
+
+  const counter = document.createElement("div");
+  counter.className = "photo-viewer-counter";
+  counter.textContent = `${idx + 1} / ${photos.length}`;
+
+  overlay.appendChild(img);
+  overlay.appendChild(close);
+  overlay.appendChild(counter);
+
+  function go(dir) {
+    idx += dir;
+    if (idx < 0) idx = photos.length - 1;
+    if (idx >= photos.length) idx = 0;
+    img.src = photos[idx].url;
+    counter.textContent = `${idx + 1} / ${photos.length}`;
+  }
+
+  if (photos.length > 1) {
+    const prev = document.createElement("button");
+    prev.className = "photo-viewer-nav photo-viewer-nav--prev";
+    prev.innerHTML = "‹";
+    prev.onclick = (e) => { e.stopPropagation(); go(-1); };
+
+    const next = document.createElement("button");
+    next.className = "photo-viewer-nav photo-viewer-nav--next";
+    next.innerHTML = "›";
+    next.onclick = (e) => { e.stopPropagation(); go(1); };
+
+    overlay.appendChild(prev);
+    overlay.appendChild(next);
+  }
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  document.addEventListener("keydown", function handler(e) {
+    if (!document.body.contains(overlay)) { document.removeEventListener("keydown", handler); return; }
+    if (e.key === "Escape") overlay.remove();
+    if (e.key === "ArrowLeft") go(-1);
+    if (e.key === "ArrowRight") go(1);
+  });
+
+  document.body.appendChild(overlay);
+};
+
+/* Legacy compat — single photo fallback */
 window.openPhoto = function(url) {
   const overlay = document.createElement("div");
-  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out";
+  overlay.className = "photo-viewer-overlay";
   const img = document.createElement("img");
   img.src = url;
-  img.style.cssText = "max-width:95vw;max-height:92vh;border-radius:6px;object-fit:contain";
   overlay.appendChild(img);
-  overlay.addEventListener("click", () => overlay.remove());
+  const close = document.createElement("button");
+  close.className = "photo-viewer-close";
+  close.innerHTML = "✕";
+  close.onclick = () => overlay.remove();
+  overlay.appendChild(close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 };
 
