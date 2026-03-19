@@ -166,10 +166,10 @@ async function tryFetch(url) {
   }
 }
 
-/* ---------- fetch paginé ---------- */
+/* ---------- fetch tous les spots ---------- */
 export async function fetchSpots({
   useCache = true,
-  pageSize = 5000,
+  pageSize = 20000,
   extraParams = { format: "geojson" },
 } = {}) {
   if (useCache) {
@@ -177,63 +177,11 @@ export async function fetchSpots({
     if (cached) return cached;
   }
 
-  const out = [];
-  let usedMode = null; // "skip" | "page" | "single"
-  let page = 1;
-  let skip = 0;
+  const url = apiUrl("/spots", { limit: pageSize, ...extraParams });
+  const json = await tryFetch(url);
+  const out = coerceArray(json);
 
-  // 1) skip/limit
-  while (true) {
-    const url = apiUrl("/spots", { limit: pageSize, skip, ...extraParams });
-    const json = await tryFetch(url);
-    const arr = coerceArray(json);
-
-    if (!arr.length) {
-      if (skip === 0) break;
-      usedMode = "skip";
-      break;
-    }
-
-    out.push(...arr);
-    if (arr.length < pageSize) {
-      usedMode = "skip";
-      break;
-    }
-    skip += pageSize;
-  }
-
-  // 2) page/perPage
-  if (!out.length) {
-    while (true) {
-      const url = apiUrl("/spots", { perPage: pageSize, page, ...extraParams });
-      const json = await tryFetch(url);
-      const arr = coerceArray(json);
-
-      if (!arr.length) {
-        if (page === 1) break;
-        usedMode = "page";
-        break;
-      }
-
-      out.push(...arr);
-      if (arr.length < pageSize) {
-        usedMode = "page";
-        break;
-      }
-      page += 1;
-    }
-  }
-
-  // 3) single fetch
-  if (!out.length) {
-    const url = apiUrl("/spots", { ...extraParams });
-    const json = await tryFetch(url);
-    const arr = coerceArray(json);
-    out.push(...arr);
-    usedMode = "single";
-  }
-
-  console.log(`[fetchSpotsAll] mode=${usedMode} total bruts=${out.length}`);
+  console.log(`[fetchSpots] total bruts=${out.length}`);
   const normalized = normalize(out);
 
   setCache(CACHE_KEYS.SPOTS, normalized);

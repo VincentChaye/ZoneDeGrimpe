@@ -1540,7 +1540,6 @@ const mapLoading = document.getElementById("mapLoading");
   try {
     allSpots = await fetchSpots({
       useCache: false,
-      pageSize: 5000,
       extraParams: { format: "flat" },
     });
     console.log(`[map] Spots normalisés reçus: ${allSpots.length}`, allSpots[0]);
