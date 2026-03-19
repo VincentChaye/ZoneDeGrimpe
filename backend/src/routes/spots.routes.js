@@ -473,7 +473,7 @@ function toFlat(d) {
     _id: d._id,
     id: d._id.toString(),
     name: d.name ?? "Inconnu",
-    type: d.type ?? null,
+    type: (d.type && d.type !== "Feature") ? d.type : (d.soustype ?? null),
     soustype: d.soustype ?? null,
     niveau_min: d.niveau_min ?? null,
     niveau_max: d.niveau_max ?? null,
@@ -503,7 +503,7 @@ function toFeature(d) {
     properties: {
       id: d._id,
       name: d.name ?? null,
-      type: d.type ?? null,
+      type: (d.type && d.type !== "Feature") ? d.type : (d.soustype ?? null),
       soustype: d.soustype ?? null,
       niveau_min: d.niveau_min ?? null,
       niveau_max: d.niveau_max ?? null,

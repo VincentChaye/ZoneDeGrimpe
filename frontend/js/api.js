@@ -60,8 +60,8 @@ function num(v) {
 }
 
 function toSpot(s, i) {
-  // GeoJSON Feature
-  if (s && s.type === "Feature" && s.geometry && Array.isArray(s.geometry.coordinates)) {
+  // GeoJSON Feature (must have geometry, not just type === "Feature")
+  if (s && s.type === "Feature" && s.geometry && s.geometry.coordinates && Array.isArray(s.geometry.coordinates)) {
     const [lngRaw, latRaw] = s.geometry.coordinates;
     const lat = num(latRaw), lng = num(lngRaw);
     const p = s.properties || s.props || {};
