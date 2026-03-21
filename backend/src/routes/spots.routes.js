@@ -519,6 +519,10 @@ function toFeature(d) {
       createdAt: d.createdAt ?? null,
       updatedBy: d.updatedBy ?? null,
       updatedAt: d.updatedAt ?? null,
+      acces: d.acces ?? null,
+      equipement: d.equipement ?? null,
+      hauteur: d.hauteur ?? null,
+      photos: d.photos ?? [],
     },
   };
 }

@@ -77,6 +77,16 @@ function toSpot(s, i) {
       url: p.url ?? null,
       description: p.description ?? null,
       info_complementaires: p.info_complementaires ?? null,
+      acces: p.acces ?? null,
+      equipement: p.equipement ?? null,
+      hauteur: p.hauteur ?? null,
+      photos: p.photos ?? [],
+      createdBy: p.createdBy ?? null,
+      submittedBy: p.submittedBy ?? null,
+      updatedBy: p.updatedBy ?? null,
+      createdAt: p.createdAt ?? null,
+      updatedAt: p.updatedAt ?? null,
+      status: p.status ?? null,
       lat, lng,
     };
   }
@@ -106,6 +116,16 @@ function toSpot(s, i) {
     url: s.url ?? null,
     description: s.description ?? null,
     info_complementaires: s.info_complementaires ?? null,
+    acces: s.acces ?? null,
+    equipement: s.equipement ?? null,
+    hauteur: s.hauteur ?? null,
+    photos: s.photos ?? [],
+    createdBy: s.createdBy ?? null,
+    submittedBy: s.submittedBy ?? null,
+    updatedBy: s.updatedBy ?? null,
+    createdAt: s.createdAt ?? null,
+    updatedAt: s.updatedAt ?? null,
+    status: s.status ?? null,
     lat, lng,
   };
 }
