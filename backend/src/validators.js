@@ -37,6 +37,9 @@ export const createSpotSchema = z.object({
   }).nullable().optional(),
 });
 
+/** Username unique (3-30 chars, alphanum + underscore) */
+export const usernameSchema = z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, "username_invalid_format");
+
 /** :id Mongo (24 hex) – utile si tu veux valider avant ObjectId() */
 export const idParamSchema = z.object({
   id: z.string().regex(/^[a-f\d]{24}$/i, "invalid_object_id"),

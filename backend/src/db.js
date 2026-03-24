@@ -31,6 +31,10 @@ export async function connectToDb(uri, dbName) {
     await collection.createIndex({ status: 1, location: "2dsphere" }).catch(() => {});
     await collection.createIndex({ "submittedBy.uid": 1 }).catch(() => {});
     await collection.createIndex({ "createdBy.uid": 1 }).catch(() => {});
+    // Index unique username
+    const usersCol = db.collection("users");
+    await usersCol.createIndex({ username: 1 }, { unique: true, sparse: true }).catch(() => {});
+
     console.log(`Connecté à MongoDB (${dbName}), index 2dsphere sur 'location' OK`);
 
     return { client, db };

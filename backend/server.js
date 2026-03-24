@@ -13,6 +13,12 @@ import { adviceRouter } from "./src/routes/advice.routes.js";
 import { spotEditsRouter } from "./src/routes/spot-edits.routes.js";
 import { bookmarksRouter } from "./src/routes/bookmarks.routes.js";
 import { climbingRoutesRouter } from "./src/routes/climbing-routes.routes.js";
+import { reviewsRouter } from "./src/routes/reviews.routes.js";
+import { logbookRouter } from "./src/routes/logbook.routes.js";
+import { followsRouter } from "./src/routes/follows.routes.js";
+import { friendsRouter } from "./src/routes/friends.routes.js";
+import { notificationsRouter } from "./src/routes/notifications.routes.js";
+import { initWebPush } from "./src/notifications.js";
 
 
 
@@ -105,6 +111,14 @@ if (hasUri) {
   app.use("/api/spot-edits", spotEditsRouter(db));
   app.use("/api/bookmarks", bookmarksRouter(db));
   app.use("/api/climbing-routes", climbingRoutesRouter(db));
+  app.use("/api/reviews", reviewsRouter(db));
+  app.use("/api/logbook", logbookRouter(db));
+  app.use("/api/follows", followsRouter(db));
+  app.use("/api/friends", friendsRouter(db));
+  app.use("/api/notifications", notificationsRouter(db));
+
+  // Init Web Push (si VAPID configure)
+  initWebPush();
 
   console.log("MongoDB mode activé");
 } else {

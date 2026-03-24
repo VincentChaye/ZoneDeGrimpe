@@ -14,8 +14,39 @@ document.addEventListener("DOMContentLoaded", () => {
   function getNext() {
     const p = new URLSearchParams(location.search);
     const next = p.get("next");
-    // n’autorise que des chemins internes (évite open redirect)
     return next && next.startsWith("/") ? decodeURIComponent(next) : "./map.html";
+  }
+
+  // --- Live username availability check ---
+  const usernameInput = form.querySelector(‘input[name="username"]’);
+  const usernameStatus = document.getElementById("usernameStatus");
+  let usernameTimer = null;
+
+  if (usernameInput && usernameStatus) {
+    usernameInput.addEventListener("input", () => {
+      clearTimeout(usernameTimer);
+      const val = usernameInput.value.trim().toLowerCase();
+      if (!val || val.length < 3) {
+        usernameStatus.textContent = "";
+        usernameStatus.className = "field-status";
+        return;
+      }
+      usernameTimer = setTimeout(async () => {
+        try {
+          const r = await fetch(apiUrl(`/users/check-username/${encodeURIComponent(val)}`));
+          const data = await r.json();
+          if (data.available) {
+            usernameStatus.textContent = "✓ Disponible";
+            usernameStatus.className = "field-status field-status--ok";
+          } else {
+            usernameStatus.textContent = "✗ Deja pris";
+            usernameStatus.className = "field-status field-status--error";
+          }
+        } catch {
+          usernameStatus.textContent = "";
+        }
+      }, 400);
+    });
   }
 
   form.addEventListener("submit", async (e) => {
@@ -23,16 +54,23 @@ document.addEventListener("DOMContentLoaded", () => {
     err.style.display = "none";
 
     const fd = new FormData(form);
+    const username = String(fd.get("username") || "").trim().toLowerCase();
     const email = String(fd.get("email") || "").trim().toLowerCase();
     const password = String(fd.get("password") || "");
     const displayName = String(fd.get("displayName") || "").trim();
     const level = String(fd.get("level") || "debutant").toLowerCase();
 
+    if (!username || username.length < 3) {
+      err.textContent = "Le nom d’utilisateur doit faire au moins 3 caracteres.";
+      err.style.display = "";
+      return;
+    }
+
     try {
       const res = await fetch(apiUrl("/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({ email, password, displayName, level }),
+        body: JSON.stringify({ email, password, displayName, username, level }),
         mode: "cors",
         cache: "no-store",
       });

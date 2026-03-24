@@ -31,12 +31,26 @@ export function authRouter(db) {
 // --- REGISTER (conforme au validator users) ---
 r.post("/register", async (req, res) => {
   try {
-    let { email, password, displayName } = req.body || {};
+    let { email, password, displayName, username } = req.body || {};
     if (!email || !password) {
       return res.status(400).json({ error: "missing_fields", detail: "email_and_password_required" });
     }
     if (typeof password !== "string" || password.length < 8 || password.length > 128) {
       return res.status(400).json({ error: "invalid_password", detail: "password_must_be_8_to_128_chars" });
+    }
+
+    // Username validation
+    if (!username || typeof username !== "string") {
+      return res.status(400).json({ error: "missing_fields", detail: "username_required" });
+    }
+    username = username.trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,30}$/.test(username)) {
+      return res.status(400).json({ error: "username_invalid_format", detail: "3-30 chars, alphanumeric and underscores only" });
+    }
+    // Check username uniqueness
+    const existingUsername = await users.findOne({ username });
+    if (existingUsername) {
+      return res.status(409).json({ error: "username_taken" });
     }
 
     email = String(email).trim().toLowerCase();
@@ -88,6 +102,7 @@ r.post("/register", async (req, res) => {
     const doc = {
       email,
       passwordHash,                    // required: string
+      username,                        // required: unique public pseudo
       displayName: baseDisplay,        // required: string (min 1)
       avatarUrl: null,                 // autorisé: string|null
       phone: null,                     // autorisé: string|null
@@ -113,7 +128,10 @@ r.post("/register", async (req, res) => {
     return res.status(201).json({ token, user });
 
   } catch (e) {
-    if (e?.code === 11000) return res.status(409).json({ error: "email_taken" });
+    if (e?.code === 11000) {
+      const key = e?.keyPattern?.username ? "username_taken" : "email_taken";
+      return res.status(409).json({ error: key });
+    }
     console.error("REGISTER_ERROR:", { code: e?.code, msg: e?.message, stack: e?.stack });
     return res.status(500).json({ error: "server_error" });
   }

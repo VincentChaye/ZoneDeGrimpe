@@ -1,0 +1,213 @@
+import { Router } from "express";
+import { ObjectId } from "mongodb";
+import { requireAuth } from "../auth.js";
+
+export function logbookRouter(db) {
+  const r = Router();
+  const logbook = db.collection("logbook_entries");
+  const spots = db.collection("climbing_spot");
+  const routes = db.collection("climbing_routes");
+
+  // Indexes
+  logbook.createIndex({ userId: 1, date: -1 }).catch(() => {});
+  logbook.createIndex({ userId: 1, spotId: 1 }).catch(() => {});
+
+  const VALID_STYLES = ["onsight", "flash", "redpoint", "repeat"];
+
+  // --- GET /api/logbook --- mes entrees (requireAuth)
+  r.get("/", requireAuth, async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit) || 30, 100);
+      const skip = Math.max(parseInt(req.query.skip) || 0, 0);
+
+      const items = await logbook
+        .find({ userId: req.auth.uid })
+        .sort({ date: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      const total = await logbook.countDocuments({ userId: req.auth.uid });
+      return res.json({ items, total });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // --- GET /api/logbook/stats --- stats aggregees (requireAuth)
+  r.get("/stats", requireAuth, async (req, res) => {
+    try {
+      const uid = req.auth.uid;
+
+      // Total + unique spots
+      const [totalResult] = await logbook.aggregate([
+        { $match: { userId: uid } },
+        { $group: { _id: null, total: { $sum: 1 }, spots: { $addToSet: "$spotId" } } },
+      ]).toArray();
+
+      const total = totalResult?.total || 0;
+      const uniqueSpots = totalResult?.spots?.length || 0;
+
+      // Grade pyramid
+      const gradePyramid = await logbook.aggregate([
+        { $match: { userId: uid, grade: { $exists: true, $ne: null } } },
+        { $group: { _id: "$grade", count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]).toArray();
+
+      // Monthly progression
+      const monthly = await logbook.aggregate([
+        { $match: { userId: uid } },
+        {
+          $group: {
+            _id: { year: { $year: "$date" }, month: { $month: "$date" } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]).toArray();
+
+      // Style distribution
+      const styles = await logbook.aggregate([
+        { $match: { userId: uid } },
+        { $group: { _id: "$style", count: { $sum: 1 } } },
+      ]).toArray();
+
+      return res.json({
+        total,
+        uniqueSpots,
+        gradePyramid: gradePyramid.map((g) => ({ grade: g._id, count: g.count })),
+        monthly: monthly.map((m) => ({ year: m._id.year, month: m._id.month, count: m.count })),
+        styles: Object.fromEntries(styles.map((s) => [s._id || "unknown", s.count])),
+      });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // --- POST /api/logbook --- requireAuth
+  r.post("/", requireAuth, async (req, res) => {
+    try {
+      const { spotId, routeId, date, style, notes, rating } = req.body || {};
+
+      if (!spotId || !ObjectId.isValid(spotId)) {
+        return res.status(400).json({ error: "invalid_spot_id" });
+      }
+      if (!date) {
+        return res.status(400).json({ error: "date_required" });
+      }
+      if (!style || !VALID_STYLES.includes(style)) {
+        return res.status(400).json({ error: "invalid_style", allowed: VALID_STYLES });
+      }
+      if (notes !== undefined && (typeof notes !== "string" || notes.length > 1000)) {
+        return res.status(400).json({ error: "invalid_notes" });
+      }
+      if (rating !== undefined && (!Number.isInteger(rating) || rating < 1 || rating > 5)) {
+        return res.status(400).json({ error: "invalid_rating" });
+      }
+
+      // Fetch spot/route names for denormalization
+      const spot = await spots.findOne({ _id: new ObjectId(spotId) });
+      if (!spot) return res.status(404).json({ error: "spot_not_found" });
+
+      let routeName = null;
+      let grade = null;
+      if (routeId && ObjectId.isValid(routeId)) {
+        const route = await routes.findOne({ _id: new ObjectId(routeId) });
+        if (route) {
+          routeName = route.name;
+          grade = route.grade || null;
+        }
+      }
+
+      const doc = {
+        userId: req.auth.uid,
+        spotId,
+        routeId: routeId || null,
+        spotName: spot.name,
+        routeName,
+        grade,
+        date: new Date(date),
+        style,
+        notes: notes || null,
+        rating: rating || null,
+        createdAt: new Date(),
+      };
+
+      const { insertedId } = await logbook.insertOne(doc);
+      return res.status(201).json({ _id: insertedId, ...doc });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // --- PATCH /api/logbook/:id --- requireAuth, auteur
+  r.patch("/:id", requireAuth, async (req, res) => {
+    try {
+      if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: "bad_id" });
+      const entry = await logbook.findOne({ _id: new ObjectId(req.params.id) });
+      if (!entry) return res.status(404).json({ error: "not_found" });
+      if (entry.userId !== req.auth.uid) return res.status(403).json({ error: "forbidden" });
+
+      const { date, style, notes, rating } = req.body || {};
+      const $set = { updatedAt: new Date() };
+
+      if (date) $set.date = new Date(date);
+      if (style) {
+        if (!VALID_STYLES.includes(style)) return res.status(400).json({ error: "invalid_style" });
+        $set.style = style;
+      }
+      if (notes !== undefined) $set.notes = notes || null;
+      if (rating !== undefined) $set.rating = rating || null;
+
+      await logbook.updateOne({ _id: new ObjectId(req.params.id) }, { $set });
+      return res.json({ ok: true });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // --- DELETE /api/logbook/:id --- requireAuth, auteur
+  r.delete("/:id", requireAuth, async (req, res) => {
+    try {
+      if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: "bad_id" });
+      const entry = await logbook.findOne({ _id: new ObjectId(req.params.id) });
+      if (!entry) return res.status(404).json({ error: "not_found" });
+      if (entry.userId !== req.auth.uid) return res.status(403).json({ error: "forbidden" });
+
+      await logbook.deleteOne({ _id: new ObjectId(req.params.id) });
+      return res.json({ deleted: true });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // --- GET /api/logbook/user/:userId --- public (profil)
+  r.get("/user/:userId", async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+      const skip = Math.max(parseInt(req.query.skip) || 0, 0);
+
+      const items = await logbook
+        .find({ userId: req.params.userId })
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limit)
+        .project({ notes: 0 }) // don't expose personal notes publicly
+        .toArray();
+
+      const total = await logbook.countDocuments({ userId: req.params.userId });
+      return res.json({ items, total });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  return r;
+}

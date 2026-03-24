@@ -23,7 +23,18 @@
       <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
       <span class="brand__title">ZoneDeGrimpe</span>
     </a>
-    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le theme">Theme</button>
+    <div class="header-actions">
+      <a href="./notifications.html" class="notif-bell" id="notifBell" aria-label="Notifications" style="display:none">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-bell__badge" id="notifBadge"></span>
+      </a>
+      <select id="langSelect" class="lang-select" aria-label="Langue">
+        <option value="fr">FR</option>
+        <option value="en">EN</option>
+        <option value="es">ES</option>
+      </select>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le theme">Theme</button>
+    </div>
   </header>
 
   <div class="auth-layout">
@@ -32,49 +43,57 @@
         <div class="auth-card__logo">
           <img src="./assets/ZoneDeGrimpeIcon.png" alt="" width="40" height="40" />
         </div>
-        <h2>Rejoins l'aventure</h2>
-        <p class="auth-card__sub">Cree ton compte pour proposer et decouvrir des spots</p>
+        <h2 data-i18n="auth.join_title">Rejoins l'aventure</h2>
+        <p class="auth-card__sub" data-i18n="auth.join_subtitle">Cree ton compte pour proposer et decouvrir des spots</p>
       </div>
       <form id="regForm" class="form">
         <label>
-          <span class="form-label">Nom affiche</span>
+          <span class="form-label" data-i18n="auth.username">Nom d'utilisateur</span>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" name="username" required minlength="3" maxlength="30" pattern="[a-zA-Z0-9_]+" placeholder="ton_pseudo" autocomplete="username" data-i18n-placeholder="auth.username_placeholder" />
+          </div>
+          <small id="usernameStatus" class="field-status"></small>
+        </label>
+        <label>
+          <span class="form-label" data-i18n="auth.display_name">Nom affiche</span>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/></svg>
-            <input type="text" name="displayName" placeholder="Ton pseudo" autocomplete="name" />
+            <input type="text" name="displayName" placeholder="Ton nom" autocomplete="name" />
           </div>
         </label>
         <label>
-          <span class="form-label">Email</span>
+          <span class="form-label" data-i18n="auth.email">Email</span>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
             <input type="email" name="email" required autocomplete="email" placeholder="ton@email.com" />
           </div>
         </label>
         <label>
-          <span class="form-label">Mot de passe</span>
+          <span class="form-label" data-i18n="auth.password">Mot de passe</span>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <input type="password" name="password" required minlength="6" autocomplete="new-password" placeholder="6 caracteres minimum" />
           </div>
         </label>
         <label>
-          <span class="form-label">Niveau d'escalade</span>
+          <span class="form-label" data-i18n="auth.level">Niveau d'escalade</span>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <select name="level" id="levelSelect">
-              <option value="debutant">Debutant</option>
-              <option value="intermediaire">Intermediaire</option>
-              <option value="avance">Avance</option>
+              <option value="debutant" data-i18n="auth.level_beginner">Debutant</option>
+              <option value="intermediaire" data-i18n="auth.level_intermediate">Intermediaire</option>
+              <option value="avance" data-i18n="auth.level_advanced">Avance</option>
             </select>
           </div>
         </label>
-        <button class="btn" type="submit">Creer le compte</button>
+        <button class="btn" type="submit" data-i18n="auth.create_account">Creer le compte</button>
       </form>
       <p id="regErr" class="auth-error" style="display:none"></p>
       <div class="auth-divider">
-        <span>ou</span>
+        <span data-i18n="auth.or">ou</span>
       </div>
-      <p class="alt-links">Deja inscrit ? <a href="./login.html">Se connecter</a></p>
+      <p class="alt-links"><span data-i18n="auth.already_member">Deja inscrit ?</span> <a href="./login.html" data-i18n="auth.login">Se connecter</a></p>
     </section>
   </div>
 

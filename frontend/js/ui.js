@@ -1,5 +1,7 @@
+import { initI18n, setLanguage, getLang, getSupportedLangs, translateDOM } from "./i18n.js";
+
 /**
- * Gestion du thème clair/foncé + UI commune
+ * Gestion du thème clair/foncé + UI commune + i18n
  */
 function initCommonUI() {
   if (document.body.hasAttribute("data-ui-initialized")) return;
@@ -30,13 +32,60 @@ function initCommonUI() {
       updateToggleLabel(next);
     });
   });
+
+  // --- Selecteur de langue ---
+  initLangSelector();
+
+  // --- i18n ---
+  initI18n();
+
+  // --- Notification bell ---
+  initNotifBell();
 }
 
 function applyTheme(mode) {
   document.documentElement.dataset.theme = mode;
 }
 
-export { initCommonUI, applyTheme };
+/** Initialise la cloche de notifications */
+function initNotifBell() {
+  const bell = document.getElementById("notifBell");
+  const badge = document.getElementById("notifBadge");
+  if (!bell || !badge) return;
+
+  let auth;
+  try { auth = JSON.parse(localStorage.getItem("auth") || "null"); } catch { return; }
+  if (!auth?.token) return;
+
+  bell.style.display = "";
+  const apiUrl = window.APP_CONFIG?.API_URL || "http://localhost:3000";
+
+  async function fetchCount() {
+    try {
+      const res = await fetch(`${apiUrl}/api/notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${auth.token}` },
+      });
+      if (!res.ok) return;
+      const { count } = await res.json();
+      badge.textContent = count > 0 ? (count > 99 ? "99+" : count) : "";
+    } catch {}
+  }
+
+  fetchCount();
+  setInterval(fetchCount, 60000);
+}
+
+/** Initialise le selecteur de langue dans le header */
+function initLangSelector() {
+  const sel = document.getElementById("langSelect");
+  if (!sel) return;
+  sel.value = getLang();
+  sel.addEventListener("change", (e) => {
+    setLanguage(e.target.value);
+  });
+}
+
+export { initCommonUI, applyTheme, translateDOM };
 
 window.initCommonUI = initCommonUI;
 window.applyTheme   = applyTheme;

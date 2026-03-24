@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="ZoneDeGrimpe — Gerer vos amis grimpeurs." />
+  <title>Amis — ZoneDeGrimpe</title>
+  <link rel="icon" href="./assets/ZoneDeGrimpeIcon.png" />
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#5D7052" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="ZoneDeGrimpe" />
+  <link rel="apple-touch-icon" href="./assets/ZoneDeGrimpeIcon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="./style/style.css" />
+  <style>
+    .friends-page { padding: 1.5rem 0 6rem; }
+    .friends-page h1 {
+      font-family: var(--font-heading);
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+    }
+    .friends-section {
+      margin-bottom: 2rem;
+    }
+    .friends-section h2 {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: .75rem;
+      padding-bottom: .5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .friends-list {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .friend-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .85rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      transition: all .25s var(--ease);
+    }
+    .friend-card:hover {
+      box-shadow: var(--shadow);
+    }
+    .friend-card__avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: var(--accent-muted);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: .95rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .friend-card__avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .friend-card__info {
+      flex: 1;
+      min-width: 0;
+    }
+    .friend-card__name {
+      font-weight: 600;
+      font-size: .92rem;
+      color: var(--text);
+    }
+    .friend-card__name a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .friend-card__name a:hover { color: var(--accent); }
+    .friend-card__username {
+      font-size: .78rem;
+      color: var(--text-2);
+    }
+    .friend-card__actions {
+      display: flex;
+      gap: .4rem;
+      flex-shrink: 0;
+    }
+    .friend-card__actions .btn {
+      padding: .35rem .75rem;
+      font-size: .78rem;
+    }
+    .btn--accept {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn--accept:hover { opacity: .85; }
+    .btn--decline, .btn--remove {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      transition: all .2s;
+    }
+    .btn--decline:hover, .btn--remove:hover {
+      border-color: #dc2626;
+      color: #dc2626;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-2);
+    }
+    .friends-login {
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+    .friends-login h2 { margin-bottom: .5rem; }
+    .friends-login p { color: var(--text-2); margin-bottom: 1rem; }
+  </style>
+</head>
+<body class="theme">
+
+  <header class="app-header">
+    <a class="brand" href="./">
+      <img src="./assets/ZoneDeGrimpeIcon.png" alt="ZoneDeGrimpe" class="brand__icon" />
+      <span class="brand__title">ZoneDeGrimpe</span>
+    </a>
+    <nav id="nav" class="nav" aria-label="Navigation principale">
+      <a href="./index.html" data-i18n="nav.home">Accueil</a>
+      <a href="./map.html" data-i18n="nav.map">Carte</a>
+      <a href="./mes-spots.html" data-i18n="nav.my_spots">Mes Spots</a>
+      <a href="./parametres.html" data-i18n="nav.profile">Profil</a>
+    </nav>
+    <div class="header-actions">
+      <a href="./notifications.html" class="notif-bell" id="notifBell" aria-label="Notifications" style="display:none">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-bell__badge" id="notifBadge"></span>
+      </a>
+      <select id="langSelect" class="lang-select" aria-label="Langue">
+        <option value="fr">FR</option>
+        <option value="en">EN</option>
+        <option value="es">ES</option>
+      </select>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Basculer le theme">Theme</button>
+    </div>
+  </header>
+
+  <!-- Not logged in -->
+  <div class="container friends-login" id="loginPrompt" hidden>
+    <h2 data-i18n="friends.title">Amis</h2>
+    <p>Connecte-toi pour gerer tes amis grimpeurs.</p>
+    <a class="btn" href="./login.html?next=friends.html">Se connecter</a>
+  </div>
+
+  <!-- Main content -->
+  <main class="container friends-page" id="main" hidden>
+    <h1 data-i18n="friends.title">Amis</h1>
+
+    <section class="friends-section">
+      <h2 data-i18n="friends.requests">Demandes d'amitie</h2>
+      <div id="requestsList" class="friends-list">
+        <p class="empty-state" data-i18n="friends.no_requests">Aucune demande en attente.</p>
+      </div>
+    </section>
+
+    <section class="friends-section">
+      <h2 data-i18n="friends.title">Amis</h2>
+      <div id="friendsList" class="friends-list">
+        <p class="empty-state" data-i18n="friends.no_friends">Aucun ami pour le moment.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="app-footer__inner">
+      <p>&copy; <span id="year"></span> ZoneDeGrimpe</p>
+    </div>
+  </footer>
+
+  <!-- Bottom Tab Bar (mobile) -->
+  <nav class="tab-bar" aria-label="Navigation mobile">
+    <a href="./index.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      <span data-i18n="nav.home">Accueil</span>
+    </a>
+    <a href="./map.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="10" r="3"/>
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      </svg>
+      <span data-i18n="nav.map">Carte</span>
+    </a>
+    <a href="./mes-spots.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+      </svg>
+      <span data-i18n="nav.my_spots">Mes Spots</span>
+    </a>
+    <a href="./parametres.html" class="tab-bar__item">
+      <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/>
+      </svg>
+      <span data-i18n="nav.profile">Profil</span>
+    </a>
+  </nav>
+
+  <script src="./config.js"></script>
+  <script type="module" src="./js/ui.js"></script>
+  <script type="module" src="./js/friends.js"></script>
+</body>
+</html>

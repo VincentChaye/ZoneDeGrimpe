@@ -11,6 +11,10 @@ const APP_SHELL = [
   "./parametres.html",
   "./mes-spots.html",
   "./profil.html",
+  "./logbook.html",
+  "./feed.html",
+  "./friends.html",
+  "./notifications.html",
   "./style/style.css",
   "./style/parametres.css",
   "./config.js",
@@ -18,7 +22,12 @@ const APP_SHELL = [
   "./js/api.js",
   "./js/map.js",
   "./js/ui.js",
+  "./js/i18n.js",
   "./js/main.js",
+  "./js/logbook.js",
+  "./js/feed.js",
+  "./js/friends.js",
+  "./js/notifications.js",
   "./assets/ZoneDeGrimpeIcon.png",
   "./assets/avatar-default.jpg",
   "./manifest.json"
@@ -174,3 +183,33 @@ async function staleWhileRevalidate(request) {
     headers: { "Content-Type": "application/json" }
   });
 }
+
+// ---- Push notifications ----
+self.addEventListener("push", e => {
+  let data = { title: "ZoneDeGrimpe", body: "Nouvelle notification" };
+  try {
+    if (e.data) data = { ...data, ...e.data.json() };
+  } catch {}
+
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "./assets/ZoneDeGrimpeIcon.png",
+      badge: "./assets/ZoneDeGrimpeIcon.png",
+      data: data.url || "./notifications.html",
+    })
+  );
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = e.notification.data || "./notifications.html";
+  e.waitUntil(
+    clients.matchAll({ type: "window" }).then(list => {
+      for (const client of list) {
+        if (client.url.includes(url) && "focus" in client) return client.focus();
+      }
+      return clients.openWindow(url);
+    })
+  );
+});

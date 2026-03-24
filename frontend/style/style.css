@@ -161,6 +161,69 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--accent-muted);
 }
 
+/* === Header actions (lang + theme) === */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+/* === Notification bell === */
+.notif-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--text-2);
+  transition: background .15s, color .15s;
+  text-decoration: none;
+}
+.notif-bell:hover {
+  background: var(--accent-muted);
+  color: var(--text);
+}
+.notif-bell__badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 99px;
+  background: #dc2626;
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+}
+.notif-bell__badge:empty { display: none; }
+
+/* === Language selector === */
+.lang-select {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: .3rem .5rem;
+  cursor: pointer;
+  color: var(--text-2);
+  font-family: var(--font-ui);
+  font-size: .78rem;
+  transition: border-color .15s, color .15s, background .15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.lang-select:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-muted);
+}
+
 /* Hamburger — gardé uniquement pour desktop (si besoin futur) */
 .hamburger { display: none; }
 
@@ -1991,6 +2054,16 @@ select.wizard-input {
   border-radius: var(--radius-sm);
   text-align: center;
 }
+
+/* Field status (username availability) */
+.field-status {
+  display: block;
+  font-size: .75rem;
+  margin-top: .25rem;
+  min-height: 1rem;
+}
+.field-status--ok { color: #16a34a; }
+.field-status--error { color: #dc2626; }
 
 /* Auth divider */
 .auth-divider {

@@ -20,6 +20,20 @@ export function usersRouter(db) {
     return LEVELS.includes(s) ? s : null;
   }
 
+  // --- GET /api/users/check-username/:username (public) ---
+  r.get("/check-username/:username", async (req, res) => {
+    try {
+      const username = String(req.params.username).trim().toLowerCase();
+      if (!/^[a-z0-9_]{3,30}$/.test(username)) {
+        return res.json({ available: false, reason: "invalid_format" });
+      }
+      const exists = await users.findOne({ username });
+      return res.json({ available: !exists });
+    } catch {
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
   // Empêche /:id d'attraper /me
   r.param("id", (req, res, next, id) => {
     if (id === "me") return next("route");
@@ -50,6 +64,16 @@ export function usersRouter(db) {
       const body = req.body || {};
       const $set = {};
 
+      if (body.username !== undefined) {
+        const uname = String(body.username).trim().toLowerCase();
+        if (!/^[a-z0-9_]{3,30}$/.test(uname)) {
+          return res.status(400).json({ error: "username_invalid_format", detail: "3-30 chars, alphanumeric and underscores only" });
+        }
+        // Check uniqueness (excluding self)
+        const taken = await users.findOne({ username: uname, _id: { $ne: uid } });
+        if (taken) return res.status(409).json({ error: "username_taken" });
+        $set.username = uname;
+      }
       if (body.displayName !== undefined) {
         if (typeof body.displayName !== "string" || !body.displayName.trim()) {
           return res.status(400).json({ error: "invalid_payload", detail: "displayName must be a non-empty string" });
@@ -159,7 +183,7 @@ export function usersRouter(db) {
 
       const doc = await users.findOne(
         { _id: new ObjectId(uid) },
-        { projection: { displayName: 1, avatarUrl: 1, profile: 1, roles: 1, "security.createdAt": 1 } }
+        { projection: { username: 1, displayName: 1, avatarUrl: 1, profile: 1, roles: 1, "security.createdAt": 1 } }
       );
       if (!doc) return res.status(404).json({ error: "not_found" });
 
@@ -183,6 +207,7 @@ export function usersRouter(db) {
 
       return res.json({
         _id: doc._id,
+        username: doc.username || null,
         displayName: doc.displayName,
         avatarUrl: doc.avatarUrl || null,
         level: doc.profile?.level || "debutant",
@@ -269,6 +294,11 @@ function sanitizePartialUpdate(body = {}, isAdmin = false) {
   const allowedRoles  = ["user", "admin", "moderator"];
   const allowedStatus = ["active", "banned", "pending"];
 
+  if (body.username !== undefined) {
+    const uname = String(body.username).trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,30}$/.test(uname)) throw new Error("Invalid 'username'");
+    set.username = uname;
+  }
   if (body.displayName !== undefined) {
     if (typeof body.displayName !== "string" || !body.displayName.trim()) throw new Error("Invalid 'displayName'");
     set.displayName = body.displayName.trim();
