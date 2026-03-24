@@ -6,3 +6,5 @@ backend/node_modules
 Thumbs.db
 .vscode
 frontend/node_modules
+.idea/
+*.md
