@@ -844,12 +844,44 @@ body.sheet-open::after {
   gap: .4rem;
   margin-bottom: .5rem;
 }
+.photo-preview-wrap {
+  position: relative;
+  display: inline-block;
+}
 .photo-preview-thumb {
   width: 72px;
   height: 72px;
   object-fit: cover;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--border);
+}
+.photo-preview-del {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: #e53e3e;
+  color: #fff;
+  font-size: .75rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-preview-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  background: var(--accent, #3b82f6);
+  color: #fff;
+  font-size: .55rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
 /* Soustype buttons (wizard) */

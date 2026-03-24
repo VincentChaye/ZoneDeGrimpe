@@ -553,6 +553,7 @@ let editWizardSpotId  = null;
 let editWizardOrig    = null; // valeurs actuelles du spot
 let editWizardData    = { name: "", type: "crag", soustype: null, orientation: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
 let editWizardPhotos  = [];
+let editWizardPhotosToDelete = []; // { _id, url } des photos existantes à supprimer
 
 const eWizardTrack       = document.getElementById("eWizardTrack");
 const eWizardProgressFill = document.getElementById("eWizardProgressFill");
@@ -661,6 +662,8 @@ function buildEditRecap() {
     ${diffRow("Hauteur (m)", "hauteur")}
     ${diffRow("Accès", "acces")}
     ${diffRow("Site web", "url")}
+    ${editWizardPhotosToDelete.length ? `<div class="recap-row recap-row--changed"><span class="recap-row__label">Photos supprimées</span><span class="recap-row__value">${editWizardPhotosToDelete.length} photo(s)</span></div>` : ""}
+    ${editWizardPhotos.length ? `<div class="recap-row recap-row--changed"><span class="recap-row__label">Photos ajoutées</span><span class="recap-row__value">${editWizardPhotos.length} photo(s)</span></div>` : ""}
     <div class="recap-row">
       <span class="recap-row__label" style="font-size:.8rem">
         ${isMapAdmin() ? "✅ Appliqué immédiatement" : "⏳ Soumis à validation admin"}
@@ -673,6 +676,7 @@ function resetEditWizard() {
   editWizardStep = 1;
   editWizardData = { name: "", type: "crag", soustype: null, orientation: null, niveau_min: "", niveau_max: "", description: "", rock: "", equipement: "", hauteur: "", acces: "", url: "" };
   editWizardPhotos = [];
+  editWizardPhotosToDelete = [];
   const ePreview = document.getElementById("ePhotoPreviewGrid");
   if (ePreview) ePreview.innerHTML = "";
   const eInput = document.getElementById("ePhotoInput");
@@ -747,6 +751,26 @@ window.editSpot = function(spotId) {
   if (accesInput) accesInput.value = editWizardData.acces;
   const urlInput = document.getElementById("eUrl");
   if (urlInput) urlInput.value = editWizardData.url;
+
+  // Afficher les photos existantes avec bouton de suppression
+  const ePreviewGrid = document.getElementById("ePhotoPreviewGrid");
+  if (ePreviewGrid) {
+    ePreviewGrid.innerHTML = "";
+    (spot.photos || []).forEach(photo => {
+      const wrap = document.createElement("div");
+      wrap.className = "photo-preview-wrap";
+      wrap.dataset.photoId = photo._id;
+      wrap.innerHTML = `
+        <img class="photo-preview-thumb" src="${photo.url}" alt="Photo existante">
+        <button type="button" class="photo-preview-del" title="Supprimer cette photo">×</button>
+      `;
+      wrap.querySelector(".photo-preview-del").addEventListener("click", () => {
+        editWizardPhotosToDelete.push(photo);
+        wrap.remove();
+      });
+      ePreviewGrid.appendChild(wrap);
+    });
+  }
 
   closeSheet();
   editModal?.showModal();
@@ -855,7 +879,8 @@ eWizardNextBtn?.addEventListener("click", async () => {
   if ((editWizardData.url || "") !== (orig.url || ""))
     changes.url = editWizardData.url || null;
 
-  if (Object.keys(changes).length === 0) {
+  const hasPhotoChanges = editWizardPhotos.length > 0 || editWizardPhotosToDelete.length > 0;
+  if (Object.keys(changes).length === 0 && !hasPhotoChanges) {
     setEditErr("errEditStep3", "Aucune modification détectée.");
     eWizardNextBtn.disabled = false;
     eWizardNextBtn.textContent = "Envoyer la modification";
@@ -863,18 +888,33 @@ eWizardNextBtn?.addEventListener("click", async () => {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/spot-edits`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ spotId: editWizardSpotId, changes }),
-    });
+    // Envoyer les changements de champs si présents
+    if (Object.keys(changes).length > 0) {
+      const res = await fetch(`${API_BASE_URL}/api/spot-edits`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ spotId: editWizardSpotId, changes }),
+      });
 
-    const text = await res.text();
-    let json;
-    try { json = JSON.parse(text); } catch { json = {}; }
-    if (!res.ok) throw new Error(json?.detail || json?.error || `Erreur ${res.status}`);
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = {}; }
+      if (!res.ok) throw new Error(json?.detail || json?.error || `Erreur ${res.status}`);
+    }
 
-    // Upload des photos si sélectionnées
+    // Supprimer les photos marquées
+    for (const photo of editWizardPhotosToDelete) {
+      await fetch(`${API_BASE_URL}/api/spots/${editWizardSpotId}/photos/${photo._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => null);
+      const idx = allSpots.findIndex(s => s.id === editWizardSpotId);
+      if (idx !== -1) {
+        allSpots[idx].photos = (allSpots[idx].photos || []).filter(p => p._id !== photo._id);
+      }
+    }
+
+    // Upload des nouvelles photos
     if (editWizardPhotos.length) {
       const formData = new FormData();
       editWizardPhotos.forEach(f => formData.append("photos", f));
@@ -1382,16 +1422,20 @@ document.getElementById("pPhotoInput")?.addEventListener("change", (e) => {
   });
 });
 
-// Preview photos (edit)
+// Preview photos (edit) — ajoute après les photos existantes
 document.getElementById("ePhotoInput")?.addEventListener("change", (e) => {
   const grid = document.getElementById("ePhotoPreviewGrid");
   if (!grid) return;
-  grid.innerHTML = "";
+  // Supprimer uniquement les previews de nouvelles photos (pas les existantes)
+  grid.querySelectorAll(".photo-preview-wrap--new").forEach(el => el.remove());
   Array.from(e.target.files).slice(0, 5).forEach(file => {
-    const img = document.createElement("img");
-    img.className = "photo-preview-thumb";
-    img.src = URL.createObjectURL(file);
-    grid.appendChild(img);
+    const wrap = document.createElement("div");
+    wrap.className = "photo-preview-wrap photo-preview-wrap--new";
+    wrap.innerHTML = `
+      <img class="photo-preview-thumb" src="${URL.createObjectURL(file)}" alt="Nouvelle photo">
+      <span class="photo-preview-badge">NEW</span>
+    `;
+    grid.appendChild(wrap);
   });
 });
 
