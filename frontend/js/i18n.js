@@ -88,7 +88,7 @@ function translateDOM(root = document) {
   });
 }
 
-/** Change la langue et re-traduit */
+/** Change la langue et re-traduit immediatement */
 async function setLanguage(lang) {
   if (!SUPPORTED_LANGS.includes(lang)) return;
   currentLang = lang;
@@ -96,6 +96,10 @@ async function setLanguage(lang) {
   document.documentElement.lang = lang;
   translations = await loadTranslations(lang);
   translateDOM();
+  // Sync tous les selecteurs de langue
+  document.querySelectorAll("#langSelect, .lang-select").forEach((sel) => {
+    if (sel.value !== lang) sel.value = lang;
+  });
   // Evenement pour que d'autres modules puissent reagir
   window.dispatchEvent(new CustomEvent("zdg:lang-changed", { detail: { lang } }));
 }
