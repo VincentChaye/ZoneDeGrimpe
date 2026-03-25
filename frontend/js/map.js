@@ -1,6 +1,7 @@
 import { initCommonUI } from "./ui.js";
 import { fetchSpots } from "./api.js";
 import { API_BASE_URL } from "./config.js";
+import { t, getLang } from "./i18n.js";
 
 initCommonUI();
 
@@ -35,6 +36,7 @@ function showToast(msg, isError = false) {
 const sheet = document.getElementById("bottomSheet");
 const sheetContent = document.getElementById("sheetContent");
 const sheetClose = document.getElementById("sheetClose");
+let currentSheetSpotId = null;
 
 // S'assure que la fiche n'est pas dans le conteneur Leaflet
 if (sheet && sheet.parentElement !== document.body) {
@@ -57,6 +59,7 @@ function enableMapInteractions() {
 
 function openSheet(html, spotId) {
   if (!sheet || !sheetContent) return;
+  currentSheetSpotId = spotId || null;
   sheetContent.innerHTML = html;
   sheet.setAttribute("aria-hidden", "false");
   document.body.classList.add("sheet-open");
@@ -115,10 +118,9 @@ function spotCardHTML(s) {
 
   // Type
   const typeIcons  = { crag: "🧗", boulder: "🪨", indoor: "🏢", shop: "🛒" };
-  const typeLabels = { crag: "Falaise", boulder: "Bloc", indoor: "Salle", shop: "Magasin" };
   const typeKey    = s.type || "crag";
   const typeIcon   = typeIcons[typeKey]  || "📍";
-  const typeLabel  = typeLabels[typeKey] || s.type || "Inconnu";
+  const typeLabel  = t(`spot.type.${typeKey}`) !== `spot.type.${typeKey}` ? t(`spot.type.${typeKey}`) : (s.type || t("spot.type.unknown"));
 
   // Grade + difficulté
   const hasGrade = s.niveau_min || s.niveau_max;
@@ -135,32 +137,30 @@ function spotCardHTML(s) {
 
   // Orientation avec flèche CSS
   const orientDeg  = { N:0, NE:45, E:90, SE:135, S:180, SO:225, O:270, NO:315 };
-  const orientFull = { N:"Nord", NE:"Nord-Est", E:"Est", SE:"Sud-Est", S:"Sud", SO:"Sud-Ouest", O:"Ouest", NO:"Nord-Ouest" };
   const orientStat = s.orientation
     ? `<span class="sc-stat">
         <span class="sc-compass" style="--rot:${orientDeg[s.orientation] ?? 0}deg">↑</span>
-        ${orientFull[s.orientation] || s.orientation}
+        ${t(`orient.${s.orientation}`) !== `orient.${s.orientation}` ? t(`orient.${s.orientation}`) : s.orientation}
        </span>`
     : "";
 
   const gradeStat = gradeText
     ? `<span class="sc-stat sc-stat--grade" data-level="${gradeLevel}">⚡ ${gradeText}</span>` : "";
   const voiesStat = s.id_voix?.length
-    ? `<span class="sc-stat">🪢 ${s.id_voix.length} voie${s.id_voix.length > 1 ? "s" : ""}</span>` : "";
+    ? `<span class="sc-stat">🪢 ${t("spot.route_count", { count: s.id_voix.length })}</span>` : "";
   const soustypeStat = s.soustype
     ? `<span class="sc-stat">🔖 ${s.soustype}</span>` : "";
   const rockStat = s.info_complementaires?.rock
     ? `<span class="sc-stat">🪨 ${esc(s.info_complementaires.rock)}</span>` : "";
-  const equipMap = { spit: "Spit", piton: "Piton", mixte: "Mixte", non_equipe: "Non équipé" };
   const equipStat = s.equipement
-    ? `<span class="sc-stat">🔩 ${equipMap[s.equipement] || s.equipement}</span>` : "";
+    ? `<span class="sc-stat">🔩 ${t(`equip.${s.equipement}`) !== `equip.${s.equipement}` ? t(`equip.${s.equipement}`) : s.equipement}</span>` : "";
   const hauteurStat = s.hauteur
     ? `<span class="sc-stat">📏 ${s.hauteur} m</span>` : "";
 
   const desc = s.description
     ? `<p class="sc-desc">${esc(s.description)}</p>` : "";
   const acces = s.acces
-    ? `<p class="sc-acces"><strong>Accès :</strong> ${esc(s.acces)}</p>` : "";
+    ? `<p class="sc-acces"><strong>${t("spot.access")} :</strong> ${esc(s.acces)}</p>` : "";
 
   // Photos — carrousel
   const photoList = s.photos || [];
@@ -172,19 +172,20 @@ function spotCardHTML(s) {
           <button class="sc-photos-nav sc-photos-nav--next" onclick="window.slidePhoto && slidePhoto('${s.id}', 1)">›</button>
           <div class="sc-photos-dots">${photoList.map((_,i) => `<span class="sc-photos-dot${i===0?' active':''}"></span>`).join("")}</div>` : ""}
         <span class="sc-photos-counter">1/${photoList.length}</span>
-        ${isLoggedIn ? `<button class="sc-photos-add" onclick="window.openPhotoUpload && openPhotoUpload('${s.id}')" title="Ajouter des photos">+</button>` : ""}
+        ${isLoggedIn ? `<button class="sc-photos-add" onclick="window.openPhotoUpload && openPhotoUpload('${s.id}')" title="${t("spot.add_photos")}">+</button>` : ""}
       </div>`
-    : (isLoggedIn ? `<button class="sc-btn" style="margin-bottom:.75rem;width:100%" onclick="window.openPhotoUpload && openPhotoUpload('${s.id}')">📷 Ajouter des photos</button>` : "");
+    : (isLoggedIn ? `<button class="sc-btn" style="margin-bottom:.75rem;width:100%" onclick="window.openPhotoUpload && openPhotoUpload('${s.id}')">📷 ${t("spot.add_photos")}</button>` : "");
 
   // Audit
   const createdBy = s.createdBy?.displayName || s.submittedBy?.displayName;
   const updatedBy = s.updatedBy?.displayName;
-  const createdAt = s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : null;
-  const updatedAt = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("fr-FR") : null;
+  const dateLoc = getLang() === "en" ? "en-GB" : getLang() === "es" ? "es-ES" : "fr-FR";
+  const createdAt = s.createdAt ? new Date(s.createdAt).toLocaleDateString(dateLoc) : null;
+  const updatedAt = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString(dateLoc) : null;
   // Profil public du contributeur
   const creatorId = s.createdBy?.uid || s.submittedBy?.uid;
   const creatorLink = creatorId
-    ? `<a class="sc-audit-link" href="./profil.html?id=${creatorId}">${createdBy || "Contributeur"}</a>` : (createdBy || "");
+    ? `<a class="sc-audit-link" href="./profil.html?id=${creatorId}">${createdBy || t("spot.contributor")}</a>` : (createdBy || "");
 
   const auditNew = (createdBy || updatedBy) ? `
     <p class="sc-audit">
@@ -203,7 +204,7 @@ function spotCardHTML(s) {
             ${gradeText ? `<span class="sc-grade-badge" data-level="${gradeLevel}">${gradeText}</span>` : ""}
           </div>
         </div>
-        ${isLoggedIn ? `<button class="sc-bookmark" onclick="window.toggleBookmark && toggleBookmark('${s.id}')" title="Sauvegarder" data-spot-id="${s.id}">
+        ${isLoggedIn ? `<button class="sc-bookmark" onclick="window.toggleBookmark && toggleBookmark('${s.id}')" title="${t("spot.bookmark")}" data-spot-id="${s.id}">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>` : ""}
       </div>
@@ -213,27 +214,27 @@ function spotCardHTML(s) {
 
         <button class="sc-cta" onclick="window.enterSpot && window.enterSpot('${s.id}')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-          Rentrer dans le spot
+          ${t("spot.enter")}
         </button>
         <div class="sc-action-row">
           <a class="sc-btn" href="${dir}" target="_blank" rel="noopener">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-            Itinéraire
+            ${t("spot.directions")}
           </a>
           <button class="sc-btn" onclick="window.shareSpot && shareSpot('${s.id}')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            Partager
+            ${t("spot.share")}
           </button>
           ${s.url && /^https?:\/\//.test(s.url) ? `<a class="sc-btn" href="${esc(s.url)}" target="_blank" rel="noopener">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Fiche
+            ${t("spot.sheet")}
           </a>` : ""}
           ${isLoggedIn ? `<button class="sc-btn" onclick="window.editSpot && editSpot('${s.id}')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Modifier
+            ${t("spot.edit")}
           </button>` : ""}
         </div>
-        ${isAdmin ? `<button class="sc-btn sc-btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${esc(s.name)}')">Supprimer ce spot</button>` : ""}
+        ${isAdmin ? `<button class="sc-btn sc-btn--danger" onclick="window.deleteSpot && deleteSpot('${s.id}', '${esc(s.name)}')">${t("spot.delete_spot")}</button>` : ""}
       </div>
     </div>
   `;
@@ -249,7 +250,7 @@ function warnIfInsecureContext() {
   // La géoloc ne marche que sur HTTPS ou http://localhost
   const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
   if (location.protocol !== "https:" && !isLocalhost) {
-    showToast("La géolocalisation nécessite HTTPS.", true);
+    showToast(t("geo.https_required"), true);
     return true;
   }
   return false;
@@ -278,7 +279,7 @@ map.on("locationfound", (e) => {
       fillOpacity: 0.8,
     })
       .addTo(map)
-      .bindTooltip("Vous êtes ici", { permanent: false });
+      .bindTooltip(t("geo.you_are_here"), { permanent: false });
   } else {
     userMarker.setLatLng(latlng);
   }
@@ -323,8 +324,8 @@ const geoBannerDismiss = document.getElementById("geoBannerDismiss");
 function showGeoBanner(denied = false) {
   if (!geoBanner) return;
   geoBannerText.textContent = denied
-    ? "La géolocalisation est bloquée. Autorise-la dans les réglages de ton navigateur."
-    : "Active la localisation pour voir les spots près de toi.";
+    ? t("geo.denied")
+    : t("geo.activate");
   if (geoBannerAccept) geoBannerAccept.hidden = denied;
   geoBanner.hidden = false;
 }
@@ -448,70 +449,70 @@ let currentFilters = {
 window.enterSpot = function(spotId) {
   try {
     const spot = allSpots.find(s => s.id === spotId || String(s.id) === String(spotId));
-    if (!spot) { showToast("Spot introuvable", true); return; }
+    if (!spot) { showToast(t("toast.spot_not_found"), true); return; }
     const isLoggedIn = !!getMapToken();
     const html = spotInteriorHTML(spot, isLoggedIn);
     openSheet(html, null);
     loadSpotRoutes(spotId);
   } catch (err) {
     console.error("[enterSpot] Error:", err);
-    showToast("Erreur à l'ouverture du spot", true);
+    showToast(t("toast.spot_open_error"), true);
   }
 };
 
 function spotInteriorHTML(s, isLoggedIn) {
   const typeIcons  = { crag: "🧗", boulder: "🪨", indoor: "🏢", shop: "🛒" };
-  const typeLabels = { crag: "Falaise", boulder: "Bloc", indoor: "Salle", shop: "Magasin" };
   const typeKey = s.type || "crag";
+  const typeLabel = t(`spot.type.${typeKey}`) !== `spot.type.${typeKey}` ? t(`spot.type.${typeKey}`) : typeKey;
 
   return `
     <div class="spot-interior">
       <div class="si-header">
-        <button class="si-back" onclick="window.backToSpotCard('${s.id}')" title="Retour">
+        <button class="si-back" onclick="window.backToSpotCard('${s.id}')" title="${t("common.back")}">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div class="si-header__info">
           <span class="si-header__icon">${typeIcons[typeKey] || "📍"}</span>
           <div>
             <h3 class="si-header__name">${esc(s.name)}</h3>
-            <span class="si-header__type">${typeLabels[typeKey] || typeKey}</span>
+            <span class="si-header__type">${typeLabel}</span>
           </div>
         </div>
       </div>
 
       <div class="si-routes">
         <div class="si-routes__header">
-          <h4 class="si-routes__title">Voies</h4>
+          <h4 class="si-routes__title">${t("spot.routes")}</h4>
           <span class="si-routes__count" id="routeCount-${s.id}"></span>
         </div>
         <div class="si-routes__list" id="routeList-${s.id}">
-          <span class="sc-routes__loading">Chargement des voies...</span>
+          <span class="sc-routes__loading">${t("spot.routes_loading")}</span>
         </div>
         ${isLoggedIn ? `
         <div class="si-add-route">
-          <h4 class="si-add-route__title">Ajouter une voie</h4>
+          <h4 class="si-add-route__title">${t("spot.add_route")}</h4>
           <form class="si-add-route__form" onsubmit="window.submitRoute(event, '${s.id}')">
-            <input class="si-input" type="text" name="name" placeholder="Nom de la voie" required maxlength="120" />
+            <input class="si-input" type="text" name="name" placeholder="${t("spot.route_name_placeholder")}" required maxlength="120" />
             <div class="si-input-row">
-              <input class="si-input" type="text" name="grade" placeholder="Cotation (6a+)" maxlength="10" />
+              <input class="si-input" type="text" name="grade" placeholder="${t("spot.route_grade_placeholder")}" maxlength="10" />
               <select class="si-select" name="style">
-                <option value="">Style</option>
-                <option value="sport">Sport</option>
-                <option value="trad">Trad</option>
-                <option value="boulder">Bloc</option>
-                <option value="multi">Grande voie</option>
-                <option value="other">Autre</option>
+                <option value="">${t("logbook.style")}</option>
+                <option value="sport">${t("style.sport")}</option>
+                <option value="trad">${t("style.trad")}</option>
+                <option value="boulder">${t("style.boulder")}</option>
+                <option value="multi">${t("style.multi")}</option>
+                <option value="other">${t("style.other")}</option>
               </select>
             </div>
             <div class="si-input-row">
-              <input class="si-input" type="number" name="height" placeholder="Hauteur (m)" min="1" max="2000" step="1" />
-              <input class="si-input" type="number" name="bolts" placeholder="Points" min="0" max="100" step="1" />
+              <input class="si-input" type="number" name="height" placeholder="${t("spot.route_height_placeholder")}" min="1" max="2000" step="1" />
+              <input class="si-input" type="number" name="bolts" placeholder="${t("spot.route_bolts_placeholder")}" min="0" max="100" step="1" />
             </div>
-            <textarea class="si-input si-textarea" name="description" placeholder="Description (optionnel)" maxlength="2000" rows="2"></textarea>
-            <button class="btn si-submit" type="submit">Ajouter la voie</button>
+            <textarea class="si-input si-textarea" name="description" placeholder="${t("spot.route_desc_placeholder")}" maxlength="2000" rows="2"></textarea>
+            <button class="btn si-submit" type="submit">${t("spot.add_route_submit")}</button>
           </form>
         </div>
-        ` : `<p class="si-login-hint"><a href="./login.html">Connecte-toi</a> pour ajouter des voies.</p>`}
+        ` : `<p class="si-login-hint"><a href="./login.html">${t("spot.login_to_add_routes")}</a></p>`}
       </div>
     </div>
   `;
@@ -533,14 +534,14 @@ window.shareSpot = function(spotId) {
   if (navigator.share) {
     navigator.share({
       title: spot.name,
-      text: `Découvre ce spot de grimpe : ${spot.name}`,
+      text: t("share.text", { name: spot.name }),
       url: url
-    }).catch(err => console.log('Partage annulé', err));
+    }).catch(err => console.log('Share cancelled', err));
   } else {
     navigator.clipboard.writeText(url).then(() => {
-      alert('Lien copié dans le presse-papier !');
+      alert(t("share.copied"));
     }).catch(() => {
-      alert(`Lien du spot : ${url}`);
+      alert(`${t("share.link")} : ${url}`);
     });
   }
 };
@@ -584,7 +585,7 @@ function updateEditWizardUI() {
 
   if (eWizardBackBtn) eWizardBackBtn.style.display = editWizardStep > 1 ? "block" : "none";
   if (eWizardNextBtn) {
-    eWizardNextBtn.textContent = editWizardStep < TOTAL ? "Suivant →" : "Envoyer la modification";
+    eWizardNextBtn.textContent = editWizardStep < TOTAL ? t("wizard.next") : t("wizard.send_edit");
     eWizardNextBtn.disabled = false;
   }
 }
@@ -597,7 +598,7 @@ function setEditErr(id, msg) {
 function validateEditStep(step) {
   if (step === 1) {
     const name = document.getElementById("eName")?.value.trim() || "";
-    if (!name) { setEditErr("errEditStep1", "Le nom du spot est obligatoire."); return false; }
+    if (!name) { setEditErr("errEditStep1", t("wizard.err_name_required")); return false; }
     setEditErr("errEditStep1", "");
     editWizardData.name = name;
     editWizardData.type = document.querySelector("#editModal .type-card.active")?.dataset.type || "crag";
@@ -627,8 +628,7 @@ function validateEditStep(step) {
 }
 
 function buildEditRecap() {
-  const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle", shop: "🛒 Magasin" };
-  const equipLabels = { spit: "Spit / Résine", piton: "Piton", mixte: "Mixte", non_equipe: "Non équipé" };
+  const typeIcons = { crag: "🧗", boulder: "🪨", indoor: "🏢", shop: "🛒" };
   const recap = document.getElementById("eRecapCard");
   if (!recap || !editWizardOrig) return;
 
@@ -649,24 +649,27 @@ function buildEditRecap() {
       </div>`;
   }
 
+  const typeDisplay = v => v ? `${typeIcons[v] || ""} ${t(`spot.type.${v}`)}`.trim() : "—";
+  const equipDisplay = v => v ? (t(`equip.${v}`) !== `equip.${v}` ? t(`equip.${v}`) : v) : "—";
+
   recap.innerHTML = `
-    ${diffRow("Nom", "name")}
-    ${diffRow("Type", "type", v => typeIcons[v] || v || "—")}
-    ${diffRow("Style", "soustype")}
-    ${diffRow("Niveau min", "niveau_min")}
-    ${diffRow("Niveau max", "niveau_max")}
-    ${diffRow("Orientation", "orientation")}
-    ${diffRow("Description", "description")}
-    ${diffRow("Rocher", "rock", null, editWizardData.rock || null)}
-    ${diffRow("Équipement", "equipement", v => equipLabels[v] || v || "—")}
-    ${diffRow("Hauteur (m)", "hauteur")}
-    ${diffRow("Accès", "acces")}
-    ${diffRow("Site web", "url")}
-    ${editWizardPhotosToDelete.length ? `<div class="recap-row recap-row--changed"><span class="recap-row__label">Photos supprimées</span><span class="recap-row__value">${editWizardPhotosToDelete.length} photo(s)</span></div>` : ""}
-    ${editWizardPhotos.length ? `<div class="recap-row recap-row--changed"><span class="recap-row__label">Photos ajoutées</span><span class="recap-row__value">${editWizardPhotos.length} photo(s)</span></div>` : ""}
+    ${diffRow(t("recap.name"), "name")}
+    ${diffRow(t("recap.type"), "type", typeDisplay)}
+    ${diffRow(t("recap.style"), "soustype")}
+    ${diffRow(t("recap.grade_min"), "niveau_min")}
+    ${diffRow(t("recap.grade_max"), "niveau_max")}
+    ${diffRow(t("recap.orientation"), "orientation")}
+    ${diffRow(t("recap.description"), "description")}
+    ${diffRow(t("recap.rock"), "rock", null, editWizardData.rock || null)}
+    ${diffRow(t("recap.equipment"), "equipement", equipDisplay)}
+    ${diffRow(t("recap.height"), "hauteur")}
+    ${diffRow(t("recap.access"), "acces")}
+    ${diffRow(t("recap.website"), "url")}
+    ${editWizardPhotosToDelete.length ? `<div class="recap-row recap-row--changed"><span class="recap-row__label">${t("recap.photos_deleted")}</span><span class="recap-row__value">${t("recap.photo_count", { count: editWizardPhotosToDelete.length })}</span></div>` : ""}
+    ${editWizardPhotos.length ? `<div class="recap-row recap-row--changed"><span class="recap-row__label">${t("recap.photos_added")}</span><span class="recap-row__value">${t("recap.photo_count", { count: editWizardPhotos.length })}</span></div>` : ""}
     <div class="recap-row">
       <span class="recap-row__label" style="font-size:.8rem">
-        ${isMapAdmin() ? "✅ Appliqué immédiatement" : "⏳ Soumis à validation admin"}
+        ${isMapAdmin() ? t("wizard.admin_immediate") : t("wizard.admin_pending")}
       </span>
     </div>
   `;
@@ -682,7 +685,7 @@ function resetEditWizard() {
   const eInput = document.getElementById("ePhotoInput");
   if (eInput) eInput.value = "";
   ["errEditStep1", "errEditStep3", "errEditStep4"].forEach(id => setEditErr(id, ""));
-  if (eWizardNextBtn) { eWizardNextBtn.style.display = ""; eWizardNextBtn.disabled = false; eWizardNextBtn.textContent = "Suivant →"; }
+  if (eWizardNextBtn) { eWizardNextBtn.style.display = ""; eWizardNextBtn.disabled = false; eWizardNextBtn.textContent = t("wizard.next"); }
   const footer = document.getElementById("eWizardFooter");
   footer?.querySelectorAll("button:not(#eWizardNextBtn):not(#eWizardBackBtn)").forEach(b => b.remove());
   updateEditWizardUI();
@@ -778,7 +781,7 @@ window.editSpot = function(spotId) {
 
 /* Supprimer un spot (admin uniquement) */
 window.deleteSpot = async function(spotId, spotName) {
-  if (!confirm(`Supprimer le spot "${spotName}" ? Cette action est irréversible.`)) return;
+  if (!confirm(t("spot.delete_confirm", { name: spotName }))) return;
   const token = getMapToken();
   try {
     const res = await fetch(`${API_BASE_URL}/api/spots/${spotId}`, {
@@ -792,7 +795,7 @@ window.deleteSpot = async function(spotId, spotName) {
     allMarkers.delete(spotId);
     filterSpots();
   } catch (e) {
-    alert(`Erreur : ${e.message}`);
+    alert(`${t("common.error")} ${e.message}`);
   }
 };
 
@@ -838,14 +841,14 @@ eWizardNextBtn?.addEventListener("click", async () => {
 
   // Étape 3 → Soumettre
   eWizardNextBtn.disabled = true;
-  eWizardNextBtn.textContent = "Envoi…";
+  eWizardNextBtn.textContent = t("wizard.sending");
   setEditErr("errEditStep3", "");
 
   const token = getMapToken();
   if (!token) {
-    setEditErr("errEditStep3", "Tu n'es pas connecté. Reconnecte-toi.");
+    setEditErr("errEditStep3", t("wizard.err_not_logged_edit"));
     eWizardNextBtn.disabled = false;
-    eWizardNextBtn.textContent = "Réessayer";
+    eWizardNextBtn.textContent = t("wizard.retry");
     return;
   }
 
@@ -881,9 +884,9 @@ eWizardNextBtn?.addEventListener("click", async () => {
 
   const hasPhotoChanges = editWizardPhotos.length > 0 || editWizardPhotosToDelete.length > 0;
   if (Object.keys(changes).length === 0 && !hasPhotoChanges) {
-    setEditErr("errEditStep3", "Aucune modification détectée.");
+    setEditErr("errEditStep3", t("wizard.err_no_changes"));
     eWizardNextBtn.disabled = false;
-    eWizardNextBtn.textContent = "Envoyer la modification";
+    eWizardNextBtn.textContent = t("wizard.send_edit");
     return;
   }
 
@@ -939,13 +942,10 @@ eWizardNextBtn?.addEventListener("click", async () => {
         <div style="text-align:center;padding:1.5rem 0">
           <div style="font-size:3rem;margin-bottom:.75rem">${isAdmin ? "✅" : "⏳"}</div>
           <p style="font-weight:700;font-size:1.05rem;margin:0 0 .4rem">
-            ${isAdmin ? "Modifications appliquées !" : "Demande envoyée !"}
+            ${isAdmin ? t("wizard.edit_applied") : t("wizard.request_sent")}
           </p>
           <p style="font-size:.88rem;color:var(--text-2);margin:0">
-            ${isAdmin
-              ? "Le spot a été mis à jour sur la carte."
-              : "Un admin va examiner ta modification. Suis son statut dans Paramètres → Mes demandes."
-            }
+            ${isAdmin ? t("wizard.edit_applied_desc") : t("wizard.edit_pending_desc")}
           </p>
         </div>`;
     }
@@ -956,7 +956,7 @@ eWizardNextBtn?.addEventListener("click", async () => {
     if (footer) {
       const closeBtn = document.createElement("button");
       closeBtn.className = "btn";
-      closeBtn.textContent = "Fermer";
+      closeBtn.textContent = t("wizard.close");
       closeBtn.style.flex = "1";
       closeBtn.addEventListener("click", () => {
         editModal?.close();
@@ -966,9 +966,9 @@ eWizardNextBtn?.addEventListener("click", async () => {
     }
   } catch (err) {
     console.error("[edit-wizard] Erreur:", err);
-    setEditErr("errEditStep3", "Erreur : " + err.message);
+    setEditErr("errEditStep3", t("common.error") + " " + err.message);
     eWizardNextBtn.disabled = false;
-    eWizardNextBtn.textContent = "Réessayer";
+    eWizardNextBtn.textContent = t("wizard.retry");
   }
 });
 
@@ -1105,7 +1105,7 @@ searchInput?.addEventListener('input', (e) => {
 
 function displaySearchResults(results) {
   if (!results.length) {
-    searchResults.innerHTML = '<div class="search-no-result">Aucun spot trouvé</div>';
+    searchResults.innerHTML = `<div class="search-no-result">${t("search.no_spots")}</div>`;
     searchResults.style.display = 'block';
     return;
   }
@@ -1117,7 +1117,7 @@ function displaySearchResults(results) {
       <div class="search-result" data-spot-id="${s.id}">
         <span class="search-result-icon">${icon}</span>
         <span class="search-result-name">${esc(s.name)}</span>
-        <span class="search-result-type">${s.type || ''}</span>
+        <span class="search-result-type">${s.type ? t(`spot.type.${s.type}`) : ''}</span>
       </div>
     `;
   }).join('');
@@ -1183,7 +1183,7 @@ resetFilters?.addEventListener('click', () => {
   const distanceValue = document.getElementById('distanceValue');
   if (filterDistance) {
     filterDistance.value = 500;
-    distanceValue.textContent = 'Toutes';
+    distanceValue.textContent = t("filter.all_distances");
   }
   filterSpots();
 });
@@ -1198,7 +1198,7 @@ filterDistance?.addEventListener('input', (e) => {
   
   // Affichage de la valeur
   if (distance >= 500) {
-    distanceValue.textContent = 'Toutes';
+    distanceValue.textContent = t("filter.all_distances");
   } else {
     distanceValue.textContent = `${distance} km`;
   }
@@ -1260,7 +1260,7 @@ function updateWizardUI() {
 
   if (wizardBackBtn) wizardBackBtn.style.display = wizardStep > 1 ? "block" : "none";
   if (wizardNextBtn) {
-    wizardNextBtn.textContent = wizardStep < TOTAL ? "Suivant →" : "Envoyer la demande";
+    wizardNextBtn.textContent = wizardStep < TOTAL ? t("wizard.next") : t("wizard.send_request");
     wizardNextBtn.style.display = "";
     wizardNextBtn.disabled = false;
   }
@@ -1275,7 +1275,7 @@ function setErr(id, msg) {
 function validateStep(step) {
   if (step === 1) {
     const name = document.getElementById("pName")?.value.trim() || "";
-    if (!name) { setErr("errStep1", "Le nom du spot est obligatoire."); return false; }
+    if (!name) { setErr("errStep1", t("wizard.err_name_required")); return false; }
     setErr("errStep1", "");
     wizardData.name = name;
     wizardData.type = document.querySelector("#proposeModal .type-card.active")?.dataset.type || "crag";
@@ -1287,11 +1287,11 @@ function validateStep(step) {
     const lat = parseFloat(latVal);
     const lng = parseFloat(lngVal);
     if (!latVal || !lngVal || isNaN(lat) || isNaN(lng)) {
-      setErr("errStep2", "La position est obligatoire. Utilise le bouton de géolocalisation ou saisis les coordonnées.");
+      setErr("errStep2", t("wizard.err_position_required"));
       return false;
     }
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      setErr("errStep2", "Coordonnées invalides (lat: -90/+90, lng: -180/+180).");
+      setErr("errStep2", t("wizard.err_coords_invalid"));
       return false;
     }
     setErr("errStep2", "");
@@ -1325,27 +1325,28 @@ function validateStep(step) {
 
 // Construction du récapitulatif
 function buildRecap() {
-  const typeIcons = { crag: "🧗 Falaise", boulder: "🪨 Bloc", indoor: "🏢 Salle", shop: "🛒 Magasin" };
-  const equipLabels = { spit: "Spit / Résine", piton: "Piton", mixte: "Mixte", non_equipe: "Non équipé" };
+  const typeIcons = { crag: "🧗", boulder: "🪨", indoor: "🏢", shop: "🛒" };
   const recap = document.getElementById("recapCard");
   if (!recap) return;
+  const typeDisplay = v => v ? `${typeIcons[v] || ""} ${t(`spot.type.${v}`)}`.trim() : "—";
+  const equipDisplay = v => v ? (t(`equip.${v}`) !== `equip.${v}` ? t(`equip.${v}`) : v) : "—";
   recap.innerHTML = `
-    <div class="recap-row"><span class="recap-row__label">Nom</span><span class="recap-row__value">${esc(wizardData.name)}</span></div>
-    <div class="recap-row"><span class="recap-row__label">Type</span><span class="recap-row__value">${esc(typeIcons[wizardData.type] || wizardData.type)}</span></div>
-    <div class="recap-row"><span class="recap-row__label">Latitude</span><span class="recap-row__value">${esc(String(wizardData.lat?.toFixed(6)))}</span></div>
-    <div class="recap-row"><span class="recap-row__label">Longitude</span><span class="recap-row__value">${esc(String(wizardData.lng?.toFixed(6)))}</span></div>
-    ${wizardData.soustype ? `<div class="recap-row"><span class="recap-row__label">Style</span><span class="recap-row__value">${esc(wizardData.soustype)}</span></div>` : ""}
-    ${wizardData.niveau_min ? `<div class="recap-row"><span class="recap-row__label">Niveau min</span><span class="recap-row__value">${esc(wizardData.niveau_min)}</span></div>` : ""}
-    ${wizardData.niveau_max ? `<div class="recap-row"><span class="recap-row__label">Niveau max</span><span class="recap-row__value">${esc(wizardData.niveau_max)}</span></div>` : ""}
-    ${wizardData.orientation ? `<div class="recap-row"><span class="recap-row__label">Orientation</span><span class="recap-row__value">${esc(wizardData.orientation)}</span></div>` : ""}
-    ${wizardData.description ? `<div class="recap-row"><span class="recap-row__label">Description</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.description)}</span></div>` : ""}
-    ${wizardData.rock ? `<div class="recap-row"><span class="recap-row__label">Rocher</span><span class="recap-row__value">${esc(wizardData.rock)}</span></div>` : ""}
-    ${wizardData.equipement ? `<div class="recap-row"><span class="recap-row__label">Équipement</span><span class="recap-row__value">${esc(equipLabels[wizardData.equipement] || wizardData.equipement)}</span></div>` : ""}
-    ${wizardData.hauteur ? `<div class="recap-row"><span class="recap-row__label">Hauteur</span><span class="recap-row__value">${esc(wizardData.hauteur)} m</span></div>` : ""}
-    ${wizardData.acces ? `<div class="recap-row"><span class="recap-row__label">Accès</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.acces)}</span></div>` : ""}
-    ${wizardData.url ? `<div class="recap-row"><span class="recap-row__label">Site web</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.url)}</span></div>` : ""}
+    <div class="recap-row"><span class="recap-row__label">${t("recap.name")}</span><span class="recap-row__value">${esc(wizardData.name)}</span></div>
+    <div class="recap-row"><span class="recap-row__label">${t("recap.type")}</span><span class="recap-row__value">${esc(typeDisplay(wizardData.type))}</span></div>
+    <div class="recap-row"><span class="recap-row__label">${t("recap.lat")}</span><span class="recap-row__value">${esc(String(wizardData.lat?.toFixed(6)))}</span></div>
+    <div class="recap-row"><span class="recap-row__label">${t("recap.lng")}</span><span class="recap-row__value">${esc(String(wizardData.lng?.toFixed(6)))}</span></div>
+    ${wizardData.soustype ? `<div class="recap-row"><span class="recap-row__label">${t("recap.style")}</span><span class="recap-row__value">${esc(wizardData.soustype)}</span></div>` : ""}
+    ${wizardData.niveau_min ? `<div class="recap-row"><span class="recap-row__label">${t("recap.grade_min")}</span><span class="recap-row__value">${esc(wizardData.niveau_min)}</span></div>` : ""}
+    ${wizardData.niveau_max ? `<div class="recap-row"><span class="recap-row__label">${t("recap.grade_max")}</span><span class="recap-row__value">${esc(wizardData.niveau_max)}</span></div>` : ""}
+    ${wizardData.orientation ? `<div class="recap-row"><span class="recap-row__label">${t("recap.orientation")}</span><span class="recap-row__value">${esc(wizardData.orientation)}</span></div>` : ""}
+    ${wizardData.description ? `<div class="recap-row"><span class="recap-row__label">${t("recap.description")}</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.description)}</span></div>` : ""}
+    ${wizardData.rock ? `<div class="recap-row"><span class="recap-row__label">${t("recap.rock")}</span><span class="recap-row__value">${esc(wizardData.rock)}</span></div>` : ""}
+    ${wizardData.equipement ? `<div class="recap-row"><span class="recap-row__label">${t("recap.equipment")}</span><span class="recap-row__value">${esc(equipDisplay(wizardData.equipement))}</span></div>` : ""}
+    ${wizardData.hauteur ? `<div class="recap-row"><span class="recap-row__label">${t("recap.height")}</span><span class="recap-row__value">${esc(wizardData.hauteur)} m</span></div>` : ""}
+    ${wizardData.acces ? `<div class="recap-row"><span class="recap-row__label">${t("recap.access")}</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.acces)}</span></div>` : ""}
+    ${wizardData.url ? `<div class="recap-row"><span class="recap-row__label">${t("recap.website")}</span><span class="recap-row__value" style="font-size:.82rem">${esc(wizardData.url)}</span></div>` : ""}
     <div class="recap-row">
-      <span class="recap-row__label" style="font-size:.8rem">${isMapAdmin() ? "✅ Sera approuvé immédiatement" : "⏳ Soumis à validation admin"}</span>
+      <span class="recap-row__label" style="font-size:.8rem">${isMapAdmin() ? t("wizard.admin_approve_immediate") : t("wizard.admin_pending")}</span>
     </div>
   `;
 }
@@ -1365,9 +1366,9 @@ function resetWizard() {
   const previewGrid = document.getElementById("pPhotoPreviewGrid");
   if (previewGrid) previewGrid.innerHTML = "";
   const cp = document.getElementById("coordsText");
-  if (cp) cp.textContent = "Position non définie";
+  if (cp) cp.textContent = t("wizard.position_undefined");
   ["errStep1","errStep2","errStep4"].forEach(id => setErr(id, ""));
-  if (wizardNextBtn) { wizardNextBtn.style.display = ""; wizardNextBtn.disabled = false; wizardNextBtn.textContent = "Suivant →"; }
+  if (wizardNextBtn) { wizardNextBtn.style.display = ""; wizardNextBtn.disabled = false; wizardNextBtn.textContent = t("wizard.next"); }
   const footer = document.querySelector(".wizard__footer");
   footer?.querySelectorAll("button:not(#wizardNextBtn):not(#wizardBackBtn)").forEach(b => b.remove());
   updateWizardUI();
@@ -1443,24 +1444,24 @@ document.getElementById("ePhotoInput")?.addEventListener("change", (e) => {
 document.getElementById("pLocateBtn")?.addEventListener("click", () => {
   const btn = document.getElementById("pLocateBtn");
   const coordsText = document.getElementById("coordsText");
-  if (btn) { btn.disabled = true; btn.textContent = "Localisation…"; }
+  if (btn) { btn.disabled = true; btn.textContent = t("wizard.locating"); }
 
   const setCoords = (lat, lng) => {
     document.getElementById("pLat").value = lat.toFixed(6);
     document.getElementById("pLng").value = lng.toFixed(6);
     if (coordsText) coordsText.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Position trouvée ✓`; }
+    if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> ${t("wizard.position_found")}`; }
   };
 
   if (userPosition) {
     setCoords(userPosition.lat, userPosition.lng);
   } else {
-    if (warnIfInsecureContext()) { if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Utiliser ma position`; } return; }
+    if (warnIfInsecureContext()) { if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> ${t("wizard.use_position")}`; } return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => setCoords(pos.coords.latitude, pos.coords.longitude),
       () => {
-        if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> Utiliser ma position`; }
-        setErr("errStep2", "Impossible d'obtenir la position.");
+        if (btn) { btn.disabled = false; btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg> ${t("wizard.use_position")}`; }
+        setErr("errStep2", t("wizard.err_get_position"));
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
@@ -1480,14 +1481,14 @@ wizardNextBtn?.addEventListener("click", async () => {
 
   // Étape 4 → Soumettre
   wizardNextBtn.disabled = true;
-  wizardNextBtn.textContent = "Envoi…";
+  wizardNextBtn.textContent = t("wizard.sending");
   setErr("errStep4", "");
 
   const token = getMapToken();
   if (!token) {
-    setErr("errStep4", "Tu n'es pas connecté. Reconnecte-toi et réessaie.");
+    setErr("errStep4", t("wizard.err_not_logged_propose"));
     wizardNextBtn.disabled = false;
-    wizardNextBtn.textContent = "Envoyer la demande";
+    wizardNextBtn.textContent = t("wizard.send_request");
     return;
   }
 
@@ -1546,13 +1547,10 @@ wizardNextBtn?.addEventListener("click", async () => {
         <div style="text-align:center;padding:1.5rem 0">
           <div style="font-size:3rem;margin-bottom:.75rem">${isAdmin ? "✅" : "⏳"}</div>
           <p style="font-weight:700;font-size:1.05rem;margin:0 0 .4rem">
-            ${isAdmin ? "Spot ajouté !" : "Demande envoyée !"}
+            ${isAdmin ? t("wizard.spot_added") : t("wizard.request_sent")}
           </p>
           <p style="font-size:.88rem;color:var(--text-2);margin:0">
-            ${isAdmin
-              ? "Le spot est maintenant visible sur la carte."
-              : "Un admin va valider ta demande. Tu peux suivre son statut dans Paramètres → Mes demandes."
-            }
+            ${isAdmin ? t("wizard.spot_visible") : t("wizard.request_pending")}
           </p>
         </div>`;
     }
@@ -1564,7 +1562,7 @@ wizardNextBtn?.addEventListener("click", async () => {
     if (footer) {
       const closeBtn = document.createElement("button");
       closeBtn.className = "btn";
-      closeBtn.textContent = "Fermer";
+      closeBtn.textContent = t("wizard.close");
       closeBtn.style.flex = "1";
       closeBtn.addEventListener("click", () => {
         proposeModal?.close();
@@ -1575,9 +1573,9 @@ wizardNextBtn?.addEventListener("click", async () => {
     }
   } catch (err) {
     console.error("[wizard] Erreur soumission:", err);
-    setErr("errStep4", "Erreur : " + err.message);
+    setErr("errStep4", t("common.error") + " " + err.message);
     wizardNextBtn.disabled = false;
-    wizardNextBtn.textContent = "Réessayer";
+    wizardNextBtn.textContent = t("wizard.retry");
   }
 });
 
@@ -1599,7 +1597,7 @@ const mapLoading = document.getElementById("mapLoading");
 
     if (!allSpots.length) {
       console.warn("[map] 0 spot après normalisation.");
-      showToast("Aucun spot trouvé.", true);
+      showToast(t("toast.no_spots_found"), true);
       return;
     }
 
@@ -1631,7 +1629,7 @@ const mapLoading = document.getElementById("mapLoading");
     }
   } catch (e) {
     console.error("[map] fetchSpots failed:", e);
-    showToast("Impossible de charger les spots : " + (e.message || e), true);
+    showToast(t("toast.load_error") + " : " + (e.message || e), true);
   } finally {
     if (mapLoading) mapLoading.style.display = "none";
   }
@@ -1640,7 +1638,7 @@ const mapLoading = document.getElementById("mapLoading");
 /* ---------- Bookmarks ---------- */
 async function toggleBookmark(spotId) {
   const token = getMapToken();
-  if (!token) { showToast("Connecte-toi pour sauvegarder des spots.", true); return; }
+  if (!token) { showToast(t("toast.login_to_save"), true); return; }
 
   const btn = document.querySelector(`.sc-bookmark[data-spot-id="${spotId}"]`);
   const isBookmarked = btn?.classList.contains("sc-bookmark--active");
@@ -1654,10 +1652,10 @@ async function toggleBookmark(spotId) {
     if (!res.ok) throw new Error("HTTP " + res.status);
 
     if (btn) btn.classList.toggle("sc-bookmark--active");
-    showToast(isBookmarked ? "Spot retiré des favoris" : "Spot sauvegardé !");
+    showToast(isBookmarked ? t("toast.spot_removed") : t("toast.spot_saved"));
   } catch (e) {
     console.error("[bookmark]", e);
-    showToast("Erreur lors de la sauvegarde.", true);
+    showToast(t("toast.save_error"), true);
   }
 }
 window.toggleBookmark = toggleBookmark;
@@ -1677,7 +1675,7 @@ async function checkBookmarkStatus(spotId) {
 }
 
 /* ---------- Voies / Routes ---------- */
-const STYLE_LABELS = { sport: "Sport", trad: "Trad", boulder: "Bloc", multi: "Grande voie", other: "Autre" };
+function getStyleLabel(style) { return t(`style.${style}`) !== `style.${style}` ? t(`style.${style}`) : style; }
 
 async function loadSpotRoutes(spotId) {
   const listEl = document.getElementById(`routeList-${spotId}`);
@@ -1692,13 +1690,13 @@ async function loadSpotRoutes(spotId) {
     if (countEl) countEl.textContent = routes.length ? `(${routes.length})` : "";
 
     if (!routes.length) {
-      listEl.innerHTML = `<span class="sc-routes__empty">Aucune voie enregistrée</span>`;
+      listEl.innerHTML = `<span class="sc-routes__empty">${t("spot.routes_empty")}</span>`;
       return;
     }
 
     listEl.innerHTML = routes.map(r => {
       const grade = r.grade ? `<span class="sc-route__grade">${esc(r.grade)}</span>` : "";
-      const style = r.style ? `<span class="sc-route__style">${esc(STYLE_LABELS[r.style] || r.style)}</span>` : "";
+      const style = r.style ? `<span class="sc-route__style">${esc(getStyleLabel(r.style))}</span>` : "";
       const height = r.height ? `<span class="sc-route__height">${esc(String(r.height))}m</span>` : "";
       return `
         <div class="sc-route">
@@ -1709,14 +1707,14 @@ async function loadSpotRoutes(spotId) {
     }).join("");
   } catch (e) {
     console.error("[routes]", e);
-    listEl.innerHTML = `<span class="sc-routes__empty">Erreur de chargement</span>`;
+    listEl.innerHTML = `<span class="sc-routes__empty">${t("spot.routes_error")}</span>`;
   }
 }
 
 async function submitRoute(e, spotId) {
   e.preventDefault();
   const token = getMapToken();
-  if (!token) { showToast("Connecte-toi pour ajouter une voie.", true); return; }
+  if (!token) { showToast(t("toast.login_to_add_route"), true); return; }
 
   const form = e.target;
   const fd = new FormData(form);
@@ -1736,7 +1734,7 @@ async function submitRoute(e, spotId) {
   if (desc) body.description = desc;
 
   const btn = form.querySelector(".si-submit");
-  if (btn) { btn.disabled = true; btn.textContent = "Ajout..."; }
+  if (btn) { btn.disabled = true; btn.textContent = t("spot.route_adding"); }
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/climbing-routes`, {
@@ -1748,14 +1746,14 @@ async function submitRoute(e, spotId) {
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error("HTTP " + res.status);
-    showToast("Voie ajoutée !");
+    showToast(t("toast.route_added"));
     form.reset();
     loadSpotRoutes(spotId);
   } catch (err) {
     console.error("[submitRoute]", err);
-    showToast("Erreur lors de l'ajout de la voie.", true);
+    showToast(t("toast.route_add_error"), true);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Ajouter la voie"; }
+    if (btn) { btn.disabled = false; btn.textContent = t("spot.add_route_submit"); }
   }
 }
 
@@ -1889,12 +1887,12 @@ window.openPhotoUpload = function(spotId) {
   input.addEventListener("change", async () => {
     const files = Array.from(input.files || []);
     if (!files.length) { input.remove(); return; }
-    if (files.length > 5) { showToast("Maximum 5 photos par upload.", true); input.remove(); return; }
+    if (files.length > 5) { showToast(t("toast.max_photos"), true); input.remove(); return; }
 
     const token = getMapToken();
-    if (!token) { showToast("Tu dois être connecté.", true); input.remove(); return; }
+    if (!token) { showToast(t("toast.login_required"), true); input.remove(); return; }
 
-    showToast("Upload en cours…");
+    showToast(t("toast.upload_progress"));
     const formData = new FormData();
     files.forEach(f => formData.append("photos", f));
 
@@ -1906,7 +1904,7 @@ window.openPhotoUpload = function(spotId) {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error || `Erreur ${res.status}`);
-      showToast(`${json.photos?.length || files.length} photo(s) ajoutée(s) !`);
+      showToast(t("toast.photos_added", { count: json.photos?.length || files.length }));
       // Mettre à jour les photos dans allSpots sans recharger toute la page
       const idx = allSpots.findIndex(s => s.id === spotId);
       if (idx !== -1 && json.photos) {
@@ -1914,7 +1912,7 @@ window.openPhotoUpload = function(spotId) {
       }
       closeSheet();
     } catch (err) {
-      showToast("Erreur upload : " + err.message, true);
+      showToast(t("toast.upload_error") + " : " + err.message, true);
     } finally {
       input.remove();
     }
@@ -1923,3 +1921,18 @@ window.openPhotoUpload = function(spotId) {
   input.click();
 };
 window.submitRoute = submitRoute;
+
+/* ---------- Re-render on language change ---------- */
+window.addEventListener("zdg:lang-changed", () => {
+  // Re-render bottom sheet if a spot card is open
+  if (sheet?.getAttribute("aria-hidden") === "false" && currentSheetSpotId) {
+    const spot = allSpots.find(s => s.id === currentSheetSpotId);
+    if (spot) {
+      sheetContent.innerHTML = spotCardHTML(spot);
+      loadSpotRoutes(spot.id);
+      checkBookmarkStatus(spot.id);
+    }
+  }
+  // Update user marker tooltip
+  if (userMarker) userMarker.setTooltipContent(t("geo.you_are_here"));
+});
