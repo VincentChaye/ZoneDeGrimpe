@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+/* ============================================
+   ZoneDeGrimpe Design System - Tailwind v4
+   Palette "Roche & Lumiere" (Rock & Light)
+   ============================================ */
+
+@theme {
+  /* --- Brand Colors --- */
+  --color-sage: #5D7052;
+  --color-sage-hover: #4A5A41;
+  --color-sage-muted: oklch(0.52 0.06 140 / 0.12);
+
+  --color-gold: #E3CD8B;
+  --color-amber-brand: #C18845;
+  --color-peach: #F0BE86;
+  --color-stone-brand: #6A645A;
+
+  /* --- Semantic Light --- */
+  --color-bg: #F6F1E6;
+  --color-surface: #FDFAF1;
+  --color-surface-2: #F1EADB;
+  --color-text-primary: #2C2720;
+  --color-text-secondary: #6A645A;
+  --color-border-subtle: oklch(0.48 0.02 70 / 0.18);
+
+  /* --- Grade difficulty colors --- */
+  --color-grade-easy: #16a34a;
+  --color-grade-medium: #ca8a04;
+  --color-grade-hard: #ea580c;
+  --color-grade-expert: #dc2626;
+  --color-grade-elite: #7c3aed;
+
+  /* --- Spot type colors --- */
+  --color-type-crag: #5D7052;
+  --color-type-boulder: #C18845;
+  --color-type-indoor: #4A90D9;
+  --color-type-shop: #8B5CF6;
+
+  /* --- Shadows --- */
+  --shadow-soft: 0 1px 3px oklch(0.2 0.02 60 / 0.07), 0 1px 2px oklch(0.2 0.02 60 / 0.04);
+  --shadow-card: 0 4px 14px oklch(0.2 0.02 60 / 0.10), 0 1px 3px oklch(0.2 0.02 60 / 0.06);
+  --shadow-elevated: 0 14px 44px oklch(0.2 0.02 60 / 0.14), 0 4px 12px oklch(0.2 0.02 60 / 0.08);
+
+  /* --- Typography --- */
+  --font-heading: "Outfit", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* --- Radius --- */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.375rem;
+
+  /* --- Layout --- */
+  --spacing-header: 58px;
+  --spacing-tabbar: 68px;
+}
+
+/* ============================================
+   Dark Theme Overrides
+   ============================================ */
+.dark {
+  --color-bg: #18140F;
+  --color-surface: #221E18;
+  --color-surface-2: #2C2820;
+  --color-text-primary: #EDE6D8;
+  --color-text-secondary: #8A8070;
+  --color-sage: #E3CD8B;
+  --color-sage-hover: #C9B472;
+  --color-sage-muted: oklch(0.85 0.06 85 / 0.12);
+  --color-border-subtle: #352E24;
+
+  --shadow-soft: 0 1px 3px oklch(0 0 0 / 0.45);
+  --shadow-card: 0 4px 14px oklch(0 0 0 / 0.55);
+  --shadow-elevated: 0 14px 44px oklch(0 0 0 / 0.70);
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  background-image:
+    radial-gradient(ellipse at 20% 10%, oklch(0.6 0.08 60 / 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 85%, oklch(0.52 0.06 140 / 0.06) 0%, transparent 50%);
+  transition: background 0.25s, color 0.25s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark body {
+  background-image: none;
+}
+
+/* Leaflet container */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Leaflet cluster brand colors */
+.marker-cluster-small {
+  background-color: oklch(0.52 0.06 140 / 0.3) !important;
+}
+.marker-cluster-small div {
+  background-color: var(--color-sage) !important;
+  color: white !important;
+}
+.marker-cluster-medium {
+  background-color: oklch(0.6 0.08 60 / 0.3) !important;
+}
+.marker-cluster-medium div {
+  background-color: var(--color-amber-brand) !important;
+  color: white !important;
+}
+.marker-cluster-large {
+  background-color: oklch(0.5 0.05 30 / 0.3) !important;
+}
+.marker-cluster-large div {
+  background-color: var(--color-stone-brand) !important;
+  color: white !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-subtle); border-radius: 3px; }
+
+/* Keyframes */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
