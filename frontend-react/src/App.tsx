@@ -9,6 +9,8 @@ import { MySpotsPage } from '@/pages/MySpotsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { FriendsPage } from '@/pages/FriendsPage';
+import { AdminSpotsPage } from '@/pages/AdminSpotsPage';
+import { AdminUsersPage } from '@/pages/AdminUsersPage';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 
@@ -33,6 +35,8 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/admin/spots" element={<AdminSpotsPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
