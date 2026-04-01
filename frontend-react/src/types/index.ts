@@ -143,15 +143,42 @@ export interface Notification {
   createdAt: string;
 }
 
+/** Raw friendship document (rarely used directly) */
 export interface Friendship {
   _id: string;
-  requester: string;
-  recipient: string;
+  requesterId: string;
+  addresseeId: string;
   status: FriendshipStatus;
   createdAt: string;
-  requesterInfo?: { displayName: string; username?: string; avatarUrl?: string };
-  recipientInfo?: { displayName: string; username?: string; avatarUrl?: string };
+  updatedAt?: string;
 }
+
+/** GET /api/friends — accepted friend */
+export interface Friend {
+  friendshipId: string;
+  _id: string;
+  displayName: string;
+  username?: string;
+  avatarUrl?: string;
+  since: string;
+}
+
+/** GET /api/friends/requests — incoming pending request */
+export interface FriendRequest {
+  friendshipId: string;
+  _id: string;
+  displayName: string;
+  username?: string;
+  avatarUrl?: string;
+  requestedAt: string;
+}
+
+/** GET /api/friends/check/:userId */
+export type FriendshipCheck =
+  | { status: 'none' }
+  | { status: 'accepted'; friendshipId: string }
+  | { status: 'pending_sent'; friendshipId: string }
+  | { status: 'pending_received'; friendshipId: string };
 
 export interface FeedItem {
   type: 'review' | 'logbook' | 'spot';

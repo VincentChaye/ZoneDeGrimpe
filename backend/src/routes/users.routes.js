@@ -120,6 +120,28 @@ export function usersRouter(db) {
     }
   });
 
+  // --- GET /api/users/search?q=xxx (auth) — recherche par username/displayName ---
+  r.get("/search", requireAuth, async (req, res) => {
+    try {
+      const q = String(req.query.q || "").trim().toLowerCase();
+      if (q.length < 2) return res.json([]);
+      const rx = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+      const results = await users
+        .find(
+          { $or: [{ username: rx }, { displayName: rx }] },
+          { projection: { _id: 1, displayName: 1, username: 1, avatarUrl: 1 } },
+        )
+        .limit(10)
+        .toArray();
+      // Exclude self
+      const filtered = results.filter((u) => String(u._id) !== req.auth.uid);
+      return res.json(filtered);
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
   // --- GET /api/users/count (public) ---
   r.get("/count", async (_req, res) => {
     try {

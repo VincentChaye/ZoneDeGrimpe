@@ -10,6 +10,7 @@ import logo from '@/assets/ZoneDeGrimpeIcon.png';
 const NAV_LINKS = [
   { to: '/', key: 'nav.home' },
   { to: '/map', key: 'nav.map' },
+  { to: '/friends', key: 'nav.friends' },
   { to: '/my-spots', key: 'nav.my_spots' },
   { to: '/settings', key: 'nav.profile' },
 ];

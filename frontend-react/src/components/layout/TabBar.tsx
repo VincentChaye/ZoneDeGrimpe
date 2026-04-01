@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Home, MapPin, Bookmark, User } from 'lucide-react';
+import { Home, MapPin, Users, Bookmark, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
   { to: '/', key: 'nav.home', icon: Home },
   { to: '/map', key: 'nav.map', icon: MapPin },
+  { to: '/friends', key: 'nav.friends', icon: Users },
   { to: '/my-spots', key: 'nav.my_spots', icon: Bookmark },
   { to: '/settings', key: 'nav.profile', icon: User },
 ] as const;
