@@ -9,6 +9,9 @@ import { MySpotsPage } from '@/pages/MySpotsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { FriendsPage } from '@/pages/FriendsPage';
+import { ProfilePage } from '@/pages/ProfilePage';
+import { LogbookPage } from '@/pages/LogbookPage';
+import { FeedPage } from '@/pages/FeedPage';
 import { AdminSpotsPage } from '@/pages/AdminSpotsPage';
 import { AdminUsersPage } from '@/pages/AdminUsersPage';
 import { useAuthStore } from '@/stores/auth.store';
@@ -35,6 +38,9 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/logbook" element={<LogbookPage />} />
+          <Route path="/feed" element={<FeedPage />} />
           <Route path="/admin/spots" element={<AdminSpotsPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
         </Route>
