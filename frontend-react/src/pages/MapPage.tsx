@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import { Search, LocateFixed, X, MapPin as MapPinIcon, Mountain, Gem, Building2, ShoppingBag } from 'lucide-react';
@@ -9,6 +10,8 @@ import { SpotSheet } from '@/components/spots/SpotSheet';
 import type { Spot, SpotType } from '@/types';
 
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
 /* ---------- Fix Leaflet default icon path ---------- */
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -231,25 +234,34 @@ export function MapPage() {
           maxZoom={19}
         />
 
-        {!loading &&
-          filteredSpots.map((spot) => (
-            <Marker
-              key={spot.id}
-              position={[spot.lat, spot.lng]}
-              icon={typeIcons[spot.type] || typeIcons.crag}
-              eventHandlers={{
-                click: () => setSelectedSpot(spot),
-              }}
-            >
-              <Popup>
-                <strong>{spot.name}</strong>
-                <br />
-                <span className="text-xs text-gray-500">
-                  {SPOT_TYPES[spot.type]?.label || spot.type}
-                </span>
-              </Popup>
-            </Marker>
-          ))}
+        {!loading && (
+          <MarkerClusterGroup
+            chunkedLoading
+            maxClusterRadius={50}
+            spiderfyOnMaxZoom
+            showCoverageOnHover={false}
+            disableClusteringAtZoom={16}
+          >
+            {filteredSpots.map((spot) => (
+              <Marker
+                key={spot.id}
+                position={[spot.lat, spot.lng]}
+                icon={typeIcons[spot.type] || typeIcons.crag}
+                eventHandlers={{
+                  click: () => setSelectedSpot(spot),
+                }}
+              >
+                <Popup>
+                  <strong>{spot.name}</strong>
+                  <br />
+                  <span className="text-xs text-gray-500">
+                    {SPOT_TYPES[spot.type]?.label || spot.type}
+                  </span>
+                </Popup>
+              </Marker>
+            ))}
+          </MarkerClusterGroup>
+        )}
 
         <FlyToSpot spot={flyTarget} />
 
