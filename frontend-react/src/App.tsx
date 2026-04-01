@@ -31,13 +31,6 @@ function App() {
           <Route path="/my-spots" element={<MySpotsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
-          {/* Future routes */}
-          {/* <Route path="/logbook" element={<LogbookPage />} /> */}
-          {/* <Route path="/feed" element={<FeedPage />} /> */}
-          {/* <Route path="/friends" element={<FriendsPage />} /> */}
-          {/* <Route path="/profile/:id" element={<ProfilePage />} /> */}
-          {/* <Route path="/admin/spots" element={<AdminSpotsPage />} /> */}
-          {/* <Route path="/admin/users" element={<AdminUsersPage />} /> */}
         </Route>
       </Routes>
     </BrowserRouter>

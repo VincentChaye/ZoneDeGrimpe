@@ -112,15 +112,5 @@ export function getCachedSpots<T>(): T | null {
 export function setCachedSpots<T>(data: T): void {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-  } catch {
-    // Quota exceeded - clear and retry
-    try {
-      Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith('cache_')) localStorage.removeItem(k);
-      });
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-    } catch {
-      /* silent */
-    }
-  }
+  } catch { /* quota exceeded — silent */ }
 }

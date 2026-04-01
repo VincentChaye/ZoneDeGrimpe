@@ -6,17 +6,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** HTML-escape a string */
-export function esc(str: string | null | undefined): string {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 /** Parse a climbing grade like "6a+" into a numeric value for comparison */
 export function parseGradeToNumber(grade: string): number {
   if (!grade) return 0;

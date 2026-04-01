@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
-import { Search, LocateFixed, SlidersHorizontal, X, MapPin as MapPinIcon } from 'lucide-react';
+import { Search, LocateFixed, X, MapPin as MapPinIcon, Mountain, Gem, Building2, ShoppingBag } from 'lucide-react';
 import { apiFetch, getCachedSpots, setCachedSpots } from '@/lib/api';
 import { cn, SPOT_TYPES } from '@/lib/utils';
 import { SpotSheet } from '@/components/spots/SpotSheet';
@@ -52,92 +52,62 @@ const typeIcons: Record<SpotType, L.DivIcon> = {
   shop: createTypeIcon('shop'),
 };
 
+/* ---------- Filter chip config ---------- */
+const FILTER_CHIPS: { type: SpotType; icon: typeof Mountain; label: string }[] = [
+  { type: 'crag', icon: Mountain, label: 'Falaise' },
+  { type: 'boulder', icon: Gem, label: 'Bloc' },
+  { type: 'indoor', icon: Building2, label: 'Salle' },
+  { type: 'shop', icon: ShoppingBag, label: 'Magasin' },
+];
+
 /* ---------- Spot data normalization ---------- */
 function normalizeSpot(s: Record<string, unknown>, i: number): Spot | null {
+  const isFeature = s.type === 'Feature' && s.geometry;
+  const p = (isFeature ? { ...(s.properties as Record<string, unknown>) } : s) as Record<string, unknown>;
+
   let lat: number | null = null;
   let lng: number | null = null;
-
-  // GeoJSON Feature
-  if (s.type === 'Feature' && s.geometry) {
-    const geom = s.geometry as { coordinates?: number[] };
-    if (geom.coordinates) {
-      lng = geom.coordinates[0] as number;
-      lat = geom.coordinates[1] as number;
-    }
-    const p = (s.properties || {}) as Record<string, unknown>;
-    return {
-      id: String(p.id ?? p._id ?? s.id ?? `spot-${i}`),
-      name: (p.name ?? 'Sans nom') as string,
-      type: (p.type ?? 'crag') as SpotType,
-      soustype: (p.soustype ?? null) as string | null,
-      lat: lat!,
-      lng: lng!,
-      orientation: p.orientation as Spot['orientation'],
-      niveau_min: (p.niveau_min ?? null) as string | null,
-      niveau_max: (p.niveau_max ?? null) as string | null,
-      id_voix: (p.id_voix ?? []) as string[],
-      url: (p.url ?? null) as string | null,
-      description: (p.description ?? null) as string | null,
-      info_complementaires: p.info_complementaires as Spot['info_complementaires'],
-      acces: (p.acces ?? null) as string | null,
-      equipement: p.equipement as Spot['equipement'],
-      hauteur: (p.hauteur ?? null) as number | null,
-      photos: (p.photos ?? []) as Spot['photos'],
-      createdBy: p.createdBy as Spot['createdBy'],
-      submittedBy: p.submittedBy as Spot['submittedBy'],
-      updatedBy: p.updatedBy as Spot['updatedBy'],
-      createdAt: (p.createdAt ?? null) as string | null,
-      updatedAt: (p.updatedAt ?? null) as string | null,
-      status: p.status as Spot['status'],
-      avgRating: p.avgRating as number | undefined,
-      reviewCount: p.reviewCount as number | undefined,
-    };
+  if (isFeature) {
+    const coords = (s.geometry as { coordinates?: number[] }).coordinates;
+    if (coords) { lng = coords[0]; lat = coords[1]; }
+  } else {
+    const loc = s.location as { lat?: number; lng?: number; type?: string; coordinates?: number[] } | undefined;
+    if (loc?.type === 'Point' && loc.coordinates) { lng = loc.coordinates[0]; lat = loc.coordinates[1]; }
+    else if (loc) { lat = loc.lat ?? null; lng = loc.lng ?? null; }
+    if (lat == null) lat = (s.lat as number) ?? null;
+    if (lng == null) lng = (s.lng as number) ?? null;
   }
-
-  // MongoDB doc
-  const loc = s.location as { lat?: number; lng?: number; type?: string; coordinates?: number[] } | undefined;
-  if (loc?.type === 'Point' && loc.coordinates) {
-    lng = loc.coordinates[0];
-    lat = loc.coordinates[1];
-  } else if (loc) {
-    lat = loc.lat ?? null;
-    lng = loc.lng ?? null;
-  }
-  if (lat == null && s.lat != null) lat = s.lat as number;
-  if (lng == null && s.lng != null) lng = s.lng as number;
-
   if (lat == null || lng == null) return null;
 
   return {
-    id: String(s.id ?? s._id ?? `spot-${i}`),
-    name: (s.name ?? 'Sans nom') as string,
-    type: (s.type ?? 'crag') as SpotType,
-    soustype: (s.soustype ?? null) as string | null,
-    lat,
-    lng,
-    orientation: s.orientation as Spot['orientation'],
-    niveau_min: (s.niveau_min ?? null) as string | null,
-    niveau_max: (s.niveau_max ?? null) as string | null,
-    id_voix: (Array.isArray(s.id_voix) ? s.id_voix : []) as string[],
-    url: (s.url ?? null) as string | null,
-    description: (s.description ?? null) as string | null,
-    info_complementaires: s.info_complementaires as Spot['info_complementaires'],
-    acces: (s.acces ?? null) as string | null,
-    equipement: s.equipement as Spot['equipement'],
-    hauteur: (s.hauteur ?? null) as number | null,
-    photos: (s.photos ?? []) as Spot['photos'],
-    createdBy: s.createdBy as Spot['createdBy'],
-    submittedBy: s.submittedBy as Spot['submittedBy'],
-    updatedBy: s.updatedBy as Spot['updatedBy'],
-    createdAt: (s.createdAt ?? null) as string | null,
-    updatedAt: (s.updatedAt ?? null) as string | null,
-    status: s.status as Spot['status'],
-    avgRating: s.avgRating as number | undefined,
-    reviewCount: s.reviewCount as number | undefined,
+    id: String(p.id ?? p._id ?? s.id ?? `spot-${i}`),
+    name: (p.name ?? 'Sans nom') as string,
+    type: (p.type ?? 'crag') as SpotType,
+    soustype: (p.soustype ?? null) as string | null,
+    lat, lng,
+    orientation: (p.orientation ?? null) as Spot['orientation'],
+    niveau_min: (p.niveau_min ?? null) as string | null,
+    niveau_max: (p.niveau_max ?? null) as string | null,
+    id_voix: (Array.isArray(p.id_voix) ? p.id_voix : []) as string[],
+    url: (p.url ?? null) as string | null,
+    description: (p.description ?? null) as string | null,
+    info_complementaires: (p.info_complementaires ?? null) as Spot['info_complementaires'],
+    acces: (p.acces ?? null) as string | null,
+    equipement: (p.equipement ?? null) as Spot['equipement'],
+    hauteur: (p.hauteur ?? null) as number | null,
+    photos: (p.photos ?? []) as Spot['photos'],
+    createdBy: (p.createdBy ?? null) as Spot['createdBy'],
+    submittedBy: (p.submittedBy ?? null) as Spot['submittedBy'],
+    updatedBy: (p.updatedBy ?? null) as Spot['updatedBy'],
+    createdAt: (p.createdAt ?? null) as string | null,
+    updatedAt: (p.updatedAt ?? null) as string | null,
+    status: (p.status ?? null) as Spot['status'],
+    avgRating: p.avgRating as number | undefined,
+    reviewCount: p.reviewCount as number | undefined,
   };
 }
 
-/* ---------- LocateButton component ---------- */
+/* ---------- LocateButton ---------- */
 function LocateButton() {
   const map = useMap();
   const { t } = useTranslation();
@@ -149,13 +119,29 @@ function LocateButton() {
   return (
     <button
       onClick={handleLocate}
-      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-[var(--radius-sm)] border border-border-subtle bg-surface shadow-card transition-colors hover:bg-surface-2"
+      className={cn(
+        'flex h-10 w-10 cursor-pointer items-center justify-center',
+        'rounded-xl bg-surface/95 backdrop-blur-md shadow-card',
+        'border border-border-subtle/50',
+        'text-text-secondary transition-all duration-200',
+        'hover:bg-surface hover:text-sage hover:shadow-elevated',
+        'active:scale-95',
+      )}
       title={t('geo.you_are_here')}
       type="button"
     >
-      <LocateFixed className="h-[18px] w-[18px] text-text-secondary" />
+      <LocateFixed className="h-[18px] w-[18px]" />
     </button>
   );
+}
+
+/* ---------- FlyToSpot ---------- */
+function FlyToSpot({ spot }: { spot: Spot | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (spot) map.flyTo([spot.lat, spot.lng], 14, { duration: 0.8 });
+  }, [spot, map]);
+  return null;
 }
 
 /* ---------- MapPage ---------- */
@@ -167,13 +153,12 @@ export function MapPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('');
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [flyTarget, setFlyTarget] = useState<Spot | null>(null);
 
   // Fetch spots
   useEffect(() => {
     async function load() {
-      // Try cache first
       const cached = getCachedSpots<Spot[]>();
       if (cached) {
         setSpots(cached);
@@ -211,10 +196,7 @@ export function MapPage() {
   }, []);
 
   // Filter spots
-  const filteredSpots = spots.filter((s) => {
-    if (filterType && s.type !== filterType) return false;
-    return true;
-  });
+  const filteredSpots = filterType ? spots.filter((s) => s.type === filterType) : spots;
 
   // Search results
   const searchResults =
@@ -224,12 +206,15 @@ export function MapPage() {
           .slice(0, 8)
       : [];
 
-  // Toggle search
+  // Focus search input
   useEffect(() => {
     if (searchOpen && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [searchOpen]);
+
+  // Count by type
+  const countByType = (type: string) => spots.filter((s) => s.type === type).length;
 
   return (
     <div className="relative h-[calc(100vh-var(--spacing-header))]">
@@ -238,7 +223,7 @@ export function MapPage() {
         center={[46.5, 2.5]}
         zoom={6}
         className="h-full w-full"
-        zoomControl={true}
+        zoomControl={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -246,7 +231,6 @@ export function MapPage() {
           maxZoom={19}
         />
 
-        {/* Markers */}
         {!loading &&
           filteredSpots.map((spot) => (
             <Marker
@@ -267,128 +251,165 @@ export function MapPage() {
             </Marker>
           ))}
 
-        {/* Controls overlay */}
+        <FlyToSpot spot={flyTarget} />
+
+        {/* Right-side controls */}
         <div className="absolute right-3 top-3 z-[1000] flex flex-col gap-2">
-          {/* Search toggle */}
           <button
             onClick={() => setSearchOpen(!searchOpen)}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-[var(--radius-sm)] border border-border-subtle bg-surface shadow-card transition-colors hover:bg-surface-2"
+            className={cn(
+              'flex h-10 w-10 cursor-pointer items-center justify-center',
+              'rounded-xl bg-surface/95 backdrop-blur-md shadow-card',
+              'border border-border-subtle/50',
+              'text-text-secondary transition-all duration-200',
+              'hover:bg-surface hover:text-sage hover:shadow-elevated',
+              'active:scale-95',
+              searchOpen && 'bg-sage text-white border-sage hover:bg-sage-hover hover:text-white',
+            )}
             title={t('common.search')}
             type="button"
           >
-            <Search className="h-[18px] w-[18px] text-text-secondary" />
+            {searchOpen ? <X className="h-[18px] w-[18px]" /> : <Search className="h-[18px] w-[18px]" />}
           </button>
 
           <LocateButton />
-
-          <div className="h-px bg-border-subtle" />
-
-          {/* Filters toggle */}
-          <button
-            onClick={() => setFiltersOpen(!filtersOpen)}
-            className={cn(
-              'flex h-10 cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] border border-border-subtle bg-surface px-3 shadow-card transition-colors hover:bg-surface-2',
-              filtersOpen && 'bg-sage-muted border-sage',
-            )}
-            type="button"
-          >
-            <SlidersHorizontal className="h-[16px] w-[16px] text-text-secondary" />
-            <span className="text-xs font-medium text-text-secondary">Filtres</span>
-          </button>
-
-          {/* Reset filters */}
-          {filterType && (
-            <button
-              onClick={() => setFilterType('')}
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-[var(--radius-sm)] border border-border-subtle bg-surface shadow-card transition-colors hover:bg-surface-2"
-              type="button"
-            >
-              <X className="h-4 w-4 text-text-secondary" />
-            </button>
-          )}
         </div>
       </MapContainer>
 
-      {/* Search bar overlay */}
+      {/* Search overlay */}
       {searchOpen && (
-        <div className="absolute left-3 right-14 top-3 z-[1001]">
-          <div className="rounded-[var(--radius-md)] border border-border-subtle bg-surface shadow-card">
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('common.search') + '...'}
-              className="w-full rounded-[var(--radius-md)] bg-transparent px-4 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary"
-            />
+        <div className="absolute left-3 right-16 top-3 z-[1001] animate-[fadeSlideDown_0.2s_ease-out]">
+          <div className="overflow-hidden rounded-xl border border-border-subtle/50 bg-surface/95 shadow-elevated backdrop-blur-md">
+            <div className="flex items-center gap-2 px-4">
+              <Search className="h-4 w-4 shrink-0 text-text-secondary/60" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('common.search') + '...'}
+                className="w-full bg-transparent py-3 text-sm text-text-primary outline-none placeholder:text-text-secondary/50"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full bg-text-secondary/10 text-text-secondary transition-colors hover:bg-text-secondary/20"
+                  type="button"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
             {searchResults.length > 0 && (
-              <div className="max-h-60 overflow-auto border-t border-border-subtle">
+              <div className="max-h-64 overflow-auto border-t border-border-subtle/50">
                 {searchResults.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => {
                       setSelectedSpot(s);
+                      setFlyTarget(s);
                       setSearchOpen(false);
                       setSearchQuery('');
                     }}
-                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-2"
+                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-sage-muted/50"
                     type="button"
                   >
-                    <MapPinIcon className="h-4 w-4 shrink-0 text-sage" />
-                    <div>
-                      <div className="text-sm font-medium text-text-primary">{s.name}</div>
-                      <div className="text-xs text-text-secondary">
+                    <div className={cn(
+                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white',
+                      TYPE_COLORS[s.type] === '#5D7052' && 'bg-type-crag',
+                      TYPE_COLORS[s.type] === '#C18845' && 'bg-type-boulder',
+                      TYPE_COLORS[s.type] === '#4A90D9' && 'bg-type-indoor',
+                      TYPE_COLORS[s.type] === '#8B5CF6' && 'bg-type-shop',
+                    )}>
+                      <MapPinIcon className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-text-primary">{s.name}</div>
+                      <div className="text-[11px] text-text-secondary">
                         {SPOT_TYPES[s.type]?.label || s.type}
+                        {s.niveau_max && <> &middot; {s.niveau_max}</>}
                       </div>
                     </div>
                   </button>
                 ))}
               </div>
             )}
+            {searchQuery.length >= 2 && searchResults.length === 0 && (
+              <div className="border-t border-border-subtle/50 px-4 py-6 text-center text-xs text-text-secondary/60">
+                {t('common.no_results') || 'Aucun résultat'}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Filters panel */}
-      {filtersOpen && (
-        <div className="absolute right-3 top-[160px] z-[1000] w-56 rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-card">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">
-            Type de spot
-          </p>
-          <div className="flex flex-col gap-1.5">
-            {(['', 'crag', 'boulder', 'indoor', 'shop'] as const).map((type) => (
-              <button
-                key={type}
-                onClick={() => {
-                  setFilterType(type);
-                  setFiltersOpen(false);
-                }}
-                className={cn(
-                  'rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm font-medium transition-colors cursor-pointer',
-                  filterType === type
-                    ? 'bg-sage-muted text-sage'
-                    : 'text-text-secondary hover:bg-surface-2',
-                )}
-                type="button"
-              >
-                {type === '' ? 'Tous les types' : SPOT_TYPES[type]?.label || type}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Filter chips — bottom of map */}
+      <div className="absolute bottom-3 left-3 right-3 z-[1000] flex items-center gap-2 overflow-x-auto pb-safe scrollbar-none">
+        {/* "All" chip */}
+        <button
+          onClick={() => setFilterType('')}
+          className={cn(
+            'flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2',
+            'text-xs font-semibold shadow-card backdrop-blur-md transition-all duration-200',
+            'border active:scale-95',
+            !filterType
+              ? 'bg-sage text-white border-sage shadow-card'
+              : 'bg-surface/90 text-text-secondary border-border-subtle/50 hover:bg-surface hover:border-sage/30',
+          )}
+          type="button"
+        >
+          <MapPinIcon className="h-3.5 w-3.5" />
+          <span>{t('filter.all') || 'Tous'}</span>
+          <span className={cn(
+            'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+            !filterType ? 'bg-white/20' : 'bg-text-secondary/10',
+          )}>
+            {spots.length}
+          </span>
+        </button>
 
-      {/* Loading indicator */}
+        {FILTER_CHIPS.map(({ type, icon: Icon, label }) => {
+          const active = filterType === type;
+          const count = countByType(type);
+          return (
+            <button
+              key={type}
+              onClick={() => setFilterType(active ? '' : type)}
+              className={cn(
+                'flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2',
+                'text-xs font-semibold shadow-card backdrop-blur-md transition-all duration-200',
+                'border active:scale-95',
+                active
+                  ? `text-white border-transparent shadow-card bg-${SPOT_TYPES[type].color}`
+                  : 'bg-surface/90 text-text-secondary border-border-subtle/50 hover:bg-surface hover:border-sage/30',
+              )}
+              style={active ? { backgroundColor: TYPE_COLORS[type] } : undefined}
+              type="button"
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span>{label}</span>
+              <span className={cn(
+                'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+                active ? 'bg-white/20' : 'bg-text-secondary/10',
+              )}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Loading */}
       {loading && (
         <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-bg/50 backdrop-blur-sm">
-          <div className="flex items-center gap-3 rounded-[var(--radius-md)] bg-surface px-6 py-4 shadow-card">
+          <div className="flex items-center gap-3 rounded-2xl bg-surface/95 px-6 py-4 shadow-elevated backdrop-blur-md">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-sage border-t-transparent" />
             <span className="text-sm font-medium text-text-secondary">{t('common.loading')}</span>
           </div>
         </div>
       )}
 
-      {/* Bottom sheet */}
+      {/* Spot sheet */}
       {selectedSpot && (
         <SpotSheet spot={selectedSpot} onClose={() => setSelectedSpot(null)} />
       )}
