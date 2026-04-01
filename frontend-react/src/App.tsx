@@ -22,7 +22,7 @@ function App() {
   }, [hydrateAuth, hydrateTheme]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/ZoneDeGrimpe">
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
