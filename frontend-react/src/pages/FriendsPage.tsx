@@ -138,12 +138,12 @@ export function FriendsPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
         <Users className="h-12 w-12 text-text-secondary/30" />
-        <p className="text-sm text-text-secondary">{t('auth.login_required') || 'Connectez-vous pour accéder à vos amis'}</p>
+        <p className="text-sm text-text-secondary">{t('friends.login_prompt')}</p>
         <Link
           to="/login"
           className="inline-flex items-center gap-2 rounded-xl bg-sage px-5 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover"
         >
-          {t('auth.login') || 'Se connecter'}
+          {t('auth.login') }
         </Link>
       </div>
     );
@@ -154,10 +154,10 @@ export function FriendsPage() {
       {/* Page header */}
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold text-text-primary">
-          {t('friends.title') || 'Amis'}
+          {t('friends.title') }
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          {t('friends.subtitle') || 'Retrouvez vos partenaires de grimpe'}
+          {t('friends.subtitle') }
         </p>
       </div>
 
@@ -169,7 +169,7 @@ export function FriendsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder={t('friends.search_placeholder') || 'Rechercher par pseudo...'}
+            placeholder={t('friends.search_placeholder') }
             className="w-full bg-transparent py-3 text-sm text-text-primary outline-none placeholder:text-text-secondary/50"
           />
           {searching && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-sage" />}
@@ -206,12 +206,12 @@ export function FriendsPage() {
                   {status?.status === 'accepted' ? (
                     <span className="flex items-center gap-1 text-xs font-medium text-sage">
                       <Check className="h-3.5 w-3.5" />
-                      {t('friends.already_friends') || 'Amis'}
+                      {t('friends.already_friends') }
                     </span>
                   ) : status?.status === 'pending_sent' ? (
                     <span className="flex items-center gap-1 text-xs font-medium text-amber-brand">
                       <Clock className="h-3.5 w-3.5" />
-                      {t('friends.request_sent') || 'Envoyée'}
+                      {t('friends.request_sent') }
                     </span>
                   ) : status?.status === 'pending_received' ? (
                     <div className="flex gap-1.5">
@@ -248,7 +248,7 @@ export function FriendsPage() {
                       ) : (
                         <>
                           <UserPlus className="h-3.5 w-3.5" />
-                          {t('friends.add') || 'Ajouter'}
+                          {t('friends.add') }
                         </>
                       )}
                     </button>
@@ -260,7 +260,7 @@ export function FriendsPage() {
         )}
         {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
           <div className="mt-2 rounded-xl border border-border-subtle bg-surface px-4 py-6 text-center text-xs text-text-secondary/60">
-            {t('friends.no_users_found') || 'Aucun utilisateur trouvé'}
+            {t('friends.no_users_found') }
           </div>
         )}
       </div>
@@ -270,7 +270,7 @@ export function FriendsPage() {
         <section className="mb-8">
           <div className="mb-3 flex items-center gap-2">
             <h2 className="font-heading text-lg font-bold text-text-primary">
-              {t('friends.requests') || 'Demandes'}
+              {t('friends.requests') }
             </h2>
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-sage px-1.5 text-[10px] font-bold text-white">
               {requests.length}
@@ -306,7 +306,7 @@ export function FriendsPage() {
                       type="button"
                     >
                       {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                      {t('friends.accept') || 'Accepter'}
+                      {t('friends.accept') }
                     </button>
                     <button
                       onClick={() => handleDecline(req.friendshipId)}
@@ -319,7 +319,7 @@ export function FriendsPage() {
                       type="button"
                     >
                       <X className="h-3.5 w-3.5" />
-                      {t('friends.decline') || 'Refuser'}
+                      {t('friends.decline') }
                     </button>
                   </div>
                 </div>
@@ -333,7 +333,7 @@ export function FriendsPage() {
       <section>
         <div className="mb-3 flex items-center gap-2">
           <h2 className="font-heading text-lg font-bold text-text-primary">
-            {t('friends.my_friends') || 'Mes amis'}
+            {t('friends.my_friends') }
           </h2>
           {friends.length > 0 && (
             <span className="text-xs font-medium text-text-secondary">({friends.length})</span>
@@ -348,10 +348,10 @@ export function FriendsPage() {
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-12 text-center">
             <Users className="mb-3 h-10 w-10 text-text-secondary/20" />
             <p className="text-sm font-medium text-text-secondary">
-              {t('friends.no_friends_yet') || 'Aucun ami pour le moment'}
+              {t('friends.no_friends_yet') }
             </p>
             <p className="mt-1 text-xs text-text-secondary/60">
-              {t('friends.search_to_add') || 'Utilisez la recherche ci-dessus pour ajouter des grimpeurs'}
+              {t('friends.search_to_add') }
             </p>
           </div>
         ) : (
@@ -370,7 +370,7 @@ export function FriendsPage() {
                       <p className="truncate text-xs text-text-secondary">@{friend.username}</p>
                     )}
                     <p className="mt-0.5 text-[11px] text-text-secondary/60">
-                      {t('friends.since') || 'Ami depuis'} {new Date(friend.since).toLocaleDateString()}
+                      {t('friends.since') } {new Date(friend.since).toLocaleDateString()}
                     </p>
                   </div>
                   <button
@@ -383,7 +383,7 @@ export function FriendsPage() {
                       'disabled:opacity-50 active:scale-95',
                     )}
                     type="button"
-                    title={t('friends.remove') || 'Retirer'}
+                    title={t('friends.remove') }
                   >
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserMinus className="h-4 w-4" />}
                   </button>

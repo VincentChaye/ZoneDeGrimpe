@@ -16,23 +16,28 @@ interface EditSpotWizardProps {
   onSuccess?: () => void;
 }
 
-const TYPES: { type: SpotType; icon: typeof Mountain; label: string }[] = [
-  { type: 'crag', icon: Mountain, label: 'Falaise' },
-  { type: 'boulder', icon: Gem, label: 'Bloc' },
-  { type: 'indoor', icon: Building2, label: 'Salle' },
-  { type: 'shop', icon: ShoppingBag, label: 'Magasin' },
+const TYPE_ICONS: { type: SpotType; icon: typeof Mountain; key: string }[] = [
+  { type: 'crag', icon: Mountain, key: 'spot.type.crag' },
+  { type: 'boulder', icon: Gem, key: 'spot.type.boulder' },
+  { type: 'indoor', icon: Building2, key: 'spot.type.indoor' },
+  { type: 'shop', icon: ShoppingBag, key: 'spot.type.shop' },
 ];
 
 const ORIENTATIONS: Orientation[] = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
-const EQUIPMENTS: { value: Equipment; label: string }[] = [
-  { value: 'spit', label: 'Spit' },
-  { value: 'piton', label: 'Piton' },
-  { value: 'mixte', label: 'Mixte' },
-  { value: 'non_equipe', label: 'Non equipé' },
+const EQUIPMENT_KEYS: { value: Equipment; key: string }[] = [
+  { value: 'spit', key: 'equip.spit' },
+  { value: 'piton', key: 'equip.piton' },
+  { value: 'mixte', key: 'equip.mixte' },
+  { value: 'non_equipe', key: 'equip.non_equipe' },
 ];
 
 const GRADES = ['3a','3b','3c','4a','4b','4c','5a','5b','5c','6a','6a+','6b','6b+','6c','6c+','7a','7a+','7b','7b+','7c','7c+','8a','8a+','8b','8b+','8c','8c+','9a','9a+','9b','9b+','9c'];
-const ROCKS = ['Calcaire', 'Granite', 'Grès', 'Gneiss', 'Basalte', 'Schiste', 'Conglomérat', 'Quartzite', 'Autre'];
+
+const ROCK_KEYS = ['calcaire', 'granite', 'gres', 'gneiss', 'basalte', 'schiste', 'conglomerat', 'quartzite', 'autre'];
+const ROCK_VALUES: Record<string, string> = {
+  calcaire: 'Calcaire', granite: 'Granite', gres: 'Grès', gneiss: 'Gneiss',
+  basalte: 'Basalte', schiste: 'Schiste', conglomerat: 'Conglomérat', quartzite: 'Quartzite', autre: 'Autre',
+};
 
 interface FormData {
   name: string;
@@ -48,6 +53,15 @@ interface FormData {
   acces: string;
   url: string;
 }
+
+// Map for recap field labels
+const RECAP_KEYS: Record<string, string> = {
+  name: 'recap.name', type: 'recap.type', soustype: 'spot.subtype',
+  niveau_min: 'recap.grade_min', niveau_max: 'recap.grade_max',
+  orientation: 'recap.orientation', description: 'recap.description',
+  acces: 'recap.access', url: 'recap.website', equipement: 'recap.equipment',
+  hauteur: 'recap.height', info_complementaires: 'recap.rock',
+};
 
 export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps) {
   const { t } = useTranslation();
@@ -78,10 +92,10 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
   }, []);
 
   const STEPS = [
-    { title: t('edit.step1') || 'Nom & Type' },
-    { title: t('edit.step2') || 'Détails grimpe' },
-    { title: t('edit.step3') || 'Infos pratiques' },
-    { title: t('edit.step4') || 'Récapitulatif' },
+    { title: t('edit.step1') },
+    { title: t('edit.step2') },
+    { title: t('edit.step3') },
+    { title: t('edit.step4') },
   ];
 
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -111,7 +125,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
   const handleSubmit = async () => {
     const changes = getChanges();
     if (Object.keys(changes).length === 0) {
-      toast.info('Aucune modification');
+      toast.info(t('toast.no_changes'));
       return;
     }
 
@@ -123,19 +137,19 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
           method: 'PATCH', auth: true,
           body: JSON.stringify(changes),
         });
-        toast.success(t('edit.applied') || 'Modifications appliquées');
+        toast.success(t('edit.applied'));
       } else {
         // User: submit edit proposal
         await apiFetch('/api/spot-edits', {
           method: 'POST', auth: true,
           body: JSON.stringify({ spotId: spot.id, changes }),
         });
-        toast.success(t('edit.pending') || 'Modifications soumises, en attente de validation');
+        toast.success(t('edit.pending'));
       }
       onSuccess?.();
       onClose();
     } catch (err) {
-      toast.error((err as Error).message || 'Erreur');
+      toast.error((err as Error).message || t('common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -157,7 +171,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
           <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
             <div>
               <h2 className="text-base font-bold text-text-primary">
-                {t('edit.title') || 'Modifier le spot'}
+                {t('edit.title')}
               </h2>
               <p className="text-xs text-text-secondary">
                 {spot.name} &middot; {STEPS[step].title} ({step + 1}/{STEPS.length})
@@ -179,7 +193,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
             {step === 0 && (
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-text-primary">Nom du spot</label>
+                  <label className="mb-1.5 block text-sm font-medium text-text-primary">{t('propose.name')}</label>
                   <input
                     type="text"
                     value={data.name}
@@ -188,9 +202,9 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-text-primary">Type</label>
+                  <label className="mb-2 block text-sm font-medium text-text-primary">{t('recap.type')}</label>
                   <div className="grid grid-cols-2 gap-2">
-                    {TYPES.map(({ type, icon: Icon, label }) => (
+                    {TYPE_ICONS.map(({ type, icon: Icon, key }) => (
                       <button
                         key={type}
                         onClick={() => set('type', type)}
@@ -203,7 +217,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                         type="button"
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="text-sm">{label}</span>
+                        <span className="text-sm">{t(key)}</span>
                       </button>
                     ))}
                   </div>
@@ -217,9 +231,13 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                 {(data.type === 'crag' || data.type === 'boulder') && (
                   <>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-text-primary">Sous-type</label>
+                      <label className="mb-1.5 block text-sm font-medium text-text-primary">{t('spot.subtype')}</label>
                       <div className="flex gap-2">
-                        {[{ v: '', l: 'Non défini' }, { v: 'diff', l: 'Voie' }, { v: 'bloc', l: 'Bloc' }].map(({ v, l }) => (
+                        {[
+                          { v: '', key: 'spot.subtype_undefined' },
+                          { v: 'diff', key: 'spot.subtype_route' },
+                          { v: 'bloc', key: 'spot.subtype_boulder' },
+                        ].map(({ v, key }) => (
                           <button
                             key={v}
                             onClick={() => set('soustype', v)}
@@ -230,13 +248,13 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                                 : 'border-border-subtle text-text-secondary hover:border-sage/30',
                             )}
                             type="button"
-                          >{l}</button>
+                          >{t(key)}</button>
                         ))}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="mb-1.5 block text-xs font-medium text-text-secondary">Niveau min</label>
+                        <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('propose.niveau_min')}</label>
                         <select
                           value={data.niveau_min}
                           onChange={(e) => set('niveau_min', e.target.value)}
@@ -247,7 +265,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                         </select>
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-xs font-medium text-text-secondary">Niveau max</label>
+                        <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('propose.niveau_max')}</label>
                         <select
                           value={data.niveau_max}
                           onChange={(e) => set('niveau_max', e.target.value)}
@@ -262,7 +280,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                 )}
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-text-primary">Orientation</label>
+                  <label className="mb-2 block text-sm font-medium text-text-primary">{t('propose.orientation')}</label>
                   <div className="flex flex-wrap gap-1.5">
                     {ORIENTATIONS.map((o) => (
                       <button
@@ -282,7 +300,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-text-primary">Description</label>
+                  <label className="mb-1.5 block text-sm font-medium text-text-primary">{t('propose.description')}</label>
                   <textarea
                     value={data.description}
                     onChange={(e) => set('description', e.target.value)}
@@ -297,22 +315,22 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
             {step === 2 && (
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-text-primary">Type de roche</label>
+                  <label className="mb-1.5 block text-sm font-medium text-text-primary">{t('propose.rock')}</label>
                   <select
                     value={data.rock}
                     onChange={(e) => set('rock', e.target.value)}
                     className="w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-sm outline-none focus:border-sage"
                   >
                     <option value="">—</option>
-                    {ROCKS.map((r) => <option key={r} value={r}>{r}</option>)}
+                    {ROCK_KEYS.map((r) => <option key={r} value={ROCK_VALUES[r]}>{t(`rock.${r}`)}</option>)}
                   </select>
                 </div>
                 {(data.type === 'crag' || data.type === 'boulder') && (
                   <>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-text-primary">Equipement</label>
+                      <label className="mb-2 block text-sm font-medium text-text-primary">{t('propose.equipement')}</label>
                       <div className="grid grid-cols-2 gap-2">
-                        {EQUIPMENTS.map(({ value, label }) => (
+                        {EQUIPMENT_KEYS.map(({ value, key }) => (
                           <button
                             key={value}
                             onClick={() => set('equipement', data.equipement === value ? '' : value)}
@@ -323,12 +341,12 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                                 : 'border-border-subtle text-text-secondary hover:border-sage/30',
                             )}
                             type="button"
-                          >{label}</button>
+                          >{t(key)}</button>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs font-medium text-text-secondary">Hauteur (m)</label>
+                      <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('propose.hauteur')}</label>
                       <input
                         type="number"
                         value={data.hauteur}
@@ -339,7 +357,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                   </>
                 )}
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-text-primary">Accès</label>
+                  <label className="mb-1.5 block text-sm font-medium text-text-primary">{t('propose.acces')}</label>
                   <textarea
                     value={data.acces}
                     onChange={(e) => set('acces', e.target.value)}
@@ -348,7 +366,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Site web</label>
+                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('propose.url')}</label>
                   <input
                     type="url"
                     value={data.url}
@@ -365,8 +383,8 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-text-primary">
                   {changeCount > 0
-                    ? `${changeCount} modification${changeCount > 1 ? 's' : ''}`
-                    : 'Aucune modification'}
+                    ? t('edit.changes_count', { count: changeCount })
+                    : t('edit.no_changes')}
                 </h3>
                 {changeCount > 0 && (
                   <div className="space-y-2 rounded-xl border border-border-subtle bg-surface-2/30 p-4 text-sm">
@@ -386,7 +404,9 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                         : String(value ?? '—');
                       return (
                         <div key={key} className="flex flex-col gap-0.5">
-                          <span className="text-xs font-semibold text-text-secondary uppercase">{key}</span>
+                          <span className="text-xs font-semibold text-text-secondary uppercase">
+                            {t(RECAP_KEYS[key] || key)}
+                          </span>
                           <div className="flex items-center gap-2 text-sm">
                             <span className="line-through text-red-400">{origVal}</span>
                             <span className="text-text-secondary">&rarr;</span>
@@ -399,7 +419,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                 )}
                 {!isAdmin && changeCount > 0 && (
                   <p className="text-xs text-text-secondary/70 italic">
-                    Vos modifications seront soumises à validation par un administrateur.
+                    {t('edit.admin_notice')}
                   </p>
                 )}
               </div>
@@ -415,7 +435,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                 type="button"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Retour
+                {t('common.back')}
               </button>
             )}
             <div className="flex-1" />
@@ -425,7 +445,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                 className="flex items-center gap-1.5 rounded-xl bg-sage px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-hover"
                 type="button"
               >
-                Suivant
+                {t('common.next')}
                 <ChevronRight className="h-4 w-4" />
               </button>
             ) : (
@@ -436,7 +456,7 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
                 type="button"
               >
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                {isAdmin ? 'Appliquer' : 'Soumettre'}
+                {isAdmin ? t('edit.apply') : t('edit.submit')}
               </button>
             )}
           </div>

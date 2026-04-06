@@ -34,8 +34,8 @@ const TYPE_CLS: Record<string, { bg: string; gradient: string; ring: string }> =
   shop: { bg: 'bg-type-shop', gradient: 'from-type-shop/8 via-type-shop/3', ring: 'ring-type-shop/20' },
 };
 
-const STYLE_LABELS: Record<ClimbingStyle, string> = {
-  sport: 'Sport', trad: 'Trad', boulder: 'Bloc', multi: 'Grande voie', other: 'Autre',
+const STYLE_KEYS: Record<ClimbingStyle, string> = {
+  sport: 'style.sport', trad: 'style.trad', boulder: 'style.boulder', multi: 'style.multi', other: 'style.other',
 };
 
 export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
@@ -76,7 +76,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
 
   const toggleBookmark = useCallback(async () => {
     if (!isAuthenticated) {
-      toast.error(t('auth.login_required') || 'Connectez-vous pour sauvegarder');
+      toast.error(t('toast.login_required'));
       return;
     }
     setBookmarkLoading(true);
@@ -84,14 +84,14 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
       if (bookmarked) {
         await apiFetch(`/api/bookmarks/${spot.id}`, { method: 'DELETE', auth: true });
         setBookmarked(false);
-        toast.success(t('bookmark.removed') || 'Retiré des favoris');
+        toast.success(t('toast.spot_removed'));
       } else {
         await apiFetch(`/api/bookmarks/${spot.id}`, { method: 'POST', auth: true });
         setBookmarked(true);
-        toast.success(t('bookmark.added') || 'Ajouté aux favoris');
+        toast.success(t('toast.spot_saved'));
       }
     } catch {
-      toast.error(t('common.error') || 'Erreur');
+      toast.error(t('common.error'));
     } finally {
       setBookmarkLoading(false);
     }
@@ -101,7 +101,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
   const handleShare = useCallback(async () => {
     const shareData = {
       title: spot.name,
-      text: `${spot.name} — ${typeInfo.label}`,
+      text: `${spot.name} — ${t(typeInfo.key)}`,
       url: `${window.location.origin}${window.location.pathname}#spot=${spot.id}`,
     };
     try {
@@ -109,15 +109,15 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(shareData.url);
-        toast.success(t('share.copied') || 'Lien copié !');
+        toast.success(t('share.copied'));
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
         await navigator.clipboard.writeText(shareData.url).catch(() => {});
-        toast.success(t('share.copied') || 'Lien copié !');
+        toast.success(t('share.copied'));
       }
     }
-  }, [spot, typeInfo.label, t]);
+  }, [spot, typeInfo.key, t]);
 
   /* ---------- Climbing routes ---------- */
   const [routes, setRoutes] = useState<ClimbingRoute[]>([]);
@@ -146,9 +146,9 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
       setRoutes((prev) => [...prev, res.route]);
       setNewRoute({ name: '', grade: '', style: 'sport' });
       setShowAddRoute(false);
-      toast.success(t('route.added') || 'Voie ajoutée');
+      toast.success(t('toast.route_added'));
     } catch {
-      toast.error(t('common.error') || 'Erreur');
+      toast.error(t('common.error'));
     } finally {
       setAddingRoute(false);
     }
@@ -158,21 +158,21 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
     try {
       await apiFetch(`/api/climbing-routes/${routeId}`, { method: 'DELETE', auth: true });
       setRoutes((prev) => prev.filter((r) => r._id !== routeId));
-      toast.success(t('route.deleted') || 'Voie supprimée');
+      toast.success(t('toast.route_deleted'));
     } catch {
-      toast.error(t('common.error') || 'Erreur');
+      toast.error(t('common.error'));
     }
   };
 
   /* ---------- Delete spot (admin) ---------- */
   const handleDeleteSpot = async () => {
-    if (!confirm(t('spot.confirm_delete') || 'Supprimer ce spot ?')) return;
+    if (!confirm(t('spot.delete_confirm', { name: spot.name }))) return;
     try {
       await apiFetch(`/api/spots/${spot.id}`, { method: 'DELETE', auth: true });
-      toast.success(t('spot.deleted') || 'Spot supprimé');
+      toast.success(t('toast.spot_deleted'));
       onClose();
     } catch {
-      toast.error(t('common.error') || 'Erreur');
+      toast.error(t('common.error'));
     }
   };
 
@@ -217,7 +217,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                   <p className="mt-0.5 text-xs font-medium text-text-secondary">
                     {t(`spot.type.${spot.type}`) !== `spot.type.${spot.type}`
                       ? t(`spot.type.${spot.type}`)
-                      : typeInfo.label}
+                      : t(typeInfo.key)}
                   </p>
                 </div>
                 {spot.avgRating != null && spot.avgRating > 0 && (
@@ -267,12 +267,12 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
               {routes.length > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-lg border border-border-subtle bg-surface-2/60 px-2.5 py-1 text-xs font-medium text-text-secondary">
                   <RouteIcon className="h-3 w-3" />
-                  {routes.length} {t('spot.routes') || 'voies'}
+                  {routes.length} {t('spot.routes')}
                 </span>
               )}
               {spot.reviewCount != null && spot.reviewCount > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-lg border border-border-subtle bg-surface-2/60 px-2.5 py-1 text-xs font-medium text-text-secondary">
-                  {spot.reviewCount} {t('spot.reviews') || 'avis'}
+                  {t('review.count', { count: spot.reviewCount })}
                 </span>
               )}
             </div>
@@ -352,7 +352,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
               <div className="border-t border-border-subtle px-5 py-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary/70">
-                    {t('spot.climbing_routes') || 'Voies'}
+                    {t('spot.climbing_routes')}
                     {routes.length > 0 && <span className="ml-1.5 text-text-primary">({routes.length})</span>}
                   </h3>
                   {isAuthenticated && !showAddRoute && (
@@ -362,7 +362,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                       type="button"
                     >
                       <Plus className="h-3 w-3" />
-                      {t('route.add') || 'Ajouter'}
+                      {t('spot.add_route')}
                     </button>
                   )}
                 </div>
@@ -373,7 +373,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                   </div>
                 ) : routes.length === 0 && !showAddRoute ? (
                   <p className="py-2 text-xs text-text-secondary/50">
-                    {t('route.none') || 'Aucune voie enregistrée'}
+                    {t('spot.routes_empty')}
                   </p>
                 ) : (
                   <div className="mt-2 space-y-1.5">
@@ -386,7 +386,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                           <span className="text-sm font-medium text-text-primary">{r.name}</span>
                           <div className="flex items-center gap-2 text-[11px] text-text-secondary">
                             {r.grade && <span className="font-bold">{r.grade}</span>}
-                            {r.style && <span>{STYLE_LABELS[r.style] || r.style}</span>}
+                            {r.style && <span>{t(STYLE_KEYS[r.style])}</span>}
                             {r.height && <span>{r.height}m</span>}
                             {r.bolts != null && <span>{r.bolts} pts</span>}
                           </div>
@@ -396,7 +396,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                             onClick={() => handleDeleteRoute(r._id)}
                             className="shrink-0 rounded p-1 text-text-secondary/40 transition-colors hover:bg-red-50 hover:text-red-500"
                             type="button"
-                            title={t('common.delete') || 'Supprimer'}
+                            title={t('common.delete')}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -413,7 +413,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                       type="text"
                       value={newRoute.name}
                       onChange={(e) => setNewRoute((s) => ({ ...s, name: e.target.value }))}
-                      placeholder={t('route.name_placeholder') || 'Nom de la voie'}
+                      placeholder={t('spot.route_name_placeholder')}
                       className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
                     />
                     <div className="flex gap-2">
@@ -421,7 +421,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                         type="text"
                         value={newRoute.grade}
                         onChange={(e) => setNewRoute((s) => ({ ...s, grade: e.target.value }))}
-                        placeholder={t('route.grade_placeholder') || 'Cotation (ex: 6a+)'}
+                        placeholder={t('spot.route_grade_placeholder')}
                         className="w-1/2 rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
                       />
                       <select
@@ -429,8 +429,8 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                         onChange={(e) => setNewRoute((s) => ({ ...s, style: e.target.value as ClimbingStyle }))}
                         className="w-1/2 rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
                       >
-                        {Object.entries(STYLE_LABELS).map(([k, v]) => (
-                          <option key={k} value={k}>{v}</option>
+                        {Object.entries(STYLE_KEYS).map(([k, v]) => (
+                          <option key={k} value={k}>{t(v)}</option>
                         ))}
                       </select>
                     </div>
@@ -441,7 +441,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                         className="flex-1 rounded-lg bg-sage px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
                         type="button"
                       >
-                        {addingRoute ? '...' : t('common.add') || 'Ajouter'}
+                        {addingRoute ? '...' : t('common.add')}
                       </button>
                       <button
                         onClick={() => setShowAddRoute(false)}
@@ -512,7 +512,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                     'active:scale-95',
                   )}
                   type="button"
-                  title={t('spot.edit') || 'Modifier'}
+                  title={t('spot.edit')}
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -527,7 +527,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                     'active:scale-95',
                   )}
                   type="button"
-                  title={t('spot.delete') || 'Supprimer'}
+                  title={t('spot.delete_spot')}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -544,7 +544,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-sage no-underline transition-colors hover:text-sage-hover"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />
-                  {t('spot.website') || 'Site web'}
+                  {t('spot.website')}
                 </a>
               </div>
             )}

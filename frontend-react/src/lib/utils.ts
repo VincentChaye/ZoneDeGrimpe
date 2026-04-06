@@ -34,10 +34,10 @@ export const ORIENT_DEG: Record<string, number> = {
   N: 0, NE: 45, E: 90, SE: 135, S: 180, SO: 225, O: 270, NO: 315,
 };
 
-/** Spot type metadata */
-export const SPOT_TYPES = {
-  crag: { label: 'Falaise', color: 'type-crag' },
-  boulder: { label: 'Bloc', color: 'type-boulder' },
-  indoor: { label: 'Salle', color: 'type-indoor' },
-  shop: { label: 'Magasin', color: 'type-shop' },
-} as const;
+/** Spot type metadata — use t('spot.type.X') for translated labels */
+export const SPOT_TYPES: Record<string, { key: string; color: string }> = {
+  crag: { key: 'spot.type.crag', color: 'type-crag' },
+  boulder: { key: 'spot.type.boulder', color: 'type-boulder' },
+  indoor: { key: 'spot.type.indoor', color: 'type-indoor' },
+  shop: { key: 'spot.type.shop', color: 'type-shop' },
+};

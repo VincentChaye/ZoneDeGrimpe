@@ -85,12 +85,12 @@ export function HomePage() {
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-8 px-4 sm:gap-16">
           <StatItem
             icon={<MapPin className="h-6 w-6" />}
-            value={spotCount !== null ? spotCount.toLocaleString('fr-FR') : '--'}
+            value={spotCount !== null ? spotCount.toLocaleString() : '--'}
             label={t('stats.spots')}
           />
           <StatItem
             icon={<Users className="h-6 w-6" />}
-            value={userCount !== null ? userCount.toLocaleString('fr-FR') : '--'}
+            value={userCount !== null ? userCount.toLocaleString() : '--'}
             label={t('stats.climbers')}
             iconClass="text-amber-brand"
           />

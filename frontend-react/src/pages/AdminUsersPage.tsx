@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Shield, Search, Loader2, UserCog, Crown, Ban, Trash2, X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ interface AdminUser {
 }
 
 export function AdminUsersPage() {
+  const { t } = useTranslation();
   const { isAdmin, user: currentUser } = useAuthStore();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -83,7 +85,7 @@ export function AdminUsersPage() {
   };
 
   const deleteUser = async (userId: string, name: string) => {
-    if (!confirm(`Supprimer définitivement ${name} ?`)) return;
+    if (!confirm(t('admin.delete_user_confirm', { name }))) return;
     setActionLoading(userId);
     try {
       await apiFetch(`/api/users/${userId}`, { method: 'DELETE', auth: true });
@@ -102,9 +104,9 @@ export function AdminUsersPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
         <Shield className="h-12 w-12 text-text-secondary/30" />
-        <p className="text-sm text-text-secondary">Accès réservé aux administrateurs</p>
+        <p className="text-sm text-text-secondary">{t('admin.access_denied')}</p>
         <Link to="/" className="text-sm font-medium text-sage no-underline hover:text-sage-hover">
-          Retour à l'accueil
+          {t('admin.back_home')}
         </Link>
       </div>
     );
@@ -112,25 +114,23 @@ export function AdminUsersPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 pb-24 md:pb-6">
-      {/* Header */}
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage text-white">
           <UserCog className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-text-primary">Gestion des Utilisateurs</h1>
-          <p className="text-sm text-text-secondary">{total} utilisateurs au total</p>
+          <h1 className="font-heading text-2xl font-bold text-text-primary">{t('admin.users_title')}</h1>
+          <p className="text-sm text-text-secondary">{t('admin.users_count', { count: total })}</p>
         </div>
       </div>
 
-      {/* Search */}
       <div className="mb-6 flex items-center gap-2 rounded-xl border border-border-subtle bg-surface px-4 shadow-soft transition-all focus-within:border-sage focus-within:shadow-card">
         <Search className="h-4 w-4 shrink-0 text-text-secondary/60" />
         <input
           type="text"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-          placeholder="Rechercher par nom ou email..."
+          placeholder={t('admin.search_users')}
           className="w-full bg-transparent py-3 text-sm text-text-primary outline-none placeholder:text-text-secondary/50"
         />
         {search && (
@@ -144,7 +144,6 @@ export function AdminUsersPage() {
         )}
       </div>
 
-      {/* Users list */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-sage" />
@@ -152,7 +151,7 @@ export function AdminUsersPage() {
       ) : users.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-16 text-center">
           <UserCog className="mb-3 h-10 w-10 text-text-secondary/20" />
-          <p className="text-sm font-medium text-text-secondary">Aucun utilisateur trouvé</p>
+          <p className="text-sm font-medium text-text-secondary">{t('admin.no_users')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -170,7 +169,6 @@ export function AdminUsersPage() {
                   isBanned && 'opacity-60',
                 )}
               >
-                {/* Avatar */}
                 <div className={cn(
                   'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold',
                   isUserAdmin ? 'bg-sage text-white' : 'bg-sage-muted text-sage',
@@ -178,33 +176,31 @@ export function AdminUsersPage() {
                   {(u.displayName || '?')[0].toUpperCase()}
                 </div>
 
-                {/* Info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="truncate text-sm font-semibold text-text-primary">{u.displayName}</p>
                     {isUserAdmin && (
                       <span className="flex items-center gap-0.5 rounded bg-sage/10 px-1.5 py-0.5 text-[10px] font-bold text-sage">
-                        <Crown className="h-2.5 w-2.5" /> Admin
+                        <Crown className="h-2.5 w-2.5" /> {t('admin.badge_admin')}
                       </span>
                     )}
                     {isBanned && (
                       <span className="flex items-center gap-0.5 rounded bg-grade-expert/10 px-1.5 py-0.5 text-[10px] font-bold text-grade-expert">
-                        <Ban className="h-2.5 w-2.5" /> Banni
+                        <Ban className="h-2.5 w-2.5" /> {t('admin.badge_banned')}
                       </span>
                     )}
                     {isSelf && (
-                      <span className="rounded bg-amber-brand/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-brand">Vous</span>
+                      <span className="rounded bg-amber-brand/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-brand">{t('admin.badge_you')}</span>
                     )}
                   </div>
                   <p className="truncate text-xs text-text-secondary">{u.email}</p>
                   {u.security?.createdAt && (
                     <p className="text-[11px] text-text-secondary/50">
-                      Inscrit le {new Date(u.security.createdAt).toLocaleDateString()}
+                      {t('admin.registered_on')} {new Date(u.security.createdAt).toLocaleDateString()}
                     </p>
                   )}
                 </div>
 
-                {/* Actions */}
                 {!isSelf && (
                   <div className="flex gap-1.5">
                     <button
@@ -217,7 +213,7 @@ export function AdminUsersPage() {
                           : 'bg-sage/10 text-sage hover:bg-sage/20',
                       )}
                       type="button"
-                      title={isUserAdmin ? 'Retirer admin' : 'Promouvoir admin'}
+                      title={isUserAdmin ? t('admin.remove_admin') : t('admin.promote_admin')}
                     >
                       <Crown className="h-3.5 w-3.5" />
                     </button>
@@ -231,7 +227,7 @@ export function AdminUsersPage() {
                           : 'border border-border-subtle text-text-secondary hover:bg-grade-expert/5 hover:text-grade-expert',
                       )}
                       type="button"
-                      title={isBanned ? 'Débannir' : 'Bannir'}
+                      title={isBanned ? t('admin.unban') : t('admin.ban')}
                     >
                       <Ban className="h-3.5 w-3.5" />
                     </button>
@@ -240,7 +236,7 @@ export function AdminUsersPage() {
                       disabled={isLoading}
                       className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-text-secondary/40 transition-colors hover:bg-grade-expert/5 hover:text-grade-expert disabled:opacity-50 active:scale-95"
                       type="button"
-                      title="Supprimer"
+                      title={t('common.delete')}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -252,7 +248,6 @@ export function AdminUsersPage() {
         </div>
       )}
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-center gap-3">
           <button

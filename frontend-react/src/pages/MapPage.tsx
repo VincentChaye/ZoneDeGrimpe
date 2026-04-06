@@ -62,11 +62,11 @@ const typeIcons: Record<SpotType, L.DivIcon> = {
 };
 
 /* ---------- Filter chip config ---------- */
-const FILTER_CHIPS: { type: SpotType; icon: typeof Mountain; label: string }[] = [
-  { type: 'crag', icon: Mountain, label: 'Falaise' },
-  { type: 'boulder', icon: Gem, label: 'Bloc' },
-  { type: 'indoor', icon: Building2, label: 'Salle' },
-  { type: 'shop', icon: ShoppingBag, label: 'Magasin' },
+const FILTER_CHIPS: { type: SpotType; icon: typeof Mountain; key: string }[] = [
+  { type: 'crag', icon: Mountain, key: 'spot.type.crag' },
+  { type: 'boulder', icon: Gem, key: 'spot.type.boulder' },
+  { type: 'indoor', icon: Building2, key: 'spot.type.indoor' },
+  { type: 'shop', icon: ShoppingBag, key: 'spot.type.shop' },
 ];
 
 const GRADE_OPTIONS = ['3','4','5','6a','6b','6c','7a','7b','7c','8a','8b','8c','9a'];
@@ -351,7 +351,7 @@ export function MapPage() {
                   <strong>{spot.name}</strong>
                   <br />
                   <span className="text-xs text-gray-500">
-                    {SPOT_TYPES[spot.type]?.label || spot.type}
+                    {t(SPOT_TYPES[spot.type]?.key || 'spot.type.crag')}
                   </span>
                 </Popup>
               </Marker>
@@ -397,7 +397,7 @@ export function MapPage() {
               'active:scale-95',
               (showFilters || hasActiveFilters) && 'bg-sage text-white border-sage hover:bg-sage-hover hover:text-white',
             )}
-            title={t('filter.advanced') || 'Filtres'}
+            title={t('filter.advanced')}
             type="button"
           >
             <SlidersHorizontal className="h-[18px] w-[18px]" />
@@ -455,7 +455,7 @@ export function MapPage() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-text-primary">{s.name}</div>
                       <div className="text-[11px] text-text-secondary">
-                        {SPOT_TYPES[s.type]?.label || s.type}
+                        {t(SPOT_TYPES[s.type]?.key || 'spot.type.crag')}
                         {s.niveau_max && <> &middot; {s.niveau_max}</>}
                       </div>
                     </div>
@@ -465,7 +465,7 @@ export function MapPage() {
             )}
             {searchQuery.length >= 2 && searchResults.length === 0 && (
               <div className="border-t border-border-subtle/50 px-4 py-6 text-center text-xs text-text-secondary/60">
-                {t('common.no_results') || 'Aucun résultat'}
+                {t('common.no_results')}
               </div>
             )}
           </div>
@@ -477,20 +477,20 @@ export function MapPage() {
         <div className="absolute right-3 top-[148px] z-[1001] w-64 animate-[fadeSlideDown_0.2s_ease-out]">
           <div className="rounded-xl border border-border-subtle/50 bg-surface/95 p-4 shadow-elevated backdrop-blur-md">
             <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-text-secondary">
-              {t('filter.advanced') || 'Filtres avancés'}
+              {t('filter.advanced')}
             </h3>
 
             {/* Grade min */}
             <div className="mb-3">
               <label className="mb-1 block text-xs font-medium text-text-secondary">
-                {t('filter.grade_min') || 'Niveau minimum'}
+                {t('filter.grade_min')}
               </label>
               <select
                 value={filterGradeMin}
                 onChange={(e) => setFilterGradeMin(e.target.value)}
                 className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
               >
-                <option value="">{t('filter.all_grades') || 'Tous niveaux'}</option>
+                <option value="">{t('filter.all_grades')}</option>
                 {GRADE_OPTIONS.map((g) => <option key={g} value={g}>{g}+</option>)}
               </select>
             </div>
@@ -498,7 +498,7 @@ export function MapPage() {
             {/* Distance */}
             <div className="mb-3">
               <label className="mb-1 flex items-center justify-between text-xs font-medium text-text-secondary">
-                <span>{t('filter.distance') || 'Distance max'}</span>
+                <span>{t('filter.distance')}</span>
                 <span className="font-bold text-text-primary">
                   {filterDistance === 0 ? '∞' : `${filterDistance} km`}
                 </span>
@@ -515,7 +515,7 @@ export function MapPage() {
               />
               {!userPos && (
                 <p className="mt-1 text-[10px] text-text-secondary/60 italic">
-                  Activez la géolocalisation pour filtrer par distance
+                  {t('filter.geo_required')}
                 </p>
               )}
             </div>
@@ -531,7 +531,7 @@ export function MapPage() {
                   className="text-xs font-medium text-sage hover:text-sage-hover"
                   type="button"
                 >
-                  {t('filter.reset') || 'Réinitialiser'}
+                  {t('filter.reset')}
                 </button>
               )}
             </div>
@@ -554,7 +554,7 @@ export function MapPage() {
             type="button"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>{t('propose.button') || 'Proposer'}</span>
+            <span>{t('propose.button')}</span>
           </button>
         )}
 
@@ -572,7 +572,7 @@ export function MapPage() {
           type="button"
         >
           <MapPinIcon className="h-3.5 w-3.5" />
-          <span>{t('filter.all') || 'Tous'}</span>
+          <span>{t('filter.all')}</span>
           <span className={cn(
             'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold',
             !filterType ? 'bg-white/20' : 'bg-text-secondary/10',
@@ -581,7 +581,7 @@ export function MapPage() {
           </span>
         </button>
 
-        {FILTER_CHIPS.map(({ type, icon: Icon, label }) => {
+        {FILTER_CHIPS.map(({ type, icon: Icon, key }) => {
           const active = filterType === type;
           const count = countByType(type);
           return (
@@ -600,7 +600,7 @@ export function MapPage() {
               type="button"
             >
               <Icon className="h-3.5 w-3.5" />
-              <span>{label}</span>
+              <span>{t(key)}</span>
               <span className={cn(
                 'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold',
                 active ? 'bg-white/20' : 'bg-text-secondary/10',

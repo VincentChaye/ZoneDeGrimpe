@@ -39,6 +39,7 @@ i18n.use(initReactI18next).init({
   },
   lng: detectLang(),
   fallbackLng: 'fr',
+  keySeparator: false, // keys are flat ("friends.my_friends"), not nested
   interpolation: {
     escapeValue: false, // React already escapes
   },

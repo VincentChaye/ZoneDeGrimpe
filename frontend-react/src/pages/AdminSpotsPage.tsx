@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Shield, Check, X, Trash2, MapPin, Loader2, FileEdit,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ interface PendingEdit {
 type Tab = 'pending' | 'edits';
 
 export function AdminSpotsPage() {
+  const { t } = useTranslation();
   const { isAdmin } = useAuthStore();
 
   const [tab, setTab] = useState<Tab>('pending');
@@ -104,7 +106,7 @@ export function AdminSpotsPage() {
   };
 
   const deleteSpot = async (id: string) => {
-    if (!confirm('Supprimer définitivement ce spot ?')) return;
+    if (!confirm(t('admin.delete_spot_confirm'))) return;
     setActionLoading(id);
     try {
       await apiFetch(`/api/spots/${id}`, { method: 'DELETE', auth: true });
@@ -152,9 +154,9 @@ export function AdminSpotsPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
         <Shield className="h-12 w-12 text-text-secondary/30" />
-        <p className="text-sm text-text-secondary">Accès réservé aux administrateurs</p>
+        <p className="text-sm text-text-secondary">{t('admin.access_denied')}</p>
         <Link to="/" className="text-sm font-medium text-sage no-underline hover:text-sage-hover">
-          Retour à l'accueil
+          {t('admin.back_home')}
         </Link>
       </div>
     );
@@ -168,8 +170,8 @@ export function AdminSpotsPage() {
           <Shield className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-text-primary">Gestion des Spots</h1>
-          <p className="text-sm text-text-secondary">Approuver, rejeter ou supprimer des spots et modifications</p>
+          <h1 className="font-heading text-2xl font-bold text-text-primary">{t('admin.spots_title')}</h1>
+          <p className="text-sm text-text-secondary">{t('admin.spots_subtitle')}</p>
         </div>
       </div>
 
@@ -186,7 +188,7 @@ export function AdminSpotsPage() {
           type="button"
         >
           <MapPin className="h-4 w-4" />
-          Spots en attente
+          {t('admin.tab_pending')}
           {totalSpots > 0 && (
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-sage px-1.5 text-[10px] font-bold text-white">
               {totalSpots}
@@ -204,7 +206,7 @@ export function AdminSpotsPage() {
           type="button"
         >
           <FileEdit className="h-4 w-4" />
-          Modifications
+          {t('admin.tab_edits')}
           {totalEdits > 0 && (
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-brand px-1.5 text-[10px] font-bold text-white">
               {totalEdits}
@@ -218,11 +220,10 @@ export function AdminSpotsPage() {
           <Loader2 className="h-6 w-6 animate-spin text-sage" />
         </div>
       ) : tab === 'pending' ? (
-        /* Pending spots */
         spots.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-16 text-center">
             <Check className="mb-3 h-10 w-10 text-grade-easy/30" />
-            <p className="text-sm font-medium text-text-secondary">Aucun spot en attente</p>
+            <p className="text-sm font-medium text-text-secondary">{t('admin.no_pending_spots')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -240,7 +241,7 @@ export function AdminSpotsPage() {
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-semibold text-text-primary">{spot.name}</h3>
                       <div className="mt-0.5 flex flex-wrap gap-1.5 text-xs text-text-secondary">
-                        <span className="rounded bg-surface-2 px-1.5 py-0.5 font-medium">{spot.type}</span>
+                        <span className="rounded bg-surface-2 px-1.5 py-0.5 font-medium">{t(`spot.type.${spot.type}`)}</span>
                         {spot.niveau_max && (
                           <span className="rounded bg-surface-2 px-1.5 py-0.5">{spot.niveau_min || '?'} → {spot.niveau_max}</span>
                         )}
@@ -249,7 +250,7 @@ export function AdminSpotsPage() {
                         <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-text-secondary/80">{spot.description}</p>
                       )}
                       <p className="mt-1.5 text-[11px] text-text-secondary/60">
-                        Proposé par <span className="font-medium">{spot.submittedBy?.displayName || spot.createdBy?.displayName || '?'}</span>
+                        {t('admin.proposed_by')} <span className="font-medium">{spot.submittedBy?.displayName || spot.createdBy?.displayName || '?'}</span>
                         {spot.createdAt && <> &middot; {new Date(spot.createdAt).toLocaleDateString()}</>}
                       </p>
                     </div>
@@ -262,7 +263,7 @@ export function AdminSpotsPage() {
                       type="button"
                     >
                       {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                      Approuver
+                      {t('admin.approve')}
                     </button>
                     <button
                       onClick={() => { setRejectId(spot._id); setRejectType('spot'); }}
@@ -271,14 +272,14 @@ export function AdminSpotsPage() {
                       type="button"
                     >
                       <X className="h-3.5 w-3.5" />
-                      Rejeter
+                      {t('admin.reject')}
                     </button>
                     <button
                       onClick={() => deleteSpot(spot._id)}
                       disabled={isLoading}
                       className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-text-secondary/40 transition-colors hover:bg-grade-expert/5 hover:text-grade-expert disabled:opacity-50 active:scale-95"
                       type="button"
-                      title="Supprimer"
+                      title={t('common.delete')}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -289,11 +290,10 @@ export function AdminSpotsPage() {
           </div>
         )
       ) : (
-        /* Pending edits */
         edits.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-16 text-center">
             <Check className="mb-3 h-10 w-10 text-grade-easy/30" />
-            <p className="text-sm font-medium text-text-secondary">Aucune modification en attente</p>
+            <p className="text-sm font-medium text-text-secondary">{t('admin.no_pending_edits')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -312,10 +312,9 @@ export function AdminSpotsPage() {
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-semibold text-text-primary">{edit.spotName}</h3>
                       <p className="mt-0.5 text-[11px] text-text-secondary/60">
-                        Par <span className="font-medium">{edit.proposedBy.displayName}</span>
+                        {t('admin.by_user')} <span className="font-medium">{edit.proposedBy.displayName}</span>
                         {' '}&middot; {new Date(edit.createdAt).toLocaleDateString()}
                       </p>
-                      {/* Diff */}
                       <div className="mt-2 space-y-1">
                         {changedKeys.map((key) => (
                           <div key={key} className="flex gap-2 text-xs">
@@ -335,7 +334,7 @@ export function AdminSpotsPage() {
                       type="button"
                     >
                       {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                      Appliquer
+                      {t('admin.apply')}
                     </button>
                     <button
                       onClick={() => { setRejectId(edit._id); setRejectType('edit'); }}
@@ -344,7 +343,7 @@ export function AdminSpotsPage() {
                       type="button"
                     >
                       <X className="h-3.5 w-3.5" />
-                      Rejeter
+                      {t('admin.reject')}
                     </button>
                   </div>
                 </div>
@@ -361,11 +360,11 @@ export function AdminSpotsPage() {
             className="mx-4 w-full max-w-md rounded-2xl bg-surface p-6 shadow-elevated"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-3 font-heading text-lg font-bold text-text-primary">Raison du rejet</h3>
+            <h3 className="mb-3 font-heading text-lg font-bold text-text-primary">{t('admin.reject_title')}</h3>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Optionnel : expliquez la raison..."
+              placeholder={t('admin.reject_placeholder')}
               className="w-full resize-none rounded-xl border border-border-subtle bg-surface-2 px-4 py-3 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
               rows={3}
             />
@@ -375,7 +374,7 @@ export function AdminSpotsPage() {
                 className="cursor-pointer rounded-lg border border-border-subtle px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2"
                 type="button"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => {
@@ -385,7 +384,7 @@ export function AdminSpotsPage() {
                 className="cursor-pointer rounded-lg bg-grade-expert px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-grade-expert/90"
                 type="button"
               >
-                Confirmer le rejet
+                {t('admin.confirm_reject')}
               </button>
             </div>
           </div>

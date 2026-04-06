@@ -26,13 +26,6 @@ interface LogbookStats {
   gradeDistribution: Record<string, number>;
 }
 
-const STYLE_LABELS: Record<string, string> = {
-  onsight: 'A vue',
-  flash: 'Flash',
-  redpoint: 'Enchaîné',
-  repeat: 'Répét',
-};
-
 const STYLE_CLS: Record<string, string> = {
   onsight: 'bg-grade-easy/10 text-grade-easy border-grade-easy/20',
   flash: 'bg-grade-medium/10 text-grade-medium border-grade-medium/20',
@@ -72,9 +65,9 @@ export function LogbookPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
         <BookOpen className="h-12 w-12 text-text-secondary/30" />
-        <p className="text-sm text-text-secondary">{t('auth.login_required') || 'Connectez-vous pour voir votre carnet'}</p>
+        <p className="text-sm text-text-secondary">{t('logbook.login_prompt')}</p>
         <Link to="/login" className="inline-flex items-center gap-2 rounded-xl bg-sage px-5 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover">
-          {t('auth.login') || 'Se connecter'}
+          {t('auth.login')}
         </Link>
       </div>
     );
@@ -93,17 +86,15 @@ export function LogbookPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold text-text-primary">
-          {t('logbook.title') || 'Carnet de grimpe'}
+          {t('logbook.title')}
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          {t('logbook.subtitle') || 'Tes ascensions et ta progression'}
+          {t('logbook.subtitle')}
         </p>
       </div>
 
-      {/* Stats cards */}
       {stats && (
         <div className="mb-6 grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-border-subtle bg-surface p-4 shadow-soft">
@@ -111,24 +102,23 @@ export function LogbookPage() {
               <TrendingUp className="h-5 w-5" />
               <span className="font-heading text-2xl font-bold">{stats.totalAscents}</span>
             </div>
-            <p className="mt-1 text-xs font-medium text-text-secondary">Ascensions</p>
+            <p className="mt-1 text-xs font-medium text-text-secondary">{t('logbook.ascents')}</p>
           </div>
           <div className="rounded-xl border border-border-subtle bg-surface p-4 shadow-soft">
             <div className="flex items-center gap-2 text-amber-brand">
               <MapPin className="h-5 w-5" />
               <span className="font-heading text-2xl font-bold">{stats.uniqueSpots}</span>
             </div>
-            <p className="mt-1 text-xs font-medium text-text-secondary">Spots différents</p>
+            <p className="mt-1 text-xs font-medium text-text-secondary">{t('logbook.unique_spots')}</p>
           </div>
         </div>
       )}
 
-      {/* Grade pyramid */}
       {gradeEntries.length > 0 && (
         <section className="mb-8">
           <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-bold text-text-primary">
             <Zap className="h-4 w-4 text-sage" />
-            Pyramide des cotations
+            {t('logbook.grade_pyramid')}
           </h2>
           <div className="space-y-1.5 rounded-xl border border-border-subtle bg-surface p-4 shadow-soft">
             {gradeEntries.map(([grade, count]) => (
@@ -139,10 +129,7 @@ export function LogbookPage() {
                     className="h-5 rounded bg-sage/20 transition-all duration-500"
                     style={{ width: `${Math.max(4, (count / maxGradeCount) * 100)}%` }}
                   >
-                    <div
-                      className="h-full rounded bg-sage"
-                      style={{ width: '100%' }}
-                    />
+                    <div className="h-full rounded bg-sage" style={{ width: '100%' }} />
                   </div>
                 </div>
                 <span className="w-8 text-xs font-medium text-text-secondary">{count}</span>
@@ -152,17 +139,16 @@ export function LogbookPage() {
         </section>
       )}
 
-      {/* Timeline */}
       <section>
         <h2 className="mb-3 font-heading text-lg font-bold text-text-primary">
-          {t('logbook.timeline') || 'Historique'}
+          {t('logbook.timeline')}
         </h2>
 
         {entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-12 text-center">
             <BookOpen className="mb-3 h-10 w-10 text-text-secondary/20" />
-            <p className="text-sm font-medium text-text-secondary">Aucune ascension enregistrée</p>
-            <p className="mt-1 text-xs text-text-secondary/60">Commencez à logger vos grimpes</p>
+            <p className="text-sm font-medium text-text-secondary">{t('logbook.no_entries')}</p>
+            <p className="mt-1 text-xs text-text-secondary/60">{t('logbook.start_logging')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -183,7 +169,7 @@ export function LogbookPage() {
                           to={`/map?spot=${entry.spotId}`}
                           className="truncate text-sm font-semibold text-text-primary no-underline hover:text-sage"
                         >
-                          {entry.spotName || 'Spot inconnu'}
+                          {entry.spotName || t('logbook.unknown_spot')}
                         </Link>
                       </div>
                       {entry.routeName && (
@@ -199,10 +185,10 @@ export function LogbookPage() {
                           'rounded-lg border px-2 py-0.5 text-xs font-semibold',
                           STYLE_CLS[entry.style] || STYLE_CLS.repeat,
                         )}>
-                          {STYLE_LABELS[entry.style] || entry.style}
+                          {t(`logbook.style.${entry.style}`)}
                         </span>
                         <span className="text-[11px] text-text-secondary/60">
-                          {date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
                       {entry.comment && (

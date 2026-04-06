@@ -14,7 +14,7 @@ export function SettingsPage() {
         <User className="mb-4 h-12 w-12 text-text-secondary/40" />
         <h2 className="font-heading text-xl font-bold text-text-primary">{t('settings.title')}</h2>
         <p className="mt-2 text-sm text-text-secondary">
-          Connecte-toi pour acceder a tes parametres.
+          {t('settings.login_prompt')}
         </p>
         <Link
           to="/login?next=/settings"
@@ -37,45 +37,42 @@ export function SettingsPage() {
         {t('settings.title')}
       </h1>
 
-      {/* Profile card */}
       <div className="mb-4 rounded-[var(--radius-md)] border border-border-subtle bg-surface p-5 shadow-soft">
-        <h3 className="mb-4 text-sm font-semibold text-text-primary">Informations personnelles</h3>
+        <h3 className="mb-4 text-sm font-semibold text-text-primary">{t('settings.personal_info')}</h3>
         <div className="space-y-3">
-          <InfoRow label="Nom" value={user.displayName} />
-          {user.username && <InfoRow label="@username" value={user.username} />}
-          <InfoRow label="Email" value={user.email} />
-          <InfoRow label="Role" value={user.roles?.join(', ') || 'user'} />
-          {user.level && <InfoRow label="Niveau" value={user.level} />}
+          <InfoRow label={t('settings.name_label')} value={user.displayName} />
+          {user.username && <InfoRow label={t('settings.username_label')} value={user.username} />}
+          <InfoRow label={t('settings.email_label')} value={user.email} />
+          <InfoRow label={t('settings.role_label')} value={user.roles?.join(', ') || 'user'} />
+          {user.level && <InfoRow label={t('settings.level_label')} value={t(`level.${user.level}`)} />}
         </div>
       </div>
 
-      {/* Admin links */}
       {isAdmin && (
         <div className="mb-4 rounded-[var(--radius-md)] border border-border-subtle bg-surface p-5 shadow-soft">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-text-primary">
             <Shield className="h-4 w-4 text-sage" />
-            Administration
+            {t('settings.admin_section')}
           </h3>
           <div className="flex flex-wrap gap-2">
             <Link
               to="/admin/spots"
               className="rounded-[var(--radius-sm)] bg-sage px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover"
             >
-              Gestion des Spots
+              {t('settings.admin_spots')}
             </Link>
             <Link
               to="/admin/users"
               className="rounded-[var(--radius-sm)] border border-border-subtle px-4 py-2 text-sm font-semibold text-text-primary no-underline transition-colors hover:bg-surface-2"
             >
-              Gestion des Utilisateurs
+              {t('settings.admin_users')}
             </Link>
           </div>
         </div>
       )}
 
-      {/* Account actions */}
       <div className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-5 shadow-soft">
-        <h3 className="mb-3 text-sm font-semibold text-text-primary">Compte</h3>
+        <h3 className="mb-3 text-sm font-semibold text-text-primary">{t('settings.account')}</h3>
         <div className="flex gap-3">
           <button
             onClick={handleLogout}
@@ -90,7 +87,7 @@ export function SettingsPage() {
             type="button"
           >
             <Trash2 className="h-4 w-4" />
-            Supprimer le compte
+            {t('settings.delete_account')}
           </button>
         </div>
       </div>

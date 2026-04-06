@@ -15,24 +15,28 @@ interface ProposeSpotWizardProps {
   initialLatLng?: { lat: number; lng: number } | null;
 }
 
-const TYPES: { type: SpotType; icon: typeof Mountain; label: string }[] = [
-  { type: 'crag', icon: Mountain, label: 'Falaise' },
-  { type: 'boulder', icon: Gem, label: 'Bloc' },
-  { type: 'indoor', icon: Building2, label: 'Salle' },
-  { type: 'shop', icon: ShoppingBag, label: 'Magasin' },
+const TYPE_ICONS: { type: SpotType; icon: typeof Mountain; key: string }[] = [
+  { type: 'crag', icon: Mountain, key: 'spot.type.crag' },
+  { type: 'boulder', icon: Gem, key: 'spot.type.boulder' },
+  { type: 'indoor', icon: Building2, key: 'spot.type.indoor' },
+  { type: 'shop', icon: ShoppingBag, key: 'spot.type.shop' },
 ];
 
 const ORIENTATIONS: Orientation[] = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
-const EQUIPMENTS: { value: Equipment; label: string }[] = [
-  { value: 'spit', label: 'Spit' },
-  { value: 'piton', label: 'Piton' },
-  { value: 'mixte', label: 'Mixte' },
-  { value: 'non_equipe', label: 'Non equipé' },
+const EQUIPMENT_KEYS: { value: Equipment; key: string }[] = [
+  { value: 'spit', key: 'equip.spit' },
+  { value: 'piton', key: 'equip.piton' },
+  { value: 'mixte', key: 'equip.mixte' },
+  { value: 'non_equipe', key: 'equip.non_equipe' },
 ];
 
 const GRADES = ['3a','3b','3c','4a','4b','4c','5a','5b','5c','6a','6a+','6b','6b+','6c','6c+','7a','7a+','7b','7b+','7c','7c+','8a','8a+','8b','8b+','8c','8c+','9a','9a+','9b','9b+','9c'];
 
-const ROCKS = ['Calcaire', 'Granite', 'Grès', 'Gneiss', 'Basalte', 'Schiste', 'Conglomérat', 'Quartzite', 'Autre'];
+const ROCK_KEYS = ['calcaire', 'granite', 'gres', 'gneiss', 'basalte', 'schiste', 'conglomerat', 'quartzite', 'autre'];
+const ROCK_VALUES: Record<string, string> = {
+  calcaire: 'Calcaire', granite: 'Granite', gres: 'Grès', gneiss: 'Gneiss',
+  basalte: 'Basalte', schiste: 'Schiste', conglomerat: 'Conglomérat', quartzite: 'Quartzite', autre: 'Autre',
+};
 
 interface FormData {
   name: string;
@@ -79,20 +83,20 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
   }, []);
 
   const STEPS = [
-    { title: t('propose.step1') || 'Nom & Type' },
-    { title: t('propose.step2') || 'Localisation' },
-    { title: t('propose.step3') || 'Détails grimpe' },
-    { title: t('propose.step4') || 'Infos pratiques' },
-    { title: t('propose.step5') || 'Récapitulatif' },
+    { title: t('propose.step1') },
+    { title: t('propose.step2') },
+    { title: t('propose.step3') },
+    { title: t('propose.step4') },
+    { title: t('propose.step5') },
   ];
 
   const validateStep = (): boolean => {
     const errs: Partial<Record<keyof FormData, string>> = {};
     if (step === 0) {
-      if (!data.name.trim()) errs.name = 'Nom requis';
+      if (!data.name.trim()) errs.name = t('propose.err_name_required');
     } else if (step === 1) {
-      if (!data.lat || isNaN(Number(data.lat))) errs.lat = 'Latitude invalide';
-      if (!data.lng || isNaN(Number(data.lng))) errs.lng = 'Longitude invalide';
+      if (!data.lat || isNaN(Number(data.lat))) errs.lat = t('propose.err_lat_invalid');
+      if (!data.lng || isNaN(Number(data.lng))) errs.lng = t('propose.err_lng_invalid');
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -106,9 +110,9 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
       (pos) => {
         set('lat', pos.coords.latitude.toFixed(6));
         set('lng', pos.coords.longitude.toFixed(6));
-        toast.success('Position récupérée');
+        toast.success(t('toast.position_found'));
       },
-      () => toast.error('Impossible de géolocaliser'),
+      () => toast.error(t('toast.position_error')),
       { enableHighAccuracy: true },
     );
   };
@@ -142,14 +146,14 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
       });
 
       if (res.status === 'approved') {
-        toast.success(t('propose.approved') || 'Spot ajouté !');
+        toast.success(t('propose.approved'));
       } else {
-        toast.success(t('propose.pending') || 'Spot soumis, en attente de validation');
+        toast.success(t('propose.pending'));
       }
       onSuccess?.();
       onClose();
     } catch (err) {
-      toast.error((err as Error).message || 'Erreur');
+      toast.error((err as Error).message || t('common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -169,7 +173,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
           <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
             <div>
               <h2 className="text-base font-bold text-text-primary">
-                {t('propose.title') || 'Proposer un spot'}
+                {t('propose.title')}
               </h2>
               <p className="text-xs text-text-secondary">
                 {STEPS[step].title} ({step + 1}/{STEPS.length})
@@ -192,13 +196,13 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
               <div className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-text-primary">
-                    {t('propose.name') || 'Nom du spot'}
+                    {t('propose.name')}
                   </label>
                   <input
                     type="text"
                     value={data.name}
                     onChange={(e) => set('name', e.target.value)}
-                    placeholder="Ex: Falaise de Buoux"
+                    placeholder={t('propose.name_placeholder')}
                     className={cn(
                       'w-full rounded-xl border bg-surface px-4 py-3 text-sm outline-none transition-colors',
                       errors.name ? 'border-red-400' : 'border-border-subtle focus:border-sage',
@@ -208,10 +212,10 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium text-text-primary">
-                    {t('propose.type') || 'Type de spot'}
+                    {t('propose.type')}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    {TYPES.map(({ type, icon: Icon, label }) => (
+                    {TYPE_ICONS.map(({ type, icon: Icon, key }) => (
                       <button
                         key={type}
                         onClick={() => set('type', type)}
@@ -224,7 +228,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                         type="button"
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="text-sm">{label}</span>
+                        <span className="text-sm">{t(key)}</span>
                       </button>
                     ))}
                   </div>
@@ -241,16 +245,16 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                   type="button"
                 >
                   <LocateFixed className="h-4 w-4" />
-                  {t('propose.geolocate') || 'Utiliser ma position'}
+                  {t('propose.geolocate')}
                 </button>
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-border-subtle" />
-                  <span className="text-xs text-text-secondary">ou</span>
+                  <span className="text-xs text-text-secondary">{t('auth.or')}</span>
                   <div className="h-px flex-1 bg-border-subtle" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Latitude</label>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('recap.lat')}</label>
                     <input
                       type="text" inputMode="decimal"
                       value={data.lat}
@@ -264,7 +268,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                     {errors.lat && <p className="mt-1 text-xs text-red-500">{errors.lat}</p>}
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Longitude</label>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('recap.lng')}</label>
                     <input
                       type="text" inputMode="decimal"
                       value={data.lng}
@@ -288,10 +292,14 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                   <>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-text-primary">
-                        {t('propose.soustype') || 'Sous-type'}
+                        {t('propose.soustype')}
                       </label>
                       <div className="flex gap-2">
-                        {[{ v: '', l: 'Non défini' }, { v: 'diff', l: 'Voie' }, { v: 'bloc', l: 'Bloc' }].map(({ v, l }) => (
+                        {[
+                          { v: '', key: 'spot.subtype_undefined' },
+                          { v: 'diff', key: 'spot.subtype_route' },
+                          { v: 'bloc', key: 'spot.subtype_boulder' },
+                        ].map(({ v, key }) => (
                           <button
                             key={v}
                             onClick={() => set('soustype', v)}
@@ -302,14 +310,14 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                                 : 'border-border-subtle text-text-secondary hover:border-sage/30',
                             )}
                             type="button"
-                          >{l}</button>
+                          >{t(key)}</button>
                         ))}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                          {t('propose.niveau_min') || 'Niveau min'}
+                          {t('propose.niveau_min')}
                         </label>
                         <select
                           value={data.niveau_min}
@@ -322,7 +330,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                       </div>
                       <div>
                         <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                          {t('propose.niveau_max') || 'Niveau max'}
+                          {t('propose.niveau_max')}
                         </label>
                         <select
                           value={data.niveau_max}
@@ -340,7 +348,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                 {/* Orientation compass */}
                 <div>
                   <label className="mb-2 block text-sm font-medium text-text-primary">
-                    {t('propose.orientation') || 'Orientation'}
+                    {t('propose.orientation')}
                   </label>
                   <div className="flex flex-wrap gap-1.5">
                     {ORIENTATIONS.map((o) => (
@@ -363,11 +371,11 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-text-primary">Description</label>
+                  <label className="mb-1.5 block text-sm font-medium text-text-primary">{t('propose.description')}</label>
                   <textarea
                     value={data.description}
                     onChange={(e) => set('description', e.target.value)}
-                    placeholder="Décrivez le spot..."
+                    placeholder={t('propose.description_placeholder')}
                     rows={3}
                     className="w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-sm outline-none focus:border-sage resize-none"
                   />
@@ -380,7 +388,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
               <div className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-text-primary">
-                    {t('propose.rock') || 'Type de roche'}
+                    {t('propose.rock')}
                   </label>
                   <select
                     value={data.rock}
@@ -388,7 +396,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                     className="w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-sm outline-none focus:border-sage"
                   >
                     <option value="">—</option>
-                    {ROCKS.map((r) => <option key={r} value={r}>{r}</option>)}
+                    {ROCK_KEYS.map((r) => <option key={r} value={ROCK_VALUES[r]}>{t(`rock.${r}`)}</option>)}
                   </select>
                 </div>
 
@@ -396,10 +404,10 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                   <>
                     <div>
                       <label className="mb-2 block text-sm font-medium text-text-primary">
-                        {t('propose.equipement') || 'Equipement'}
+                        {t('propose.equipement')}
                       </label>
                       <div className="grid grid-cols-2 gap-2">
-                        {EQUIPMENTS.map(({ value, label }) => (
+                        {EQUIPMENT_KEYS.map(({ value, key }) => (
                           <button
                             key={value}
                             onClick={() => set('equipement', data.equipement === value ? '' : value)}
@@ -410,13 +418,13 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                                 : 'border-border-subtle text-text-secondary hover:border-sage/30',
                             )}
                             type="button"
-                          >{label}</button>
+                          >{t(key)}</button>
                         ))}
                       </div>
                     </div>
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                        {t('propose.hauteur') || 'Hauteur (m)'}
+                        {t('propose.hauteur')}
                       </label>
                       <input
                         type="number"
@@ -431,12 +439,12 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-text-primary">
-                    {t('propose.acces') || "Accès"}
+                    {t('propose.acces')}
                   </label>
                   <textarea
                     value={data.acces}
                     onChange={(e) => set('acces', e.target.value)}
-                    placeholder="Comment accéder au spot..."
+                    placeholder={t('propose.acces_placeholder')}
                     rows={2}
                     className="w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-sm outline-none focus:border-sage resize-none"
                   />
@@ -444,7 +452,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
 
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                    {t('propose.url') || 'Site web (optionnel)'}
+                    {t('propose.url')}
                   </label>
                   <input
                     type="url"
@@ -461,21 +469,21 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
             {step === 4 && (
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-text-primary">
-                  {t('propose.recap') || 'Vérifiez avant envoi'}
+                  {t('propose.recap')}
                 </h3>
                 <div className="space-y-2 rounded-xl border border-border-subtle bg-surface-2/30 p-4 text-sm">
-                  <Row label="Nom" value={data.name} />
-                  <Row label="Type" value={TYPES.find((t) => t.type === data.type)?.label || data.type} />
-                  <Row label="Position" value={`${data.lat}, ${data.lng}`} />
-                  {data.orientation && <Row label="Orientation" value={data.orientation} />}
-                  {data.niveau_min && <Row label="Niveau min" value={data.niveau_min} />}
-                  {data.niveau_max && <Row label="Niveau max" value={data.niveau_max} />}
-                  {data.rock && <Row label="Roche" value={data.rock} />}
-                  {data.equipement && <Row label="Équipement" value={data.equipement} />}
-                  {data.hauteur && <Row label="Hauteur" value={`${data.hauteur}m`} />}
-                  {data.description && <Row label="Description" value={data.description} />}
-                  {data.acces && <Row label="Accès" value={data.acces} />}
-                  {data.url && <Row label="URL" value={data.url} />}
+                  <Row label={t('recap.name')} value={data.name} />
+                  <Row label={t('recap.type')} value={t(`spot.type.${data.type}`)} />
+                  <Row label={t('recap.lat') + ', ' + t('recap.lng')} value={`${data.lat}, ${data.lng}`} />
+                  {data.orientation && <Row label={t('recap.orientation')} value={t(`orient.${data.orientation}`)} />}
+                  {data.niveau_min && <Row label={t('recap.grade_min')} value={data.niveau_min} />}
+                  {data.niveau_max && <Row label={t('recap.grade_max')} value={data.niveau_max} />}
+                  {data.rock && <Row label={t('recap.rock')} value={data.rock} />}
+                  {data.equipement && <Row label={t('recap.equipment')} value={t(`equip.${data.equipement}`)} />}
+                  {data.hauteur && <Row label={t('recap.height')} value={`${data.hauteur}m`} />}
+                  {data.description && <Row label={t('recap.description')} value={data.description} />}
+                  {data.acces && <Row label={t('recap.access')} value={data.acces} />}
+                  {data.url && <Row label={t('recap.website')} value={data.url} />}
                 </div>
               </div>
             )}
@@ -490,7 +498,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                 type="button"
               >
                 <ChevronLeft className="h-4 w-4" />
-                {t('common.back') || 'Retour'}
+                {t('common.back')}
               </button>
             )}
             <div className="flex-1" />
@@ -500,7 +508,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                 className="flex items-center gap-1.5 rounded-xl bg-sage px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-hover"
                 type="button"
               >
-                {t('common.next') || 'Suivant'}
+                {t('common.next')}
                 <ChevronRight className="h-4 w-4" />
               </button>
             ) : (
@@ -515,7 +523,7 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                 ) : (
                   <Check className="h-4 w-4" />
                 )}
-                {t('propose.submit') || 'Envoyer'}
+                {t('propose.submit')}
               </button>
             )}
           </div>
