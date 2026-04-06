@@ -11,6 +11,7 @@
     "import-osm:dry": "node scripts/import-osm.js --dry-run"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.2.0",
     "cloudinary": "^1.41.3",

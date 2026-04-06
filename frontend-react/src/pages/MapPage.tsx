@@ -1,12 +1,18 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, CircleMarker } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
-import { Search, LocateFixed, X, MapPin as MapPinIcon, Mountain, Gem, Building2, ShoppingBag } from 'lucide-react';
+import {
+  Search, LocateFixed, X, MapPin as MapPinIcon, Mountain, Gem, Building2,
+  ShoppingBag, Plus, SlidersHorizontal,
+} from 'lucide-react';
 import { apiFetch, getCachedSpots, setCachedSpots } from '@/lib/api';
-import { cn, SPOT_TYPES } from '@/lib/utils';
+import { cn, SPOT_TYPES, parseGradeToNumber } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth.store';
 import { SpotSheet } from '@/components/spots/SpotSheet';
+import { ProposeSpotWizard } from '@/components/spots/ProposeSpotWizard';
+import { EditSpotWizard } from '@/components/spots/EditSpotWizard';
 import type { Spot, SpotType } from '@/types';
 
 import 'leaflet/dist/leaflet.css';
@@ -63,6 +69,8 @@ const FILTER_CHIPS: { type: SpotType; icon: typeof Mountain; label: string }[] =
   { type: 'shop', icon: ShoppingBag, label: 'Magasin' },
 ];
 
+const GRADE_OPTIONS = ['3','4','5','6a','6b','6c','7a','7b','7c','8a','8b','8c','9a'];
+
 /* ---------- Spot data normalization ---------- */
 function normalizeSpot(s: Record<string, unknown>, i: number): Spot | null {
   const isFeature = s.type === 'Feature' && s.geometry;
@@ -110,14 +118,34 @@ function normalizeSpot(s: Record<string, unknown>, i: number): Spot | null {
   };
 }
 
+/* ---------- Haversine distance (km) ---------- */
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 /* ---------- LocateButton ---------- */
-function LocateButton() {
+function LocateButton({ onLocated }: { onLocated: (lat: number, lng: number) => void }) {
   const map = useMap();
   const { t } = useTranslation();
 
   const handleLocate = useCallback(() => {
-    map.locate({ setView: true, maxZoom: 13 });
-  }, [map]);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        map.flyTo([latitude, longitude], 13, { duration: 0.8 });
+        onLocated(latitude, longitude);
+      },
+      () => {
+        map.locate({ setView: true, maxZoom: 13 });
+      },
+      { enableHighAccuracy: true },
+    );
+  }, [map, onLocated]);
 
   return (
     <button
@@ -147,9 +175,29 @@ function FlyToSpot({ spot }: { spot: Spot | null }) {
   return null;
 }
 
+/* ---------- UserLocationMarker ---------- */
+function UserLocationMarker({ position }: { position: { lat: number; lng: number } | null }) {
+  if (!position) return null;
+  return (
+    <>
+      <Circle
+        center={[position.lat, position.lng]}
+        radius={100}
+        pathOptions={{ color: '#4A90D9', fillColor: '#4A90D9', fillOpacity: 0.1, weight: 1 }}
+      />
+      <CircleMarker
+        center={[position.lat, position.lng]}
+        radius={7}
+        pathOptions={{ color: 'white', fillColor: '#4A90D9', fillOpacity: 1, weight: 2 }}
+      />
+    </>
+  );
+}
+
 /* ---------- MapPage ---------- */
 export function MapPage() {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuthStore();
   const [spots, setSpots] = useState<Spot[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
@@ -158,6 +206,18 @@ export function MapPage() {
   const [filterType, setFilterType] = useState<string>('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [flyTarget, setFlyTarget] = useState<Spot | null>(null);
+
+  // User location
+  const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Advanced filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterGradeMin, setFilterGradeMin] = useState('');
+  const [filterDistance, setFilterDistance] = useState(0); // 0 = no limit
+
+  // Wizards
+  const [showPropose, setShowPropose] = useState(false);
+  const [editSpot, setEditSpot] = useState<Spot | null>(null);
 
   // Fetch spots
   useEffect(() => {
@@ -198,8 +258,32 @@ export function MapPage() {
     load();
   }, []);
 
-  // Filter spots
-  const filteredSpots = filterType ? spots.filter((s) => s.type === filterType) : spots;
+  // Filtered spots with all filters
+  const filteredSpots = useMemo(() => {
+    let result = spots;
+
+    // Type filter
+    if (filterType) result = result.filter((s) => s.type === filterType);
+
+    // Grade filter
+    if (filterGradeMin) {
+      const minNum = parseGradeToNumber(filterGradeMin);
+      result = result.filter((s) => {
+        if (!s.niveau_max) return false;
+        return parseGradeToNumber(s.niveau_max) >= minNum;
+      });
+    }
+
+    // Distance filter
+    if (filterDistance > 0 && userPos) {
+      result = result.filter((s) => {
+        const d = haversine(userPos.lat, userPos.lng, s.lat, s.lng);
+        return d <= filterDistance;
+      });
+    }
+
+    return result;
+  }, [spots, filterType, filterGradeMin, filterDistance, userPos]);
 
   // Search results
   const searchResults =
@@ -218,6 +302,18 @@ export function MapPage() {
 
   // Count by type
   const countByType = (type: string) => spots.filter((s) => s.type === type).length;
+
+  const handleLocated = useCallback((lat: number, lng: number) => {
+    setUserPos({ lat, lng });
+  }, []);
+
+  const handleSpotCreated = useCallback(() => {
+    // Clear cache to force reload
+    localStorage.removeItem('cache_spots_v2');
+    window.location.reload();
+  }, []);
+
+  const hasActiveFilters = filterGradeMin || filterDistance > 0;
 
   return (
     <div className="relative h-[calc(100vh-var(--spacing-header))]">
@@ -263,6 +359,9 @@ export function MapPage() {
           </MarkerClusterGroup>
         )}
 
+        {/* User location marker */}
+        <UserLocationMarker position={userPos} />
+
         <FlyToSpot spot={flyTarget} />
 
         {/* Right-side controls */}
@@ -284,7 +383,25 @@ export function MapPage() {
             {searchOpen ? <X className="h-[18px] w-[18px]" /> : <Search className="h-[18px] w-[18px]" />}
           </button>
 
-          <LocateButton />
+          <LocateButton onLocated={handleLocated} />
+
+          {/* Filter toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              'flex h-10 w-10 cursor-pointer items-center justify-center',
+              'rounded-xl bg-surface/95 backdrop-blur-md shadow-card',
+              'border border-border-subtle/50',
+              'text-text-secondary transition-all duration-200',
+              'hover:bg-surface hover:text-sage hover:shadow-elevated',
+              'active:scale-95',
+              (showFilters || hasActiveFilters) && 'bg-sage text-white border-sage hover:bg-sage-hover hover:text-white',
+            )}
+            title={t('filter.advanced') || 'Filtres'}
+            type="button"
+          >
+            <SlidersHorizontal className="h-[18px] w-[18px]" />
+          </button>
         </div>
       </MapContainer>
 
@@ -355,8 +472,92 @@ export function MapPage() {
         </div>
       )}
 
+      {/* Advanced filters panel */}
+      {showFilters && (
+        <div className="absolute right-3 top-[148px] z-[1001] w-64 animate-[fadeSlideDown_0.2s_ease-out]">
+          <div className="rounded-xl border border-border-subtle/50 bg-surface/95 p-4 shadow-elevated backdrop-blur-md">
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-text-secondary">
+              {t('filter.advanced') || 'Filtres avancés'}
+            </h3>
+
+            {/* Grade min */}
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium text-text-secondary">
+                {t('filter.grade_min') || 'Niveau minimum'}
+              </label>
+              <select
+                value={filterGradeMin}
+                onChange={(e) => setFilterGradeMin(e.target.value)}
+                className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
+              >
+                <option value="">{t('filter.all_grades') || 'Tous niveaux'}</option>
+                {GRADE_OPTIONS.map((g) => <option key={g} value={g}>{g}+</option>)}
+              </select>
+            </div>
+
+            {/* Distance */}
+            <div className="mb-3">
+              <label className="mb-1 flex items-center justify-between text-xs font-medium text-text-secondary">
+                <span>{t('filter.distance') || 'Distance max'}</span>
+                <span className="font-bold text-text-primary">
+                  {filterDistance === 0 ? '∞' : `${filterDistance} km`}
+                </span>
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={500}
+                step={10}
+                value={filterDistance}
+                onChange={(e) => setFilterDistance(Number(e.target.value))}
+                className="w-full accent-sage"
+                disabled={!userPos}
+              />
+              {!userPos && (
+                <p className="mt-1 text-[10px] text-text-secondary/60 italic">
+                  Activez la géolocalisation pour filtrer par distance
+                </p>
+              )}
+            </div>
+
+            {/* Active filter count */}
+            <div className="flex items-center justify-between border-t border-border-subtle pt-3">
+              <span className="text-xs text-text-secondary">
+                {filteredSpots.length} spot{filteredSpots.length !== 1 ? 's' : ''}
+              </span>
+              {hasActiveFilters && (
+                <button
+                  onClick={() => { setFilterGradeMin(''); setFilterDistance(0); }}
+                  className="text-xs font-medium text-sage hover:text-sage-hover"
+                  type="button"
+                >
+                  {t('filter.reset') || 'Réinitialiser'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filter chips — bottom of map */}
       <div className="absolute bottom-3 left-3 right-3 z-[1000] flex items-center gap-2 overflow-x-auto pb-safe scrollbar-none">
+        {/* Propose button (authenticated) */}
+        {isAuthenticated && (
+          <button
+            onClick={() => setShowPropose(true)}
+            className={cn(
+              'flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2',
+              'text-xs font-semibold shadow-card backdrop-blur-md transition-all duration-200',
+              'border active:scale-95',
+              'bg-sage text-white border-sage hover:bg-sage-hover',
+            )}
+            type="button"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>{t('propose.button') || 'Proposer'}</span>
+          </button>
+        )}
+
         {/* "All" chip */}
         <button
           onClick={() => setFilterType('')}
@@ -376,7 +577,7 @@ export function MapPage() {
             'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold',
             !filterType ? 'bg-white/20' : 'bg-text-secondary/10',
           )}>
-            {spots.length}
+            {filteredSpots.length}
           </span>
         </button>
 
@@ -423,7 +624,31 @@ export function MapPage() {
 
       {/* Spot sheet */}
       {selectedSpot && (
-        <SpotSheet spot={selectedSpot} onClose={() => setSelectedSpot(null)} />
+        <SpotSheet
+          spot={selectedSpot}
+          onClose={() => setSelectedSpot(null)}
+          onEdit={(spot) => {
+            setSelectedSpot(null);
+            setEditSpot(spot);
+          }}
+        />
+      )}
+
+      {/* Propose wizard */}
+      {showPropose && (
+        <ProposeSpotWizard
+          onClose={() => setShowPropose(false)}
+          onSuccess={handleSpotCreated}
+        />
+      )}
+
+      {/* Edit wizard */}
+      {editSpot && (
+        <EditSpotWizard
+          spot={editSpot}
+          onClose={() => setEditSpot(null)}
+          onSuccess={handleSpotCreated}
+        />
       )}
     </div>
   );

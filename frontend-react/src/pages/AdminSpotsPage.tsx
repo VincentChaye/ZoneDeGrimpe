@@ -1,8 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  Shield, Check, X, Trash2, MapPin, Loader2, ChevronLeft, ChevronRight,
-  Eye, FileEdit,
+  Shield, Check, X, Trash2, MapPin, Loader2, FileEdit,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -35,7 +33,6 @@ interface PendingEdit {
 type Tab = 'pending' | 'edits';
 
 export function AdminSpotsPage() {
-  const { t } = useTranslation();
   const { isAdmin } = useAuthStore();
 
   const [tab, setTab] = useState<Tab>('pending');

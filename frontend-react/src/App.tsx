@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Toaster } from 'sonner';
 import { Layout } from '@/components/layout/Layout';
 import { HomePage } from '@/pages/HomePage';
 import { MapPage } from '@/pages/MapPage';
@@ -28,6 +29,7 @@ function App() {
 
   return (
     <BrowserRouter basename="/ZoneDeGrimpe">
+      <Toaster position="bottom-center" richColors closeButton />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />

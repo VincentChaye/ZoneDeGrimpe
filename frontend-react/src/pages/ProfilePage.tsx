@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { MapPin, CheckCircle2, Crown, Calendar, Loader2, ArrowLeft } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -31,7 +30,6 @@ const LEVEL_CLS: Record<string, string> = {
 };
 
 export function ProfilePage() {
-  const { t } = useTranslation();
   const [params] = useSearchParams();
   const userId = params.get('id');
 
