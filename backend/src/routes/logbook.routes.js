@@ -15,19 +15,23 @@ export function logbookRouter(db) {
   const VALID_STYLES = ["onsight", "flash", "redpoint", "repeat"];
 
   // --- GET /api/logbook --- mes entrees (requireAuth)
+  // Query params optionnels : spotId, limit, skip
   r.get("/", requireAuth, async (req, res) => {
     try {
       const limit = Math.min(parseInt(req.query.limit) || 30, 100);
       const skip = Math.max(parseInt(req.query.skip) || 0, 0);
 
+      const filter = { userId: req.auth.uid };
+      if (req.query.spotId) filter.spotId = req.query.spotId;
+
       const items = await logbook
-        .find({ userId: req.auth.uid })
+        .find(filter)
         .sort({ date: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .toArray();
 
-      const total = await logbook.countDocuments({ userId: req.auth.uid });
+      const total = await logbook.countDocuments(filter);
       return res.json({ items, total });
     } catch (e) {
       console.error(e);

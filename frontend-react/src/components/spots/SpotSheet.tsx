@@ -241,7 +241,21 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
   const [logDate, setLogDate] = useState(new Date().toISOString().slice(0, 10));
   const [logComment, setLogComment] = useState('');
   const [logging, setLogging] = useState(false);
+  const [loggedRouteIds, setLoggedRouteIds] = useState<Set<string>>(new Set());
   const LOG_STYLES = ['onsight', 'flash', 'redpoint', 'repeat'] as const;
+
+  // Fetch already-logged routes for this spot (auth only)
+  useEffect(() => {
+    if (!isAuthenticated || !spot.id) return;
+    apiFetch<{ items: { routeId?: string }[] }>(`/api/logbook?spotId=${spot.id}&limit=100`, { auth: true })
+      .then((res) => {
+        const ids = new Set(
+          (res.items ?? []).map((e) => e.routeId).filter((id): id is string => Boolean(id))
+        );
+        setLoggedRouteIds(ids);
+      })
+      .catch(() => {});
+  }, [spot.id, isAuthenticated]);
 
   const handleLogRouteChange = (routeId: string) => {
     setLogRouteId(routeId);
@@ -250,6 +264,10 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
   };
 
   const submitLog = async () => {
+    if (logRouteId && loggedRouteIds.has(logRouteId)) {
+      toast.error(t('logbook.route_already_logged'));
+      return;
+    }
     setLogging(true);
     try {
       const payload: Record<string, unknown> = { spotId: spot.id, style: logStyle, date: logDate };
@@ -257,6 +275,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
       if (logComment.trim()) payload.notes = logComment.trim();
       await apiFetch('/api/logbook', { method: 'POST', auth: true, body: JSON.stringify(payload) });
       toast.success(t('toast.log_saved'));
+      if (logRouteId) setLoggedRouteIds((prev) => new Set([...prev, logRouteId]));
       setShowLogger(false);
       setLogRouteId('');
       setLogGrade(spot.niveau_max ?? '');
@@ -685,18 +704,31 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                 </div>
                 <div className="mt-2 space-y-2">
                   {routes.length > 0 && (
-                    <select
-                      value={logRouteId}
-                      onChange={(e) => handleLogRouteChange(e.target.value)}
-                      className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
-                    >
-                      <option value="">{t('logbook.select_route')}</option>
-                      {routes.map((r) => (
-                        <option key={r._id} value={r._id}>
-                          {r.name}{r.grade ? ` — ${r.grade}` : ''}
-                        </option>
-                      ))}
-                    </select>
+                    <>
+                      <select
+                        value={logRouteId}
+                        onChange={(e) => handleLogRouteChange(e.target.value)}
+                        className={cn(
+                          'w-full rounded-lg border bg-surface px-3 py-2 text-sm outline-none focus:border-sage',
+                          logRouteId && loggedRouteIds.has(logRouteId)
+                            ? 'border-red-400 text-red-500'
+                            : 'border-border-subtle',
+                        )}
+                      >
+                        <option value="">{t('logbook.select_route')}</option>
+                        {routes.map((r) => {
+                          const done = loggedRouteIds.has(r._id);
+                          return (
+                            <option key={r._id} value={r._id} disabled={done}>
+                              {done ? '✓ ' : ''}{r.name}{r.grade ? ` — ${r.grade}` : ''}{done ? ` (${t('logbook.already_logged')})` : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      {logRouteId && loggedRouteIds.has(logRouteId) && (
+                        <p className="text-xs text-red-500">{t('logbook.route_already_logged')}</p>
+                      )}
+                    </>
                   )}
                   <div className="flex gap-2">
                     {LOG_STYLES.map((s) => (
