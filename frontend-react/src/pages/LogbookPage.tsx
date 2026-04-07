@@ -151,6 +151,11 @@ export function LogbookPage() {
   // Debounced search
   function handleSearchChange(q: string) {
     setSearchQuery(q);
+    // If user edits the query while a spot is selected, close the form
+    if (selectedSpot && q !== selectedSpot.name) {
+      setSelectedSpot(null);
+      setSpotRoutes([]);
+    }
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (q.trim().length < 2) { setSearchResults([]); setShowDropdown(false); return; }
     searchTimer.current = setTimeout(async () => {
@@ -177,10 +182,12 @@ export function LogbookPage() {
     setShowDropdown(false);
     setLogForm(EMPTY_LOG);
     setLogError('');
+    setSpotRoutes([]);
     setRoutesLoading(true);
+    const spotId = spot.id;
     try {
-      const routes = await apiFetch<ClimbingRoute[]>(`/api/climbing-routes/spot/${spot.id}`);
-      setSpotRoutes(Array.isArray(routes) ? routes : []);
+      const fetched = await apiFetch<ClimbingRoute[]>(`/api/climbing-routes/spot/${spotId}`);
+      setSpotRoutes(Array.isArray(fetched) ? fetched : []);
     } catch {
       setSpotRoutes([]);
     } finally {
