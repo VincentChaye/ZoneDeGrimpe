@@ -178,7 +178,9 @@ export function AdminUsersPage() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-semibold text-text-primary">{u.displayName}</p>
+                    <Link to={`/profile?id=${u._id}`} className="truncate text-sm font-semibold text-text-primary no-underline hover:text-sage">
+                      {u.displayName}
+                    </Link>
                     {isUserAdmin && (
                       <span className="flex items-center gap-0.5 rounded bg-sage/10 px-1.5 py-0.5 text-[10px] font-bold text-sage">
                         <Crown className="h-2.5 w-2.5" /> {t('admin.badge_admin')}

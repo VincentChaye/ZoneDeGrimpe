@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  BookOpen, MapPin, TrendingUp, Loader2, Zap,
+  BookOpen, MapPin, TrendingUp, Loader2, Zap, Trash2, Plus, X,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -33,6 +33,26 @@ const STYLE_CLS: Record<string, string> = {
   repeat: 'bg-surface-2 text-text-secondary border-border-subtle',
 };
 
+const STYLES = ['onsight', 'flash', 'redpoint', 'repeat'] as const;
+
+interface AddForm {
+  spotName: string;
+  routeName: string;
+  grade: string;
+  style: string;
+  date: string;
+  comment: string;
+}
+
+const EMPTY_FORM: AddForm = {
+  spotName: '',
+  routeName: '',
+  grade: '',
+  style: 'redpoint',
+  date: new Date().toISOString().slice(0, 10),
+  comment: '',
+};
+
 function sortGrades(grades: [string, number][]): [string, number][] {
   return [...grades].sort((a, b) => parseGradeToNumber(a[0]) - parseGradeToNumber(b[0]));
 }
@@ -44,6 +64,12 @@ export function LogbookPage() {
   const [entries, setEntries] = useState<LogbookEntry[]>([]);
   const [stats, setStats] = useState<LogbookStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<AddForm>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [filterStyle, setFilterStyle] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) { setLoading(false); return; }
@@ -60,6 +86,47 @@ export function LogbookPage() {
       .catch((err) => console.error('[logbook]', err))
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
+
+  async function deleteEntry(id: string) {
+    if (!confirm(t('logbook.confirm_delete'))) return;
+    setDeleting(id);
+    try {
+      await apiFetch(`/api/logbook/${id}`, { method: 'DELETE', auth: true });
+      setEntries((prev) => prev.filter((e) => e._id !== id));
+    } catch (err) {
+      console.error('[logbook] delete:', err);
+    }
+    setDeleting(null);
+  }
+
+  async function addEntry() {
+    if (!form.spotName.trim()) { setFormError(t('logbook.form_spot_required')); return; }
+    setSaving(true);
+    setFormError('');
+    try {
+      const payload: Record<string, string> = {
+        spotName: form.spotName.trim(),
+        style: form.style,
+        date: form.date,
+      };
+      if (form.routeName.trim()) payload.routeName = form.routeName.trim();
+      if (form.grade.trim()) payload.grade = form.grade.trim();
+      if (form.comment.trim()) payload.comment = form.comment.trim();
+      const newEntry = await apiFetch<LogbookEntry>('/api/logbook', {
+        method: 'POST', auth: true,
+        body: JSON.stringify(payload),
+      });
+      setEntries((prev) => [newEntry, ...prev]);
+      setStats((s) => s ? { ...s, totalAscents: s.totalAscents + 1 } : s);
+      setShowForm(false);
+      setForm(EMPTY_FORM);
+    } catch (err) {
+      console.error('[logbook] add:', err);
+      setFormError(t('common.error'));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (!isAuthenticated) {
     return (
@@ -86,13 +153,23 @@ export function LogbookPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
-      <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold text-text-primary">
-          {t('logbook.title')}
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          {t('logbook.subtitle')}
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-text-primary">
+            {t('logbook.title')}
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            {t('logbook.subtitle')}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => { setShowForm(true); setFormError(''); }}
+          className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-sage-hover hover:shadow-card"
+        >
+          <Plus className="h-4 w-4" />
+          {t('logbook.add_entry')}
+        </button>
       </div>
 
       {stats && (
@@ -140,9 +217,28 @@ export function LogbookPage() {
       )}
 
       <section>
-        <h2 className="mb-3 font-heading text-lg font-bold text-text-primary">
-          {t('logbook.timeline')}
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <h2 className="font-heading text-lg font-bold text-text-primary">
+            {t('logbook.timeline')}
+          </h2>
+          <div className="ml-auto flex flex-wrap gap-1.5">
+            {(['', ...STYLES] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setFilterStyle(s)}
+                className={cn(
+                  'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
+                  filterStyle === s
+                    ? 'bg-sage text-white'
+                    : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+                )}
+              >
+                {s ? t(`logbook.style.${s}`) : t('myspots.filter_all')}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-12 text-center">
@@ -152,7 +248,7 @@ export function LogbookPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {entries.map((entry) => {
+            {entries.filter((e) => !filterStyle || e.style === filterStyle).map((entry) => {
               const date = new Date(entry.date || entry.createdAt);
               return (
                 <div
@@ -195,6 +291,15 @@ export function LogbookPage() {
                         <p className="mt-1.5 text-xs leading-relaxed text-text-secondary/80">{entry.comment}</p>
                       )}
                     </div>
+                    <button
+                      onClick={() => deleteEntry(entry._id)}
+                      disabled={deleting === entry._id}
+                      type="button"
+                      className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50 dark:hover:bg-red-900/20"
+                      title={t('logbook.delete_entry')}
+                    >
+                      {deleting === entry._id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    </button>
                   </div>
                 </div>
               );
@@ -202,6 +307,112 @@ export function LogbookPage() {
           </div>
         )}
       </section>
+
+      {/* Add entry modal */}
+      {showForm && (
+        <div
+          className="fixed inset-0 z-[2000] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
+          onClick={() => setShowForm(false)}
+        >
+          <div
+            className="mx-0 w-full max-w-md rounded-t-2xl bg-surface p-6 shadow-elevated sm:mx-4 sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold text-text-primary">{t('logbook.add_entry')}</h3>
+              <button type="button" onClick={() => setShowForm(false)} className="cursor-pointer rounded-lg p-1.5 text-text-secondary hover:bg-surface-2">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_spot')} *</label>
+                <input
+                  type="text"
+                  value={form.spotName}
+                  onChange={(e) => setForm((f) => ({ ...f, spotName: e.target.value }))}
+                  placeholder={t('logbook.form_spot_placeholder')}
+                  className="w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_route')}</label>
+                  <input
+                    type="text"
+                    value={form.routeName}
+                    onChange={(e) => setForm((f) => ({ ...f, routeName: e.target.value }))}
+                    placeholder={t('logbook.form_route_placeholder')}
+                    className="w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_grade')}</label>
+                  <input
+                    type="text"
+                    value={form.grade}
+                    onChange={(e) => setForm((f) => ({ ...f, grade: e.target.value }))}
+                    placeholder="6a, 7b+..."
+                    className="w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_style')}</label>
+                  <select
+                    value={form.style}
+                    onChange={(e) => setForm((f) => ({ ...f, style: e.target.value }))}
+                    className="w-full cursor-pointer rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none focus:border-sage"
+                  >
+                    {STYLES.map((s) => (
+                      <option key={s} value={s}>{t(`logbook.style.${s}`)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_date')}</label>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                    className="w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none focus:border-sage"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_comment')}</label>
+                <textarea
+                  value={form.comment}
+                  onChange={(e) => setForm((f) => ({ ...f, comment: e.target.value }))}
+                  rows={2}
+                  placeholder={t('logbook.form_comment_placeholder')}
+                  className="w-full resize-none rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                />
+              </div>
+              {formError && <p className="text-xs font-medium text-red-500">{formError}</p>}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="cursor-pointer rounded-xl border border-border-subtle px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={addEntry}
+                disabled={saving}
+                className="flex cursor-pointer items-center gap-2 rounded-xl bg-sage px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                {t('logbook.save_entry')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

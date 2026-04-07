@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import {
   Navigation, Compass, Zap, Bookmark, Share2, MapPin, Star,
   ArrowUpRight, ChevronLeft, ChevronRight, Route as RouteIcon,
-  Plus, X, Pencil, Trash2,
+  Plus, X, Pencil, Trash2, BookOpen, Loader2, Maximize2,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { cn, getGradeLevel, ORIENT_DEG, SPOT_TYPES } from '@/lib/utils';
@@ -164,6 +164,110 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
     }
   };
 
+  /* ---------- Reviews ---------- */
+  // Backend stores "username" (display label), not "displayName"
+  interface Review { _id: string; userId: string; username: string; rating: number; comment?: string; createdAt: string; }
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [myReview, setMyReview] = useState<Review | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const meId = useAuthStore.getState().user?._id;
+
+  useEffect(() => {
+    setReviewsLoading(true);
+    apiFetch<{ items: Review[]; total: number } | Review[]>(`/api/reviews/spot/${spot.id}`)
+      .then((r) => {
+        const list: Review[] = Array.isArray(r) ? r : ((r as { items?: Review[] }).items ?? []);
+        setReviews(list);
+        const mine = meId ? list.find((rv) => rv.userId === meId) ?? null : null;
+        setMyReview(mine);
+        if (mine) { setReviewRating(mine.rating); setReviewComment(mine.comment ?? ''); }
+      })
+      .catch(() => setReviews([]))
+      .finally(() => setReviewsLoading(false));
+  }, [spot.id, meId]);
+
+  const submitReview = async () => {
+    if (!reviewRating) return;
+    setSubmittingReview(true);
+    try {
+      if (myReview) {
+        await apiFetch(`/api/reviews/${myReview._id}`, {
+          method: 'PATCH', auth: true,
+          body: JSON.stringify({ rating: reviewRating, comment: reviewComment || undefined }),
+        });
+        const updated: Review = { ...myReview, rating: reviewRating, comment: reviewComment || undefined };
+        setReviews((prev) => prev.map((rv) => rv._id === myReview._id ? updated : rv));
+        setMyReview(updated);
+      } else {
+        const created = await apiFetch<Review>('/api/reviews', {
+          method: 'POST', auth: true,
+          body: JSON.stringify({ spotId: spot.id, rating: reviewRating, comment: reviewComment || undefined }),
+        });
+        setReviews((prev) => [created, ...prev]);
+        setMyReview(created);
+      }
+      setShowReviewForm(false);
+      toast.success(t('toast.review_saved'));
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const deleteReview = async (reviewId: string) => {
+    if (!confirm(t('review.confirm_delete'))) return;
+    try {
+      await apiFetch(`/api/reviews/${reviewId}`, { method: 'DELETE', auth: true });
+      setReviews((prev) => prev.filter((rv) => rv._id !== reviewId));
+      setMyReview(null);
+      setReviewRating(0);
+      setReviewComment('');
+      toast.success(t('toast.review_deleted'));
+    } catch {
+      toast.error(t('common.error'));
+    }
+  };
+
+  /* ---------- Logger une grimpe ---------- */
+  const [showLogger, setShowLogger] = useState(false);
+  const [logRouteId, setLogRouteId] = useState('');
+  const [logStyle, setLogStyle] = useState('redpoint');
+  const [logGrade, setLogGrade] = useState(spot.niveau_max ?? '');
+  const [logDate, setLogDate] = useState(new Date().toISOString().slice(0, 10));
+  const [logComment, setLogComment] = useState('');
+  const [logging, setLogging] = useState(false);
+  const LOG_STYLES = ['onsight', 'flash', 'redpoint', 'repeat'] as const;
+
+  const handleLogRouteChange = (routeId: string) => {
+    setLogRouteId(routeId);
+    const route = routes.find((r) => r._id === routeId);
+    if (route?.grade) setLogGrade(route.grade);
+  };
+
+  const submitLog = async () => {
+    setLogging(true);
+    try {
+      const payload: Record<string, unknown> = { spotId: spot.id, style: logStyle, date: logDate };
+      if (logRouteId) payload.routeId = logRouteId;
+      if (logComment.trim()) payload.notes = logComment.trim();
+      await apiFetch('/api/logbook', { method: 'POST', auth: true, body: JSON.stringify(payload) });
+      toast.success(t('toast.log_saved'));
+      setShowLogger(false);
+      setLogRouteId('');
+      setLogGrade(spot.niveau_max ?? '');
+      setLogComment('');
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setLogging(false);
+    }
+  };
+
   /* ---------- Delete spot (admin) ---------- */
   const handleDeleteSpot = async () => {
     if (!confirm(t('spot.delete_confirm', { name: spot.name }))) return;
@@ -176,10 +280,14 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
     }
   };
 
+  /* ---------- Lightbox ---------- */
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   /* ---------- Reset photo index on spot change ---------- */
   useEffect(() => { setPhotoIdx(0); }, [spot.id]);
 
   return (
+    <>
     <Drawer.Root open onOpenChange={(open) => !open && onClose()} modal={false}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-[1001] bg-black/25 backdrop-blur-[2px] md:hidden" />
@@ -284,9 +392,18 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                   <img
                     src={spot.photos[photoIdx].url}
                     alt={`Photo ${photoIdx + 1} de ${spot.name}`}
-                    className="h-44 w-full object-cover transition-opacity duration-200"
+                    className="h-44 w-full cursor-zoom-in object-cover transition-opacity duration-200"
                     loading="lazy"
+                    onClick={() => setLightboxOpen(true)}
                   />
+                  <button
+                    onClick={() => setLightboxOpen(true)}
+                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                    type="button"
+                    title={t('spot.photos_fullscreen')}
+                  >
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  </button>
                   {photoCount > 1 && (
                     <>
                       <button
@@ -456,6 +573,181 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
               </div>
             )}
 
+            {/* Reviews section */}
+            {spot.type !== 'shop' && (
+              <div className="border-t border-border-subtle px-5 py-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary/70">
+                    {t('review.title')}
+                    {reviews.length > 0 && <span className="ml-1.5 text-text-primary">({reviews.length})</span>}
+                  </h3>
+                  {isAuthenticated && !showReviewForm && (
+                    <button
+                      onClick={() => setShowReviewForm(true)}
+                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-sage transition-colors hover:bg-sage-muted"
+                      type="button"
+                    >
+                      <Star className="h-3 w-3" />
+                      {myReview ? t('review.edit') : t('review.add')}
+                    </button>
+                  )}
+                </div>
+
+                {/* Review form */}
+                {showReviewForm && (
+                  <div className="mt-2 space-y-2 rounded-xl border border-border-subtle bg-surface-2/30 p-3">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setReviewRating(n)}
+                          className="cursor-pointer transition-transform hover:scale-110"
+                        >
+                          <Star className={cn('h-6 w-6', n <= reviewRating ? 'fill-amber-brand text-amber-brand' : 'text-text-secondary/30')} />
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder={t('review.comment_placeholder')}
+                      rows={2}
+                      className="w-full resize-none rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={submitReview}
+                        disabled={submittingReview || !reviewRating}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-sage py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
+                        type="button"
+                      >
+                        {submittingReview && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        {t('common.save')}
+                      </button>
+                      <button
+                        onClick={() => setShowReviewForm(false)}
+                        className="rounded-lg border border-border-subtle px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-2"
+                        type="button"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {reviewsLoading ? (
+                  <div className="py-3 text-center text-xs text-text-secondary/50">{t('common.loading')}...</div>
+                ) : reviews.length === 0 ? (
+                  <p className="py-2 text-xs text-text-secondary/50">{t('review.no_reviews')}</p>
+                ) : (
+                  <div className="mt-2 space-y-2">
+                    {reviews.map((rv) => (
+                      <div key={rv._id} className="rounded-lg bg-surface-2/40 p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-text-primary">{rv.username}</span>
+                              <div className="flex items-center gap-0.5">
+                                {[1, 2, 3, 4, 5].map((n) => (
+                                  <Star key={n} className={cn('h-3 w-3', n <= rv.rating ? 'fill-amber-brand text-amber-brand' : 'text-text-secondary/20')} />
+                                ))}
+                              </div>
+                            </div>
+                            {rv.comment && <p className="mt-1 text-xs leading-relaxed text-text-secondary">{rv.comment}</p>}
+                          </div>
+                          {meId === rv.userId && (
+                            <button
+                              onClick={() => deleteReview(rv._id)}
+                              className="shrink-0 rounded p-1 text-text-secondary/40 transition-colors hover:bg-red-50 hover:text-red-500"
+                              type="button"
+                              title={t('common.delete')}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Logger une grimpe modal */}
+            {showLogger && (
+              <div className="border-t border-border-subtle px-5 py-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary/70">{t('logbook.log_climb')}</h3>
+                  <button onClick={() => setShowLogger(false)} className="cursor-pointer rounded-lg p-1 text-text-secondary hover:bg-surface-2" type="button">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="mt-2 space-y-2">
+                  {routes.length > 0 && (
+                    <select
+                      value={logRouteId}
+                      onChange={(e) => handleLogRouteChange(e.target.value)}
+                      className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
+                    >
+                      <option value="">{t('logbook.select_route')}</option>
+                      {routes.map((r) => (
+                        <option key={r._id} value={r._id}>
+                          {r.name}{r.grade ? ` — ${r.grade}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <div className="flex gap-2">
+                    {LOG_STYLES.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setLogStyle(s)}
+                        className={cn(
+                          'flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all',
+                          logStyle === s ? 'bg-sage text-white' : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+                        )}
+                      >
+                        {t(`logbook.style.${s}`)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={logGrade}
+                      onChange={(e) => setLogGrade(e.target.value)}
+                      placeholder={t('logbook.form_grade')}
+                      className="w-1/2 rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
+                    />
+                    <input
+                      type="date"
+                      value={logDate}
+                      onChange={(e) => setLogDate(e.target.value)}
+                      className="w-1/2 rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
+                    />
+                  </div>
+                  <textarea
+                    value={logComment}
+                    onChange={(e) => setLogComment(e.target.value)}
+                    placeholder={t('logbook.form_comment_placeholder')}
+                    rows={2}
+                    className="w-full resize-none rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                  />
+                  <button
+                    onClick={submitLog}
+                    disabled={logging}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-sage py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
+                    type="button"
+                  >
+                    {logging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
+                    {t('logbook.save_entry')}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Action buttons */}
             <div className="flex gap-2 border-t border-border-subtle px-5 py-4">
               <a
@@ -502,6 +794,22 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
               >
                 <Share2 className="h-4 w-4" />
               </button>
+              {isAuthenticated && spot.type !== 'shop' && (
+                <button
+                  onClick={() => setShowLogger((v) => !v)}
+                  className={cn(
+                    'flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl',
+                    'border transition-all duration-200 active:scale-95',
+                    showLogger
+                      ? 'border-sage bg-sage-muted text-sage'
+                      : 'border-border-subtle text-text-secondary hover:border-sage/30 hover:bg-sage-muted hover:text-sage',
+                  )}
+                  type="button"
+                  title={t('logbook.log_climb')}
+                >
+                  <BookOpen className="h-4 w-4" />
+                </button>
+              )}
               {isAuthenticated && (
                 <button
                   onClick={() => onEdit?.(spot)}
@@ -572,5 +880,51 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
+
+    {/* Lightbox */}
+    {lightboxOpen && hasPhotos && (
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm"
+        onClick={() => setLightboxOpen(false)}
+      >
+        <button
+          onClick={() => setLightboxOpen(false)}
+          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+          type="button"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <img
+          src={spot.photos[photoIdx].url}
+          alt={`Photo ${photoIdx + 1} de ${spot.name}`}
+          className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+
+        {photoCount > 1 && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); prevPhoto(); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              type="button"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); nextPhoto(); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              type="button"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm font-bold text-white backdrop-blur-sm">
+              {photoIdx + 1} / {photoCount}
+            </div>
+          </>
+        )}
+      </div>
+    )}
+    </>
   );
 }

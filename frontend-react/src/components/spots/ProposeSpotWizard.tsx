@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
   X, ChevronLeft, ChevronRight, Mountain, Gem, Building2, ShoppingBag,
-  LocateFixed, Check, Loader2,
+  LocateFixed, Check, Loader2, MapPin, Search,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -71,6 +71,9 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
   }));
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressSearching, setAddressSearching] = useState(false);
+  const [addressStatus, setAddressStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -104,6 +107,33 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
 
   const next = () => { if (validateStep()) setStep((s) => Math.min(s + 1, STEPS.length - 1)); };
   const prev = () => setStep((s) => Math.max(s - 1, 0));
+
+  const handleAddressSearch = async () => {
+    if (!addressQuery.trim()) return;
+    setAddressSearching(true);
+    setAddressStatus('idle');
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addressQuery.trim())}`,
+        { headers: { 'Accept-Language': 'fr' } },
+      );
+      const results = await res.json();
+      if (results.length > 0) {
+        set('lat', parseFloat(results[0].lat).toFixed(6));
+        set('lng', parseFloat(results[0].lon).toFixed(6));
+        setAddressStatus('found');
+        toast.success(t('propose.address_found'));
+      } else {
+        setAddressStatus('not_found');
+        toast.error(t('propose.address_not_found'));
+      }
+    } catch {
+      setAddressStatus('not_found');
+      toast.error(t('propose.address_not_found'));
+    } finally {
+      setAddressSearching(false);
+    }
+  };
 
   const handleGeolocate = () => {
     navigator.geolocation.getCurrentPosition(
@@ -239,6 +269,55 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
             {/* Step 1: Location */}
             {step === 1 && (
               <div className="space-y-4">
+                {/* Address search */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-text-primary">
+                    {t('propose.address')}
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary/50" />
+                      <input
+                        type="text"
+                        value={addressQuery}
+                        onChange={(e) => { setAddressQuery(e.target.value); setAddressStatus('idle'); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddressSearch(); } }}
+                        placeholder={t('propose.address_placeholder')}
+                        className="w-full rounded-xl border border-border-subtle bg-surface py-3 pl-10 pr-4 text-sm outline-none transition-colors focus:border-sage"
+                      />
+                    </div>
+                    <button
+                      onClick={handleAddressSearch}
+                      disabled={addressSearching || !addressQuery.trim()}
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl bg-sage px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
+                      type="button"
+                    >
+                      {addressSearching ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
+                      {t('propose.address_search')}
+                    </button>
+                  </div>
+                  {addressStatus === 'found' && data.lat && data.lng && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-green-600">
+                      <Check className="h-3.5 w-3.5" />
+                      {t('propose.address_found')} ({data.lat}, {data.lng})
+                    </p>
+                  )}
+                  {addressStatus === 'not_found' && (
+                    <p className="mt-1.5 text-xs text-red-500">{t('propose.address_not_found')}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border-subtle" />
+                  <span className="text-xs text-text-secondary">{t('auth.or')}</span>
+                  <div className="h-px flex-1 bg-border-subtle" />
+                </div>
+
+                {/* Geolocate button */}
                 <button
                   onClick={handleGeolocate}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-sage/30 bg-sage-muted px-4 py-3 text-sm font-medium text-sage transition-colors hover:bg-sage/10"
@@ -247,11 +326,14 @@ export function ProposeSpotWizard({ onClose, onSuccess, initialLatLng }: Propose
                   <LocateFixed className="h-4 w-4" />
                   {t('propose.geolocate')}
                 </button>
+
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-border-subtle" />
-                  <span className="text-xs text-text-secondary">{t('auth.or')}</span>
+                  <span className="text-xs text-text-secondary">{t('propose.or_manual')}</span>
                   <div className="h-px flex-1 bg-border-subtle" />
                 </div>
+
+                {/* Manual lat/lng */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-text-secondary">{t('recap.lat')}</label>

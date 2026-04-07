@@ -1,17 +1,23 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Mail, Lock } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, ApiError } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
 import type { AuthState } from '@/types';
 import logo from '@/assets/ZoneDeGrimpeIcon.png';
+
+const ERROR_MAP: Record<string, string> = {
+  invalid_credentials: 'auth.invalid_credentials',
+  missing_fields: 'auth.missing_fields',
+  too_many_requests: 'auth.too_many_requests',
+};
 
 export function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const login = useAuthStore((s) => s.login);
+  const { login, isAuthenticated } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,9 +26,20 @@ export function LoginPage() {
 
   const next = searchParams.get('next') || '/map';
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) navigate(next, { replace: true });
+  }, [isAuthenticated, navigate, next]);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+
+    // Client-side validation
+    if (!email.trim() || !password) {
+      setError(t('auth.missing_fields'));
+      return;
+    }
     setLoading(true);
 
     try {
@@ -33,7 +50,17 @@ export function LoginPage() {
       login(data);
       navigate(next);
     } catch (err) {
-      setError(t('common.error'));
+      if (err instanceof ApiError) {
+        try {
+          const body = JSON.parse(err.body);
+          const key = ERROR_MAP[body.error];
+          setError(key ? t(key) : t('auth.invalid_credentials'));
+        } catch {
+          setError(t('auth.invalid_credentials'));
+        }
+      } else {
+        setError(t('common.error'));
+      }
       console.error(err);
     } finally {
       setLoading(false);

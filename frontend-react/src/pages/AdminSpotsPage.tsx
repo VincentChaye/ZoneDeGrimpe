@@ -47,6 +47,7 @@ export function AdminSpotsPage() {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectType, setRejectType] = useState<'spot' | 'edit'>('spot');
+  const [filterType, setFilterType] = useState('');
 
   const loadPendingSpots = useCallback(async () => {
     try {
@@ -226,8 +227,27 @@ export function AdminSpotsPage() {
             <p className="text-sm font-medium text-text-secondary">{t('admin.no_pending_spots')}</p>
           </div>
         ) : (
+          <>
+            {/* Type filter */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(['', 'crag', 'boulder', 'indoor', 'shop'] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFilterType(type)}
+                  className={cn(
+                    'cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-all',
+                    filterType === type
+                      ? 'bg-sage text-white'
+                      : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+                  )}
+                >
+                  {type ? t(`spot.type.${type}`) : t('myspots.filter_all')}
+                </button>
+              ))}
+            </div>
           <div className="space-y-3">
-            {spots.map((spot) => {
+            {spots.filter((s) => !filterType || s.type === filterType).map((spot) => {
               const isLoading = actionLoading === spot._id;
               return (
                 <div
@@ -250,7 +270,15 @@ export function AdminSpotsPage() {
                         <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-text-secondary/80">{spot.description}</p>
                       )}
                       <p className="mt-1.5 text-[11px] text-text-secondary/60">
-                        {t('admin.proposed_by')} <span className="font-medium">{spot.submittedBy?.displayName || spot.createdBy?.displayName || '?'}</span>
+                        {t('admin.proposed_by')}{' '}
+                        {(spot.submittedBy || spot.createdBy) ? (
+                          <Link
+                            to={`/profile?id=${(spot.submittedBy || spot.createdBy)!.uid}`}
+                            className="font-medium text-sage no-underline hover:underline"
+                          >
+                            {(spot.submittedBy || spot.createdBy)!.displayName}
+                          </Link>
+                        ) : <span className="font-medium">?</span>}
                         {spot.createdAt && <> &middot; {new Date(spot.createdAt).toLocaleDateString()}</>}
                       </p>
                     </div>
@@ -288,6 +316,7 @@ export function AdminSpotsPage() {
               );
             })}
           </div>
+          </>
         )
       ) : (
         edits.length === 0 ? (

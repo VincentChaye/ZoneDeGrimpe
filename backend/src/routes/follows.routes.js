@@ -179,57 +179,78 @@ export function followsRouter(db) {
       if (followingIds.length === 0) return res.json([]);
 
       // Fetch recent activity in parallel
+      // reviews + logbook store userId (plain string), spots store createdBy.uid
       const [recentReviews, recentLogbook, recentSpots] = await Promise.all([
         reviews
-          .find({ "createdBy.uid": { $in: followingIds } })
+          .find({ userId: { $in: followingIds } })
           .sort({ createdAt: -1 })
           .limit(50)
           .toArray()
           .catch(() => []),
         logbook
-          .find({ "createdBy.uid": { $in: followingIds } })
+          .find({ userId: { $in: followingIds } })
           .sort({ createdAt: -1 })
           .limit(50)
           .toArray()
           .catch(() => []),
         spots
-          .find({
-            "createdBy.uid": { $in: followingIds },
-            status: "approved",
-          })
+          .find({ "createdBy.uid": { $in: followingIds }, status: "approved" })
           .sort({ createdAt: -1 })
           .limit(50)
           .toArray()
           .catch(() => []),
       ]);
 
+      // Batch user lookup for logbook (no username stored there)
+      const logbookUserIds = [...new Set(recentLogbook.map(l => l.userId).filter(Boolean))];
+      const userDocs = logbookUserIds.length
+        ? await users.find(
+            { _id: { $in: logbookUserIds.map(id => { try { return new ObjectId(id); } catch { return null; } }).filter(Boolean) } },
+            { projection: { username: 1, displayName: 1 } }
+          ).toArray()
+        : [];
+      const userMap = new Map(userDocs.map(u => [u._id.toString(), u]));
+
+      // Batch spot name lookup for reviews (spotName not stored on review)
+      const reviewSpotIds = [...new Set(recentReviews.map(r => r.spotId).filter(Boolean))];
+      const spotDocs = reviewSpotIds.length
+        ? await spots.find(
+            { _id: { $in: reviewSpotIds.map(id => { try { return new ObjectId(id); } catch { return null; } }).filter(Boolean) } },
+            { projection: { name: 1 } }
+          ).toArray()
+        : [];
+      const spotMap = new Map(spotDocs.map(s => [s._id.toString(), s.name]));
+
       // Build unified feed
       const feed = [
         ...recentReviews.map(r => ({
           type: "review",
-          userId: r.createdBy?.uid,
-          username: r.createdBy?.displayName || "Utilisateur",
-          data: r,
-          date: r.createdAt,
+          userId: r.userId,
+          username: r.username || "Utilisateur",
+          data: { spotId: r.spotId, spotName: spotMap.get(r.spotId) || null, rating: r.rating, comment: r.comment },
+          createdAt: r.createdAt,
         })),
-        ...recentLogbook.map(l => ({
-          type: "logbook",
-          userId: l.createdBy?.uid,
-          username: l.createdBy?.displayName || "Utilisateur",
-          data: l,
-          date: l.createdAt,
-        })),
+        ...recentLogbook.map(l => {
+          const u = userMap.get(l.userId);
+          return {
+            type: "logbook",
+            userId: l.userId,
+            username: u?.username || u?.displayName || "Utilisateur",
+            data: { spotId: l.spotId, spotName: l.spotName, routeName: l.routeName, grade: l.grade, style: l.style },
+            createdAt: l.createdAt,
+          };
+        }),
         ...recentSpots.map(s => ({
           type: "spot",
           userId: s.createdBy?.uid,
-          username: s.createdBy?.displayName || "Utilisateur",
-          data: s,
-          date: s.createdAt,
+          username: s.createdBy?.displayName || s.createdBy?.username || "Utilisateur",
+          data: { spotId: s._id.toString(), spotName: s.name },
+          createdAt: s.createdAt,
         })),
       ];
 
       // Sort by date desc and limit
-      feed.sort((a, b) => (b.date || 0) - (a.date || 0));
+      feed.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
       res.json(feed.slice(0, 30));
     } catch (e) {

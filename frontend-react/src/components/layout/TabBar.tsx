@@ -2,6 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Home, MapPin, Users, Bookmark, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth.store';
+import { useNotificationsStore } from '@/stores/notifications.store';
 
 const TABS = [
   { to: '/', key: 'nav.home', icon: Home },
@@ -15,6 +17,8 @@ export function TabBar() {
   const { t } = useTranslation();
   const location = useLocation();
   const activeIndex = TABS.findIndex(({ to }) => location.pathname === to);
+  const { isAuthenticated } = useAuthStore();
+  const unreadCount = useNotificationsStore((s) => s.unreadCount);
 
   return (
     <nav
@@ -39,6 +43,7 @@ export function TabBar() {
 
       {TABS.map(({ to, key, icon: Icon }) => {
         const isActive = location.pathname === to;
+        const showBadge = to === '/settings' && isAuthenticated && unreadCount > 0;
         return (
           <Link
             key={to}
@@ -53,7 +58,7 @@ export function TabBar() {
             aria-current={isActive ? 'page' : undefined}
           >
             <div className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-200',
+              'relative flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-200',
               isActive && 'bg-sage-muted',
             )}>
               <Icon
@@ -63,6 +68,11 @@ export function TabBar() {
                 )}
                 strokeWidth={isActive ? 2.25 : 1.75}
               />
+              {showBadge && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </div>
             <span className={cn(
               'text-[10px] leading-tight transition-all duration-200',

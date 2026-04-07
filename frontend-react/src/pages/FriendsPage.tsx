@@ -365,7 +365,12 @@ export function FriendsPage() {
                 >
                   <Avatar name={friend.displayName} url={friend.avatarUrl} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-text-primary">{friend.displayName}</p>
+                    <Link
+                      to={`/profile?id=${friend._id}`}
+                      className="block truncate text-sm font-semibold text-text-primary no-underline hover:text-sage"
+                    >
+                      {friend.displayName}
+                    </Link>
                     {friend.username && (
                       <p className="truncate text-xs text-text-secondary">@{friend.username}</p>
                     )}

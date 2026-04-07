@@ -1,23 +1,30 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo, lazy, Suspense, memo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, CircleMarker } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import {
   Search, LocateFixed, X, MapPin as MapPinIcon, Mountain, Gem, Building2,
-  ShoppingBag, Plus, SlidersHorizontal,
+  ShoppingBag, Plus, SlidersHorizontal, Layers,
 } from 'lucide-react';
 import { apiFetch, getCachedSpots, setCachedSpots } from '@/lib/api';
 import { cn, SPOT_TYPES, parseGradeToNumber } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 import { SpotSheet } from '@/components/spots/SpotSheet';
-import { ProposeSpotWizard } from '@/components/spots/ProposeSpotWizard';
-import { EditSpotWizard } from '@/components/spots/EditSpotWizard';
 import type { Spot, SpotType } from '@/types';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+
+/* ---------- Lazy-loaded wizards (code-split) ---------- */
+const ProposeSpotWizard = lazy(() =>
+  import('@/components/spots/ProposeSpotWizard').then((m) => ({ default: m.ProposeSpotWizard })),
+);
+const EditSpotWizard = lazy(() =>
+  import('@/components/spots/EditSpotWizard').then((m) => ({ default: m.EditSpotWizard })),
+);
 
 /* ---------- Fix Leaflet default icon path ---------- */
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -70,6 +77,26 @@ const FILTER_CHIPS: { type: SpotType; icon: typeof Mountain; key: string }[] = [
 ];
 
 const GRADE_OPTIONS = ['3','4','5','6a','6b','6c','7a','7b','7c','8a','8b','8c','9a'];
+
+type MapLayerKey = 'osm' | 'satellite' | 'topo';
+const TILE_LAYERS: Record<MapLayerKey, { url: string; attribution: string; maxZoom: number }> = {
+  osm: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
+    maxZoom: 18,
+  },
+  topo: {
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+    maxZoom: 17,
+  },
+};
+const MAP_LAYER_ORDER: MapLayerKey[] = ['osm', 'satellite', 'topo'];
 
 /* ---------- Spot data normalization ---------- */
 function normalizeSpot(s: Record<string, unknown>, i: number): Spot | null {
@@ -126,6 +153,16 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number): numb
   const a = Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/* ---------- useDebounce hook ---------- */
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
 }
 
 /* ---------- LocateButton ---------- */
@@ -194,10 +231,50 @@ function UserLocationMarker({ position }: { position: { lat: number; lng: number
   );
 }
 
+/* ---------- Memoized MarkerLayer (avoids re-rendering 20K markers on unrelated state changes) ---------- */
+const MarkerLayer = memo(function MarkerLayer({
+  spots,
+  onSelect,
+}: {
+  spots: Spot[];
+  onSelect: (spot: Spot) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <MarkerClusterGroup
+      chunkedLoading
+      maxClusterRadius={50}
+      spiderfyOnMaxZoom
+      showCoverageOnHover={false}
+      disableClusteringAtZoom={16}
+    >
+      {spots.map((spot) => (
+        <Marker
+          key={spot.id}
+          position={[spot.lat, spot.lng]}
+          icon={typeIcons[spot.type] || typeIcons.crag}
+          eventHandlers={{
+            click: () => onSelect(spot),
+          }}
+        >
+          <Popup>
+            <strong>{spot.name}</strong>
+            <br />
+            <span className="text-xs text-gray-500">
+              {t(SPOT_TYPES[spot.type]?.key || 'spot.type.crag')}
+            </span>
+          </Popup>
+        </Marker>
+      ))}
+    </MarkerClusterGroup>
+  );
+});
+
 /* ---------- MapPage ---------- */
 export function MapPage() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [spots, setSpots] = useState<Spot[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
@@ -215,57 +292,75 @@ export function MapPage() {
   const [filterGradeMin, setFilterGradeMin] = useState('');
   const [filterDistance, setFilterDistance] = useState(0); // 0 = no limit
 
+  // Map layer
+  const [mapLayer, setMapLayer] = useState<MapLayerKey>('osm');
+  const cycleLayer = useCallback(() => {
+    setMapLayer((prev) => {
+      const idx = MAP_LAYER_ORDER.indexOf(prev);
+      return MAP_LAYER_ORDER[(idx + 1) % MAP_LAYER_ORDER.length];
+    });
+  }, []);
+
   // Wizards
   const [showPropose, setShowPropose] = useState(false);
   const [editSpot, setEditSpot] = useState<Spot | null>(null);
 
   // Fetch spots
-  useEffect(() => {
-    async function load() {
-      const cached = getCachedSpots<Spot[]>();
-      if (cached) {
-        setSpots(cached);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const json = await apiFetch<unknown>('/api/spots?limit=20000&format=geojson');
-        let raw: unknown[] = [];
-        if (json && typeof json === 'object') {
-          const obj = json as Record<string, unknown>;
-          if (obj.type === 'FeatureCollection' && Array.isArray(obj.features)) {
-            raw = obj.features;
-          } else if (Array.isArray(json)) {
-            raw = json;
-          } else if (Array.isArray(obj.data)) {
-            raw = obj.data;
-          }
-        }
-
-        const normalized = raw
-          .map((s, i) => normalizeSpot(s as Record<string, unknown>, i))
-          .filter((s): s is Spot => s !== null && typeof s.lat === 'number' && typeof s.lng === 'number');
-
-        setSpots(normalized);
-        setCachedSpots(normalized);
-      } catch (err) {
-        console.error('[MapPage] Failed to load spots:', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadSpots = useCallback(async () => {
+    const cached = getCachedSpots<Spot[]>();
+    if (cached) {
+      setSpots(cached);
+      setLoading(false);
+      return;
     }
-    load();
+
+    try {
+      const json = await apiFetch<unknown>('/api/spots?limit=20000&format=geojson');
+      let raw: unknown[] = [];
+      if (json && typeof json === 'object') {
+        const obj = json as Record<string, unknown>;
+        if (obj.type === 'FeatureCollection' && Array.isArray(obj.features)) {
+          raw = obj.features;
+        } else if (Array.isArray(json)) {
+          raw = json;
+        } else if (Array.isArray(obj.data)) {
+          raw = obj.data;
+        }
+      }
+
+      const normalized = raw
+        .map((s, i) => normalizeSpot(s as Record<string, unknown>, i))
+        .filter((s): s is Spot => s !== null && typeof s.lat === 'number' && typeof s.lng === 'number');
+
+      setSpots(normalized);
+      setCachedSpots(normalized);
+    } catch (err) {
+      console.error('[MapPage] Failed to load spots:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Filtered spots with all filters
+  useEffect(() => { loadSpots(); }, [loadSpots]);
+
+  // Open spot from URL param ?spot=<id>
+  useEffect(() => {
+    const spotId = searchParams.get('spot');
+    if (!spotId || spots.length === 0) return;
+    const found = spots.find((s) => s.id === spotId);
+    if (found) {
+      setSelectedSpot(found);
+      setFlyTarget(found);
+      setSearchParams({}, { replace: true });
+    }
+  }, [spots, searchParams, setSearchParams]);
+
+  // Filtered spots with all filters (memoized)
   const filteredSpots = useMemo(() => {
     let result = spots;
 
-    // Type filter
     if (filterType) result = result.filter((s) => s.type === filterType);
 
-    // Grade filter
     if (filterGradeMin) {
       const minNum = parseGradeToNumber(filterGradeMin);
       result = result.filter((s) => {
@@ -274,7 +369,6 @@ export function MapPage() {
       });
     }
 
-    // Distance filter
     if (filterDistance > 0 && userPos) {
       result = result.filter((s) => {
         const d = haversine(userPos.lat, userPos.lng, s.lat, s.lng);
@@ -285,13 +379,24 @@ export function MapPage() {
     return result;
   }, [spots, filterType, filterGradeMin, filterDistance, userPos]);
 
-  // Search results
-  const searchResults =
-    searchQuery.length >= 2
-      ? spots
-          .filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
-          .slice(0, 8)
-      : [];
+  // Debounced search query (300ms)
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Search results (memoized + debounced)
+  const searchResults = useMemo(() => {
+    if (debouncedSearch.length < 2) return [];
+    const q = debouncedSearch.toLowerCase();
+    return spots.filter((s) => s.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [spots, debouncedSearch]);
+
+  // Count by type (memoized)
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const s of spots) {
+      counts[s.type] = (counts[s.type] || 0) + 1;
+    }
+    return counts;
+  }, [spots]);
 
   // Focus search input
   useEffect(() => {
@@ -300,18 +405,21 @@ export function MapPage() {
     }
   }, [searchOpen]);
 
-  // Count by type
-  const countByType = (type: string) => spots.filter((s) => s.type === type).length;
-
   const handleLocated = useCallback((lat: number, lng: number) => {
     setUserPos({ lat, lng });
   }, []);
 
-  const handleSpotCreated = useCallback(() => {
-    // Clear cache to force reload
-    localStorage.removeItem('cache_spots_v2');
-    window.location.reload();
+  // Stable callback for marker selection (avoids re-creating on each render)
+  const handleMarkerSelect = useCallback((spot: Spot) => {
+    setSelectedSpot(spot);
   }, []);
+
+  const handleSpotCreated = useCallback(() => {
+    // Clear cache and re-fetch without reloading the page
+    localStorage.removeItem('cache_spots_v2');
+    setLoading(true);
+    loadSpots();
+  }, [loadSpots]);
 
   const hasActiveFilters = filterGradeMin || filterDistance > 0;
 
@@ -325,38 +433,14 @@ export function MapPage() {
         zoomControl={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={19}
+          key={mapLayer}
+          attribution={TILE_LAYERS[mapLayer].attribution}
+          url={TILE_LAYERS[mapLayer].url}
+          maxZoom={TILE_LAYERS[mapLayer].maxZoom}
         />
 
         {!loading && (
-          <MarkerClusterGroup
-            chunkedLoading
-            maxClusterRadius={50}
-            spiderfyOnMaxZoom
-            showCoverageOnHover={false}
-            disableClusteringAtZoom={16}
-          >
-            {filteredSpots.map((spot) => (
-              <Marker
-                key={spot.id}
-                position={[spot.lat, spot.lng]}
-                icon={typeIcons[spot.type] || typeIcons.crag}
-                eventHandlers={{
-                  click: () => setSelectedSpot(spot),
-                }}
-              >
-                <Popup>
-                  <strong>{spot.name}</strong>
-                  <br />
-                  <span className="text-xs text-gray-500">
-                    {t(SPOT_TYPES[spot.type]?.key || 'spot.type.crag')}
-                  </span>
-                </Popup>
-              </Marker>
-            ))}
-          </MarkerClusterGroup>
+          <MarkerLayer spots={filteredSpots} onSelect={handleMarkerSelect} />
         )}
 
         {/* User location marker */}
@@ -384,6 +468,24 @@ export function MapPage() {
           </button>
 
           <LocateButton onLocated={handleLocated} />
+
+          {/* Layer switcher */}
+          <button
+            onClick={cycleLayer}
+            className={cn(
+              'flex h-10 w-10 cursor-pointer items-center justify-center',
+              'rounded-xl bg-surface/95 backdrop-blur-md shadow-card',
+              'border border-border-subtle/50',
+              'text-text-secondary transition-all duration-200',
+              'hover:bg-surface hover:text-sage hover:shadow-elevated',
+              'active:scale-95',
+              mapLayer !== 'osm' && 'bg-sage text-white border-sage hover:bg-sage-hover hover:text-white',
+            )}
+            title={t(`map.layer.${mapLayer}`)}
+            type="button"
+          >
+            <Layers className="h-[18px] w-[18px]" />
+          </button>
 
           {/* Filter toggle */}
           <button
@@ -463,7 +565,7 @@ export function MapPage() {
                 ))}
               </div>
             )}
-            {searchQuery.length >= 2 && searchResults.length === 0 && (
+            {debouncedSearch.length >= 2 && searchResults.length === 0 && (
               <div className="border-t border-border-subtle/50 px-4 py-6 text-center text-xs text-text-secondary/60">
                 {t('common.no_results')}
               </div>
@@ -583,7 +685,7 @@ export function MapPage() {
 
         {FILTER_CHIPS.map(({ type, icon: Icon, key }) => {
           const active = filterType === type;
-          const count = countByType(type);
+          const count = typeCounts[type] || 0;
           return (
             <button
               key={type}
@@ -634,21 +736,25 @@ export function MapPage() {
         />
       )}
 
-      {/* Propose wizard */}
+      {/* Propose wizard (lazy-loaded) */}
       {showPropose && (
-        <ProposeSpotWizard
-          onClose={() => setShowPropose(false)}
-          onSuccess={handleSpotCreated}
-        />
+        <Suspense fallback={null}>
+          <ProposeSpotWizard
+            onClose={() => setShowPropose(false)}
+            onSuccess={handleSpotCreated}
+          />
+        </Suspense>
       )}
 
-      {/* Edit wizard */}
+      {/* Edit wizard (lazy-loaded) */}
       {editSpot && (
-        <EditSpotWizard
-          spot={editSpot}
-          onClose={() => setEditSpot(null)}
-          onSuccess={handleSpotCreated}
-        />
+        <Suspense fallback={null}>
+          <EditSpotWizard
+            spot={editSpot}
+            onClose={() => setEditSpot(null)}
+            onSuccess={handleSpotCreated}
+          />
+        </Suspense>
       )}
     </div>
   );

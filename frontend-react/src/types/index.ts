@@ -138,7 +138,10 @@ export interface Notification {
   _id: string;
   type: NotificationType;
   userId: string;
-  data: Record<string, string>;
+  fromUserId?: string;
+  fromUsername?: string;
+  message?: string;
+  data?: Record<string, string> | null;
   read: boolean;
   createdAt: string;
 }

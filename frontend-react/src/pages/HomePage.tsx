@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Users, Map, Shield, UserPlus, ArrowRight, Mountain } from 'lucide-react';
+import { MapPin, Users, Map, Shield, UserPlus, ArrowRight, Mountain, BookOpen, Activity } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
 import logo from '@/assets/ZoneDeGrimpeIcon.png';
@@ -103,6 +103,18 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* Personalized CTAs for authenticated users */}
+      {isAuthenticated && (
+        <section className="mx-auto max-w-4xl px-4 py-10">
+          <h2 className="mb-5 font-heading text-xl font-bold text-text-primary">{t('home.your_space')}</h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <QuickLink to="/logbook" icon={<BookOpen className="h-5 w-5" />} label={t('nav.logbook')} desc={t('home.logbook_desc')} />
+            <QuickLink to="/feed" icon={<Activity className="h-5 w-5" />} label={t('nav.feed')} desc={t('home.feed_desc')} />
+            <QuickLink to="/my-spots" icon={<MapPin className="h-5 w-5" />} label={t('nav.my_spots')} desc={t('home.myspots_desc')} />
+          </div>
+        </section>
+      )}
+
       {/* Features */}
       <section className="mx-auto max-w-5xl px-4 py-16">
         <h2 className="mb-10 text-center font-heading text-2xl font-bold text-text-primary">
@@ -165,6 +177,23 @@ export function HomePage() {
 }
 
 /* --- Sub-components --- */
+
+function QuickLink({ to, icon, label, desc }: { to: string; icon: React.ReactNode; label: string; desc: string }) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface p-4 shadow-soft no-underline transition-all hover:-translate-y-0.5 hover:shadow-card hover:border-sage/30 group"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage-muted text-sage transition-colors group-hover:bg-sage group-hover:text-white">
+        {icon}
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-text-primary">{label}</p>
+        <p className="text-xs text-text-secondary">{desc}</p>
+      </div>
+    </Link>
+  );
+}
 
 function StatItem({
   icon,
