@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  BookOpen, MapPin, TrendingUp, Loader2, Zap, Trash2, Pencil,
-  BarChart2, Search, X, ChevronRight,
+  BookOpen, MapPin, TrendingUp, Loader2, Zap, Trash2, Pencil, Plus, X, BarChart2,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -29,23 +28,10 @@ interface LogbookStats {
   styles: Record<string, number>;
 }
 
-interface SpotResult {
-  id: string;
-  name: string;
-  type?: string;
-  niveau_min?: string;
-  niveau_max?: string;
-}
-
-interface ClimbingRoute {
-  _id: string;
-  name: string;
-  grade?: string;
-  style?: string;
-}
-
-interface LogForm {
-  routeId: string;
+interface AddForm {
+  spotName: string;
+  routeName: string;
+  grade: string;
   style: string;
   date: string;
   notes: string;
@@ -67,6 +53,15 @@ const STYLE_CLS: Record<string, string> = {
 const STYLES = ['onsight', 'flash', 'redpoint', 'repeat'] as const;
 type Period = 'all' | 'month' | '3months' | 'year';
 
+const EMPTY_FORM: AddForm = {
+  spotName: '',
+  routeName: '',
+  grade: '',
+  style: 'redpoint',
+  date: new Date().toISOString().slice(0, 10),
+  notes: '',
+};
+
 function sortGrades(items: { grade: string; count: number }[]) {
   return [...items].sort((a, b) => parseGradeToNumber(a.grade) - parseGradeToNumber(b.grade));
 }
@@ -81,13 +76,6 @@ function filterByPeriod(entries: LogbookEntry[], period: Period): LogbookEntry[]
   return entries.filter((e) => new Date(e.date || e.createdAt) >= cutoff);
 }
 
-const EMPTY_LOG: LogForm = {
-  routeId: '',
-  style: 'redpoint',
-  date: new Date().toISOString().slice(0, 10),
-  notes: '',
-};
-
 export function LogbookPage() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
@@ -97,21 +85,11 @@ export function LogbookPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SpotResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null);
-
-  // Log form
-  const [selectedSpot, setSelectedSpot] = useState<SpotResult | null>(null);
-  const [spotRoutes, setSpotRoutes] = useState<ClimbingRoute[]>([]);
-  const [routesLoading, setRoutesLoading] = useState(false);
-  const [logForm, setLogForm] = useState<LogForm>(EMPTY_LOG);
-  const [logSaving, setLogSaving] = useState(false);
-  const [logError, setLogError] = useState('');
+  // Add form
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<AddForm>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
 
   // Edit form
   const [editEntry, setEditEntry] = useState<LogbookEntry | null>(null);
@@ -137,97 +115,32 @@ export function LogbookPage() {
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
 
-  // Click outside → close dropdown
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  // Debounced search
-  function handleSearchChange(q: string) {
-    setSearchQuery(q);
-    // If user edits the query while a spot is selected, close the form
-    if (selectedSpot && q !== selectedSpot.name) {
-      setSelectedSpot(null);
-      setSpotRoutes([]);
-    }
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    if (q.trim().length < 2) { setSearchResults([]); setShowDropdown(false); return; }
-    searchTimer.current = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const data = await apiFetch<{ features: { properties: SpotResult }[] } | SpotResult[]>(
-          `/api/spots?name=${encodeURIComponent(q.trim())}&format=flat&limit=8`
-        );
-        // format=flat returns array of flat objects
-        const results = Array.isArray(data) ? data : [];
-        setSearchResults(results);
-        setShowDropdown(true);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 300);
-  }
-
-  async function selectSpot(spot: SpotResult) {
-    setSelectedSpot(spot);
-    setSearchQuery(spot.name);
-    setShowDropdown(false);
-    setLogForm(EMPTY_LOG);
-    setLogError('');
-    setSpotRoutes([]);
-    setRoutesLoading(true);
-    const spotId = spot.id;
+  async function addEntry() {
+    if (!form.spotName.trim()) { setFormError(t('logbook.form_spot_required')); return; }
+    setSaving(true);
+    setFormError('');
     try {
-      const fetched = await apiFetch<ClimbingRoute[]>(`/api/climbing-routes/spot/${spotId}`);
-      setSpotRoutes(Array.isArray(fetched) ? fetched : []);
-    } catch {
-      setSpotRoutes([]);
-    } finally {
-      setRoutesLoading(false);
-    }
-  }
-
-  function closeLogForm() {
-    setSelectedSpot(null);
-    setSpotRoutes([]);
-    setSearchQuery('');
-    setLogForm(EMPTY_LOG);
-    setLogError('');
-  }
-
-  async function submitLog() {
-    if (!selectedSpot) return;
-    setLogSaving(true);
-    setLogError('');
-    try {
-      const payload: Record<string, string | null> = {
-        spotId: selectedSpot.id,
-        style: logForm.style,
-        date: logForm.date,
+      const payload: Record<string, string> = {
+        spotName: form.spotName.trim(),
+        style: form.style,
+        date: form.date,
       };
-      if (logForm.routeId) payload.routeId = logForm.routeId;
-      if (logForm.notes.trim()) payload.notes = logForm.notes.trim();
-
+      if (form.routeName.trim()) payload.routeName = form.routeName.trim();
+      if (form.grade.trim()) payload.grade = form.grade.trim();
+      if (form.notes.trim()) payload.notes = form.notes.trim();
       const newEntry = await apiFetch<LogbookEntry>('/api/logbook', {
         method: 'POST', auth: true,
         body: JSON.stringify(payload),
       });
       setEntries((prev) => [newEntry, ...prev]);
       setStats((s) => s ? { ...s, total: s.total + 1 } : s);
-      closeLogForm();
+      setShowForm(false);
+      setForm(EMPTY_FORM);
     } catch (err) {
       console.error('[logbook] add:', err);
-      setLogError(t('common.error'));
+      setFormError(t('common.error'));
     } finally {
-      setLogSaving(false);
+      setSaving(false);
     }
   }
 
@@ -301,170 +214,23 @@ export function LogbookPage() {
   const PERIODS: Period[] = ['all', 'month', '3months', 'year'];
   const filteredEntries = filterByPeriod(entries, filterPeriod).filter((e) => !filterStyle || e.style === filterStyle);
 
-  // Loggged route IDs for selected spot (by routeId stored as spotId+routeName key was wrong — use actual entry routeId)
-  const loggedRouteIdsForSpot = selectedSpot
-    ? new Set(entries.filter((e) => e.spotId === selectedSpot.id).map((e) => e.routeName).filter(Boolean))
-    : new Set<string>();
-
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
-      {/* Header + Search */}
-      <div className="mb-6">
-        <div className="mb-4">
+
+      {/* Header */}
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
           <h1 className="font-heading text-2xl font-bold text-text-primary">{t('logbook.title')}</h1>
           <p className="mt-1 text-sm text-text-secondary">{t('logbook.subtitle')}</p>
         </div>
-
-        {/* Search bar */}
-        <div ref={searchRef} className="relative">
-          <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 shadow-soft focus-within:border-sage focus-within:ring-1 focus-within:ring-sage/30">
-            {searchLoading
-              ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-text-secondary/50" />
-              : <Search className="h-4 w-4 shrink-0 text-text-secondary/50" />
-            }
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-              placeholder={t('logbook.search_spot')}
-              className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-secondary/50"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => { setSearchQuery(''); setSearchResults([]); setShowDropdown(false); setSelectedSpot(null); }}
-                className="shrink-0 cursor-pointer text-text-secondary/40 hover:text-text-secondary"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Dropdown */}
-          {showDropdown && searchResults.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-border-subtle bg-surface shadow-elevated">
-              {searchResults.map((spot) => (
-                <button
-                  key={spot.id}
-                  type="button"
-                  onClick={() => selectSpot(spot)}
-                  className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-2"
-                >
-                  <MapPin className="h-4 w-4 shrink-0 text-sage" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-text-primary">{spot.name}</p>
-                    {(spot.niveau_min || spot.niveau_max) && (
-                      <p className="text-xs text-text-secondary">
-                        {spot.niveau_min}{spot.niveau_max && spot.niveau_max !== spot.niveau_min ? ` – ${spot.niveau_max}` : ''}
-                      </p>
-                    )}
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-text-secondary/30" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Inline log form — shown when a spot is selected */}
-        {selectedSpot && (
-          <div className="mt-3 rounded-xl border border-sage/30 bg-sage/5 p-4 shadow-soft">
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-text-primary">{selectedSpot.name}</p>
-                {(selectedSpot.niveau_min || selectedSpot.niveau_max) && (
-                  <p className="text-xs text-text-secondary">
-                    {selectedSpot.niveau_min}{selectedSpot.niveau_max && selectedSpot.niveau_max !== selectedSpot.niveau_min ? ` – ${selectedSpot.niveau_max}` : ''}
-                  </p>
-                )}
-              </div>
-              <button type="button" onClick={closeLogForm} className="cursor-pointer rounded-lg p-1 text-text-secondary/40 hover:bg-surface-2 hover:text-text-secondary">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {/* Route selector */}
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_route')}</label>
-                {routesLoading ? (
-                  <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-surface px-3 py-2.5">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-text-secondary/50" />
-                    <span className="text-xs text-text-secondary/60">{t('common.loading')}</span>
-                  </div>
-                ) : (
-                  <select
-                    value={logForm.routeId}
-                    onChange={(e) => setLogForm((f) => ({ ...f, routeId: e.target.value }))}
-                    className="w-full cursor-pointer rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-sm text-text-primary outline-none focus:border-sage"
-                  >
-                    <option value="">{t('logbook.no_specific_route')}</option>
-                    {spotRoutes.map((route) => {
-                      const alreadyLogged = loggedRouteIdsForSpot.has(route.name);
-                      return (
-                        <option key={route._id} value={route._id} disabled={alreadyLogged}>
-                          {alreadyLogged ? `✓ ${route.name}` : route.name}
-                          {route.grade ? ` (${route.grade})` : ''}
-                          {alreadyLogged ? ` — ${t('logbook.already_logged')}` : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_style')}</label>
-                  <select
-                    value={logForm.style}
-                    onChange={(e) => setLogForm((f) => ({ ...f, style: e.target.value }))}
-                    className="w-full cursor-pointer rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-sm text-text-primary outline-none focus:border-sage"
-                  >
-                    {STYLES.map((s) => (
-                      <option key={s} value={s}>{t(`logbook.style.${s}`)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_date')}</label>
-                  <input
-                    type="date"
-                    value={logForm.date}
-                    onChange={(e) => setLogForm((f) => ({ ...f, date: e.target.value }))}
-                    className="w-full rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-sm text-text-primary outline-none focus:border-sage"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_comment')}</label>
-                <textarea
-                  value={logForm.notes}
-                  onChange={(e) => setLogForm((f) => ({ ...f, notes: e.target.value }))}
-                  rows={2}
-                  placeholder={t('logbook.form_comment_placeholder')}
-                  className="w-full resize-none rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
-                />
-              </div>
-
-              {logError && <p className="text-xs font-medium text-red-500">{logError}</p>}
-            </div>
-
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={submitLog}
-                disabled={logSaving}
-                className="flex cursor-pointer items-center gap-2 rounded-xl bg-sage px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
-              >
-                {logSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {t('logbook.save_entry')}
-              </button>
-            </div>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={() => { setShowForm(true); setFormError(''); }}
+          className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-sage-hover hover:shadow-card"
+        >
+          <Plus className="h-4 w-4" />
+          {t('logbook.add_entry')}
+        </button>
       </div>
 
       {/* Stats */}
@@ -487,6 +253,7 @@ export function LogbookPage() {
         </div>
       )}
 
+      {/* Grade pyramid */}
       {gradePyramid.length > 0 && (
         <section className="mb-6">
           <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-bold text-text-primary">
@@ -512,6 +279,7 @@ export function LogbookPage() {
         </section>
       )}
 
+      {/* Monthly chart */}
       {monthly.length > 1 && (
         <section className="mb-8">
           <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-bold text-text-primary">
@@ -593,10 +361,7 @@ export function LogbookPage() {
             {filteredEntries.map((entry) => {
               const date = new Date(entry.date || entry.createdAt);
               return (
-                <div
-                  key={entry._id}
-                  className="rounded-xl border border-border-subtle bg-surface p-4 shadow-soft transition-shadow hover:shadow-card"
-                >
+                <div key={entry._id} className="rounded-xl border border-border-subtle bg-surface p-4 shadow-soft transition-shadow hover:shadow-card">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sage-muted text-sage">
                       <MapPin className="h-4 w-4" />
@@ -657,6 +422,112 @@ export function LogbookPage() {
           </div>
         )}
       </section>
+
+      {/* Add entry modal */}
+      {showForm && (
+        <div
+          className="fixed inset-0 z-[2000] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
+          onClick={() => setShowForm(false)}
+        >
+          <div
+            className="mx-0 w-full max-w-md rounded-t-2xl bg-surface p-6 shadow-elevated sm:mx-4 sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold text-text-primary">{t('logbook.add_entry')}</h3>
+              <button type="button" onClick={() => setShowForm(false)} className="cursor-pointer rounded-lg p-1.5 text-text-secondary hover:bg-surface-2">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_spot')} *</label>
+                <input
+                  type="text"
+                  value={form.spotName}
+                  onChange={(e) => setForm((f) => ({ ...f, spotName: e.target.value }))}
+                  placeholder={t('logbook.form_spot_placeholder')}
+                  className="w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_route')}</label>
+                  <input
+                    type="text"
+                    value={form.routeName}
+                    onChange={(e) => setForm((f) => ({ ...f, routeName: e.target.value }))}
+                    placeholder={t('logbook.form_route_placeholder')}
+                    className="w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_grade')}</label>
+                  <input
+                    type="text"
+                    value={form.grade}
+                    onChange={(e) => setForm((f) => ({ ...f, grade: e.target.value }))}
+                    placeholder="6a, 7b+..."
+                    className="w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_style')}</label>
+                  <select
+                    value={form.style}
+                    onChange={(e) => setForm((f) => ({ ...f, style: e.target.value }))}
+                    className="w-full cursor-pointer rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none focus:border-sage"
+                  >
+                    {STYLES.map((s) => (
+                      <option key={s} value={s}>{t(`logbook.style.${s}`)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_date')}</label>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                    className="w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none focus:border-sage"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-text-secondary">{t('logbook.form_comment')}</label>
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                  rows={2}
+                  placeholder={t('logbook.form_comment_placeholder')}
+                  className="w-full resize-none rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 focus:border-sage"
+                />
+              </div>
+              {formError && <p className="text-xs font-medium text-red-500">{formError}</p>}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="cursor-pointer rounded-xl border border-border-subtle px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={addEntry}
+                disabled={saving}
+                className="flex cursor-pointer items-center gap-2 rounded-xl bg-sage px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                {t('logbook.save_entry')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit modal */}
       {editEntry && (
