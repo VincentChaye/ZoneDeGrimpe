@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { createSpotSchema, updateSpotSchema } from "../validators.js";
 import { requireAuth, requireAdmin } from "../auth.js";
 import { upload, cloudinary } from "../upload.js";
+import { createNotification } from "../notifications.js";
 
 export function spotsRouter(db) {
   const r = Router();
@@ -289,6 +290,18 @@ export function spotsRouter(db) {
         { returnDocument: "after" }
       );
       if (!result) return res.status(404).json({ error: "not_found" });
+      // Notify proposer
+      const proposerId = result.submittedBy?.uid || result.createdBy?.uid;
+      if (proposerId) {
+        createNotification(db, {
+          userId: proposerId,
+          type: "spot_approved",
+          fromUserId: req.auth.uid,
+          fromUsername: displayName,
+          data: { spotId: result._id.toString(), spotName: result.name },
+          message: `Votre spot "${result.name}" a été approuvé !`,
+        }).catch(() => {});
+      }
       res.json({ ok: true, spot: result });
     } catch (e) {
       console.error(e);
@@ -319,6 +332,18 @@ export function spotsRouter(db) {
         { returnDocument: "after" }
       );
       if (!result) return res.status(404).json({ error: "not_found" });
+      // Notify proposer
+      const proposerId = result.submittedBy?.uid || result.createdBy?.uid;
+      if (proposerId) {
+        createNotification(db, {
+          userId: proposerId,
+          type: "spot_rejected",
+          fromUserId: req.auth.uid,
+          fromUsername: displayName,
+          data: { spotId: result._id.toString(), spotName: result.name, reason: reason || null },
+          message: `Votre spot "${result.name}" a été refusé.${reason ? ` Raison : ${reason}` : ""}`,
+        }).catch(() => {});
+      }
       res.json({ ok: true, spot: result });
     } catch (e) {
       console.error(e);

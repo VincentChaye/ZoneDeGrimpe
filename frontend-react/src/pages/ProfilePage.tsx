@@ -4,12 +4,39 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
   MapPin, CheckCircle2, Crown, Calendar, Loader2, ArrowLeft,
-  UserPlus, UserCheck, Clock, UserMinus, Users,
+  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
 import type { FriendshipCheck } from '@/types';
+
+interface RecentAscent {
+  _id: string;
+  spotId: string;
+  spotName?: string;
+  routeName?: string;
+  grade?: string;
+  style: string;
+  date?: string;
+  createdAt: string;
+}
+
+interface RecentReview {
+  _id: string;
+  spotId: string;
+  spotName?: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
+const STYLE_CLS: Record<string, string> = {
+  onsight: 'bg-grade-easy/10 text-grade-easy border-grade-easy/20',
+  flash: 'bg-grade-medium/10 text-grade-medium border-grade-medium/20',
+  redpoint: 'bg-grade-hard/10 text-grade-hard border-grade-hard/20',
+  repeat: 'bg-surface-2 text-text-secondary border-border-subtle',
+};
 
 interface PublicProfile {
   displayName: string;
@@ -46,10 +73,23 @@ export function ProfilePage() {
   const [following, setFollowing] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
 
+  // Activity sections
+  const [recentAscents, setRecentAscents] = useState<RecentAscent[]>([]);
+  const [recentReviews, setRecentReviews] = useState<RecentReview[]>([]);
+
   useEffect(() => {
     if (!userId) { setError(t('profile.id_missing')); setLoading(false); return; }
-    apiFetch<PublicProfile>(`/api/users/${userId}/public`)
-      .then((data) => setProfile(data))
+    Promise.all([
+      apiFetch<PublicProfile>(`/api/users/${userId}/public`),
+      apiFetch<{ items: RecentAscent[] }>(`/api/logbook/user/${userId}?limit=5`).catch(() => ({ items: [] })),
+      apiFetch<{ items: RecentReview[] } | RecentReview[]>(`/api/reviews/user/${userId}?limit=5`).catch(() => ({ items: [] })),
+    ])
+      .then(([profileData, logData, reviewData]) => {
+        setProfile(profileData);
+        setRecentAscents(Array.isArray(logData) ? logData : logData.items ?? []);
+        const rv = Array.isArray(reviewData) ? reviewData : (reviewData as { items?: RecentReview[] }).items ?? [];
+        setRecentReviews(rv);
+      })
       .catch(() => setError(t('profile.not_found')))
       .finally(() => setLoading(false));
   }, [userId, t]);
@@ -203,6 +243,81 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Recent ascents */}
+      <section className="mt-6">
+        <h2 className="mb-3 flex items-center gap-2 font-heading text-base font-bold text-text-primary">
+          <BookOpen className="h-4 w-4 text-sage" />
+          {t('profile.recent_ascents')}
+        </h2>
+        {recentAscents.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border-subtle py-6 text-center text-sm text-text-secondary/60">
+            {t('profile.no_ascents')}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {recentAscents.map((a) => (
+              <div key={a._id} className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface px-4 py-3 shadow-soft">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-text-primary">{a.spotName || '—'}</p>
+                  {a.routeName && <p className="truncate text-xs text-text-secondary">{a.routeName}</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {a.grade && (
+                    <span className="rounded-lg border border-border-subtle bg-surface-2/60 px-2 py-0.5 text-xs font-bold text-text-primary">
+                      {a.grade}
+                    </span>
+                  )}
+                  <span className={cn(
+                    'rounded-lg border px-2 py-0.5 text-xs font-semibold',
+                    STYLE_CLS[a.style] || STYLE_CLS.repeat,
+                  )}>
+                    {t(`logbook.style.${a.style}`)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Recent reviews */}
+      <section className="mt-6">
+        <h2 className="mb-3 flex items-center gap-2 font-heading text-base font-bold text-text-primary">
+          <Star className="h-4 w-4 text-amber-brand" />
+          {t('profile.recent_reviews')}
+        </h2>
+        {recentReviews.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border-subtle py-6 text-center text-sm text-text-secondary/60">
+            {t('profile.no_reviews')}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {recentReviews.map((r) => (
+              <Link
+                key={r._id}
+                to={`/map?spot=${r.spotId}`}
+                className="block rounded-xl border border-border-subtle bg-surface px-4 py-3 shadow-soft no-underline transition-shadow hover:shadow-card"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-sm font-semibold text-text-primary">{r.spotName || '—'}</p>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={cn('h-3 w-3', i < r.rating ? 'fill-amber-brand text-amber-brand' : 'text-border-subtle')}
+                      />
+                    ))}
+                  </div>
+                </div>
+                {r.comment && (
+                  <p className="mt-1 line-clamp-2 text-xs text-text-secondary/80">{r.comment}</p>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

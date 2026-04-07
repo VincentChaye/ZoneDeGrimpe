@@ -2,6 +2,7 @@ import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "../auth.js";
+import { createNotification } from "../notifications.js";
 
 const changesSchema = z
   .object({
@@ -138,6 +139,18 @@ export function spotEditsRouter(db) {
         { _id: edit.spotId },
         { $set: { ...edit.changes, updatedAt: new Date(), updatedBy: { uid: req.auth.uid, displayName } } }
       );
+      // Notify proposer
+      if (edit.userId) {
+        const spot = await spots.findOne({ _id: edit.spotId });
+        createNotification(db, {
+          userId: edit.userId,
+          type: "spot_approved",
+          fromUserId: req.auth.uid,
+          fromUsername: displayName,
+          data: { spotId: edit.spotId.toString(), spotName: spot?.name },
+          message: `Votre modification du spot "${spot?.name || edit.spotId}" a été approuvée !`,
+        }).catch(() => {});
+      }
       res.json({ status: "approved" });
     } catch (e) {
       res.status(500).json({ error: "Erreur serveur" });
@@ -157,15 +170,28 @@ export function spotEditsRouter(db) {
       if (!edit) return res.status(404).json({ error: "Demande introuvable ou déjà traitée" });
 
       const displayName = await getDisplayName(req.auth.uid);
+      const reason = req.body?.reason ?? null;
       await spotEdits.updateOne(
         { _id: editId },
         { $set: {
           status:         "rejected",
-          rejectedReason: req.body?.reason ?? null,
+          rejectedReason: reason,
           updatedAt:      new Date(),
           reviewedBy:     { uid: req.auth.uid, displayName },
         }}
       );
+      // Notify proposer
+      if (edit.userId) {
+        const spot = await spots.findOne({ _id: edit.spotId });
+        createNotification(db, {
+          userId: edit.userId,
+          type: "spot_rejected",
+          fromUserId: req.auth.uid,
+          fromUsername: displayName,
+          data: { spotId: edit.spotId.toString(), spotName: spot?.name, reason },
+          message: `Votre modification du spot "${spot?.name || edit.spotId}" a été refusée.${reason ? ` Raison : ${reason}` : ""}`,
+        }).catch(() => {});
+      }
       res.json({ status: "rejected" });
     } catch (e) {
       res.status(500).json({ error: "Erreur serveur" });
