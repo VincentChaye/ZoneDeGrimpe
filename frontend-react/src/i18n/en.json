@@ -490,6 +490,8 @@
   "logbook.select_route": "Select a route (optional)",
   "logbook.already_logged": "already done",
   "logbook.route_already_logged": "You have already logged this route.",
+  "logbook.search_spot": "Search a spot to log an ascent...",
+  "logbook.no_specific_route": "No specific route",
   "logbook.edit_entry": "Edit ascent",
   "logbook.monthly_chart": "Monthly progression",
   "logbook.period.all": "All",

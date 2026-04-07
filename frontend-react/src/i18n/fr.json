@@ -490,6 +490,8 @@
   "logbook.select_route": "Selectionner une voie (optionnel)",
   "logbook.already_logged": "deja faite",
   "logbook.route_already_logged": "Tu as deja logge cette voie.",
+  "logbook.search_spot": "Rechercher un spot pour logger une ascension...",
+  "logbook.no_specific_route": "Aucune voie specifique",
   "logbook.edit_entry": "Modifier l'ascension",
   "logbook.monthly_chart": "Progression mensuelle",
   "logbook.period.all": "Tout",

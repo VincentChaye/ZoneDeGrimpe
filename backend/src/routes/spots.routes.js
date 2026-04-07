@@ -191,7 +191,7 @@ export function spotsRouter(db) {
   // ================================================================
   r.get("/", async (req, res) => {
     try {
-      const { minLng, minLat, maxLng, maxLat, limit = 1000, skip = 0, format = "geojson" } = req.query;
+      const { minLng, minLat, maxLng, maxLat, limit = 1000, skip = 0, format = "geojson", name = "" } = req.query;
       const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 5000, 20000));
       const skipNum = Math.max(0, parseInt(skip, 10) || 0);
 
@@ -212,7 +212,10 @@ export function spotsRouter(db) {
         };
       }
 
-      const query = { ...PUBLIC_FILTER, ...geoFilter };
+      let nameFilter = {};
+      if (name) nameFilter.name = { $regex: name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+
+      const query = { ...PUBLIC_FILTER, ...geoFilter, ...nameFilter };
       const docs = await spots.find(query, { projection: MAP_PROJECTION }).skip(skipNum).limit(limNum).toArray();
 
       if (format === "flat") return res.json(docs.map(toFlat));
