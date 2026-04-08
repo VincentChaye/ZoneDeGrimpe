@@ -122,6 +122,16 @@ export function LoginPage() {
               </p>
             )}
 
+            {/* Forgot password */}
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs text-text-secondary hover:text-sage hover:underline"
+              >
+                {t('auth.forgot_link')}
+              </Link>
+            </div>
+
             {/* Submit */}
             <button
               type="submit"

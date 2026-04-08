@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { ObjectId } from "mongodb";
 import rateLimit from "express-rate-limit";
+import crypto from "crypto";
+import { sendPasswordResetEmail } from "../email.js";
 
 const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
@@ -133,6 +135,77 @@ r.post("/register", async (req, res) => {
       return res.status(409).json({ error: key });
     }
     console.error("REGISTER_ERROR:", { code: e?.code, msg: e?.message, stack: e?.stack });
+    return res.status(500).json({ error: "server_error" });
+  }
+});
+
+// --- FORGOT PASSWORD ---
+r.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ error: "missing_fields" });
+
+    const user = await users.findOne({ email: String(email).trim().toLowerCase() });
+
+    // Always return 200 to avoid user enumeration
+    if (!user) return res.json({ success: true });
+
+    // Generate token
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await users.updateOne(
+      { _id: user._id },
+      { $set: { "passwordReset.tokenHash": tokenHash, "passwordReset.expiresAt": expiresAt } },
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL || "https://vincentchaye.github.io/ZoneDeGrimpe";
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+
+    try {
+      await sendPasswordResetEmail(user.email, resetUrl, "fr");
+    } catch (mailErr) {
+      console.error("[email] send failed:", mailErr?.message);
+      // Don't fail the request if email fails — but log it
+    }
+
+    return res.json({ success: true });
+  } catch (e) {
+    console.error("FORGOT_PASSWORD_ERROR:", e?.stack || e);
+    return res.status(500).json({ error: "server_error" });
+  }
+});
+
+// --- RESET PASSWORD ---
+r.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body || {};
+    if (!token || !newPassword) return res.status(400).json({ error: "missing_fields" });
+    if (typeof newPassword !== "string" || newPassword.length < 8 || newPassword.length > 128) {
+      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_8_to_128_chars" });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const user = await users.findOne({
+      "passwordReset.tokenHash": tokenHash,
+      "passwordReset.expiresAt": { $gt: new Date() },
+    });
+
+    if (!user) return res.status(400).json({ error: "invalid_or_expired_token" });
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await users.updateOne(
+      { _id: user._id },
+      {
+        $set: { passwordHash, "security.updatedAt": new Date() },
+        $unset: { passwordReset: "" },
+      },
+    );
+
+    return res.json({ success: true });
+  } catch (e) {
+    console.error("RESET_PASSWORD_ERROR:", e?.stack || e);
     return res.status(500).json({ error: "server_error" });
   }
 });

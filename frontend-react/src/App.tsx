@@ -15,6 +15,8 @@ import { LogbookPage } from '@/pages/LogbookPage';
 import { FeedPage } from '@/pages/FeedPage';
 import { AdminSpotsPage } from '@/pages/AdminSpotsPage';
 import { AdminUsersPage } from '@/pages/AdminUsersPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 
@@ -45,6 +47,8 @@ function App() {
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/admin/spots" element={<AdminSpotsPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
