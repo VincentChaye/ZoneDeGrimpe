@@ -153,7 +153,7 @@ r.post("/forgot-password", async (req, res) => {
     // Generate token
     const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     await users.updateOne(
       { _id: user._id },
