@@ -67,6 +67,7 @@ export function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'review' | 'logbook' | 'spot'>('all');
+  const [displayCount, setDisplayCount] = useState(20);
 
   useEffect(() => {
     if (!isAuthenticated) { setLoading(false); return; }
@@ -148,7 +149,7 @@ export function FeedPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {(filter === 'all' ? items : items.filter((i) => i.type === filter)).map((item, i) => {
+          {(filter === 'all' ? items : items.filter((i) => i.type === filter)).slice(0, displayCount).map((item, i) => {
             const Icon = TYPE_ICON[item.type] || Activity;
             const iconCls = TYPE_CLS[item.type] || TYPE_CLS.spot;
             const d = item.data;
@@ -223,6 +224,17 @@ export function FeedPage() {
               </div>
             );
           })}
+          {(filter === 'all' ? items : items.filter((i) => i.type === filter)).length > displayCount && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => setDisplayCount((c) => c + 20)}
+                className="cursor-pointer rounded-xl border border-border-subtle bg-surface px-5 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2"
+              >
+                {t('common.load_more')}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

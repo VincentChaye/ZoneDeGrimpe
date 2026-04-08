@@ -63,6 +63,8 @@ export function LogbookPage() {
   const { isAuthenticated } = useAuthStore();
 
   const [entries, setEntries] = useState<LogbookEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [stats, setStats] = useState<LogbookStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -76,20 +78,42 @@ export function LogbookPage() {
   const [filterStyle, setFilterStyle] = useState('');
   const [filterPeriod, setFilterPeriod] = useState<Period>('all');
 
+  const LIMIT = 50;
+
   useEffect(() => {
     if (!isAuthenticated) { setLoading(false); return; }
     Promise.all([
-      apiFetch<{ items: LogbookEntry[] } | LogbookEntry[]>('/api/logbook?limit=200', { auth: true }),
+      apiFetch<{ items: LogbookEntry[]; total: number }>(`/api/logbook?limit=${LIMIT}`, { auth: true }),
       apiFetch<LogbookStats>('/api/logbook/stats', { auth: true }),
     ])
       .then(([rawEntries, rawStats]) => {
-        const list = Array.isArray(rawEntries) ? rawEntries : (rawEntries as { items: LogbookEntry[] })?.items ?? [];
+        const list = Array.isArray(rawEntries) ? rawEntries : rawEntries?.items ?? [];
+        const tot = Array.isArray(rawEntries) ? list.length : rawEntries?.total ?? list.length;
         setEntries(list.sort((a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()));
+        setTotal(tot);
         setStats(rawStats);
       })
       .catch((err) => console.error('[logbook]', err))
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
+
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const data = await apiFetch<{ items: LogbookEntry[]; total: number }>(
+        `/api/logbook?limit=${LIMIT}&skip=${entries.length}`, { auth: true },
+      );
+      const newItems = Array.isArray(data) ? data : data?.items ?? [];
+      const tot = Array.isArray(data) ? entries.length + newItems.length : data?.total ?? 0;
+      setEntries((prev) => [...prev, ...newItems].sort(
+        (a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime(),
+      ));
+      setTotal(tot);
+    } catch (err) {
+      console.error('[logbook] loadMore:', err);
+    }
+    setLoadingMore(false);
+  }
 
   function openEdit(entry: LogbookEntry) {
     setEditEntry(entry);
@@ -356,6 +380,20 @@ export function LogbookPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+        {/* Load more */}
+        {entries.length < total && (
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-border-subtle bg-surface px-5 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2 disabled:opacity-50"
+            >
+              {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {t('logbook.load_more')} ({entries.length}/{total})
+            </button>
           </div>
         )}
       </section>

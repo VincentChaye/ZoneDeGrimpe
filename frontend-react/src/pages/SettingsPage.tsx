@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  User, LogOut, Trash2, Shield, Pencil, Check, X, Sun, Moon, Globe, Eye, Loader2,
+  User, LogOut, Trash2, Shield, Pencil, Check, X, Sun, Moon, Globe, Eye, Loader2, Lock,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -22,6 +22,11 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Change password
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState('');
 
   if (!isAuthenticated || !user) {
     return (
@@ -85,6 +90,27 @@ export function SettingsPage() {
   function handleLogout() {
     logout();
     navigate('/');
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwError('');
+    if (!pwForm.current) { setPwError(t('settings.pw_required')); return; }
+    if (pwForm.next.length < 8) { setPwError(t('settings.pw_too_short')); return; }
+    if (pwForm.next !== pwForm.confirm) { setPwError(t('settings.pw_mismatch')); return; }
+    setPwSaving(true);
+    try {
+      await apiFetch('/api/auth/change-password', {
+        method: 'PATCH',
+        auth: true,
+        body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.next }),
+      });
+      setPwForm({ current: '', next: '', confirm: '' });
+      toast.success(t('settings.pw_changed'));
+    } catch {
+      setPwError(t('settings.pw_wrong_current'));
+    }
+    setPwSaving(false);
   }
 
   function changeLang(lang: string) {
@@ -222,6 +248,54 @@ export function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Security — change password */}
+      <div className="mb-4 rounded-[var(--radius-md)] border border-border-subtle bg-surface p-5 shadow-soft">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-text-primary">
+          <Lock className="h-4 w-4 text-text-secondary" />
+          {t('settings.security')}
+        </h3>
+        <form onSubmit={changePassword} className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-text-secondary">{t('settings.pw_current')}</label>
+            <input
+              type="password"
+              value={pwForm.current}
+              onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
+              className="w-full rounded-md border border-border-subtle bg-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-text-secondary">{t('settings.pw_new')}</label>
+              <input
+                type="password"
+                value={pwForm.next}
+                onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
+                className="w-full rounded-md border border-border-subtle bg-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-text-secondary">{t('settings.pw_confirm')}</label>
+              <input
+                type="password"
+                value={pwForm.confirm}
+                onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
+                className="w-full rounded-md border border-border-subtle bg-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage"
+              />
+            </div>
+          </div>
+          {pwError && <p className="text-xs text-red-500">{pwError}</p>}
+          <button
+            type="submit"
+            disabled={pwSaving}
+            className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] bg-sage px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
+          >
+            {pwSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+            {t('settings.pw_save')}
+          </button>
+        </form>
+      </div>
 
       {/* Account actions */}
       <div className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-5 shadow-soft">

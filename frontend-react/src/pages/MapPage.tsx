@@ -290,6 +290,8 @@ export function MapPage() {
   // Advanced filters
   const [showFilters, setShowFilters] = useState(false);
   const [filterGradeMin, setFilterGradeMin] = useState('');
+  const [filterOrientation, setFilterOrientation] = useState('');
+  const [filterRock, setFilterRock] = useState('');
   const [filterDistance, setFilterDistance] = useState(0); // 0 = no limit
 
   // Map layer
@@ -355,6 +357,12 @@ export function MapPage() {
     }
   }, [spots, searchParams, setSearchParams]);
 
+  // Available rock types (memoized)
+  const rockTypes = useMemo(
+    () => [...new Set(spots.map((s) => s.info_complementaires?.rock).filter(Boolean) as string[])].sort(),
+    [spots],
+  );
+
   // Filtered spots with all filters (memoized)
   const filteredSpots = useMemo(() => {
     let result = spots;
@@ -369,6 +377,10 @@ export function MapPage() {
       });
     }
 
+    if (filterOrientation) result = result.filter((s) => s.orientation === filterOrientation);
+
+    if (filterRock) result = result.filter((s) => s.info_complementaires?.rock === filterRock);
+
     if (filterDistance > 0 && userPos) {
       result = result.filter((s) => {
         const d = haversine(userPos.lat, userPos.lng, s.lat, s.lng);
@@ -377,7 +389,7 @@ export function MapPage() {
     }
 
     return result;
-  }, [spots, filterType, filterGradeMin, filterDistance, userPos]);
+  }, [spots, filterType, filterGradeMin, filterOrientation, filterRock, filterDistance, userPos]);
 
   // Debounced search query (300ms)
   const debouncedSearch = useDebounce(searchQuery, 300);
@@ -421,7 +433,7 @@ export function MapPage() {
     loadSpots();
   }, [loadSpots]);
 
-  const hasActiveFilters = filterGradeMin || filterDistance > 0;
+  const hasActiveFilters = filterGradeMin || filterDistance > 0 || filterOrientation || filterRock;
 
   return (
     <div className="relative h-[calc(100vh-var(--spacing-header))]">
@@ -596,6 +608,61 @@ export function MapPage() {
                 {GRADE_OPTIONS.map((g) => <option key={g} value={g}>{g}+</option>)}
               </select>
             </div>
+
+            {/* Orientation */}
+            <div className="mb-3">
+              <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                {t('filter.orientation')}
+              </label>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => setFilterOrientation('')}
+                  className={cn(
+                    'rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors cursor-pointer',
+                    !filterOrientation
+                      ? 'bg-sage text-white'
+                      : 'bg-surface-2 text-text-secondary hover:bg-sage-muted hover:text-sage',
+                  )}
+                >
+                  {t('filter.all_orientations')}
+                </button>
+                {(['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'] as const).map((o) => (
+                  <button
+                    key={o}
+                    type="button"
+                    onClick={() => setFilterOrientation(filterOrientation === o ? '' : o)}
+                    className={cn(
+                      'rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors cursor-pointer',
+                      filterOrientation === o
+                        ? 'bg-sage text-white'
+                        : 'bg-surface-2 text-text-secondary hover:bg-sage-muted hover:text-sage',
+                    )}
+                  >
+                    {o}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rock type */}
+            {rockTypes.length > 0 && (
+              <div className="mb-3">
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  {t('filter.rock_type')}
+                </label>
+                <select
+                  value={filterRock}
+                  onChange={(e) => setFilterRock(e.target.value)}
+                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm outline-none focus:border-sage"
+                >
+                  <option value="">{t('filter.all_rocks')}</option>
+                  {rockTypes.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Distance */}
             <div className="mb-3">

@@ -137,6 +137,47 @@ r.post("/register", async (req, res) => {
   }
 });
 
+// --- CHANGE PASSWORD ---
+r.patch("/change-password", async (req, res) => {
+  try {
+    // Verify JWT manually (no requireAuth middleware on this router)
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    if (!token) return res.status(401).json({ error: "unauthorized" });
+
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ error: "invalid_token" });
+    }
+
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "missing_fields" });
+    }
+    if (typeof newPassword !== "string" || newPassword.length < 8 || newPassword.length > 128) {
+      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_8_to_128_chars" });
+    }
+
+    const user = await users.findOne({ _id: new ObjectId(payload.uid) });
+    if (!user || !user.passwordHash) return res.status(401).json({ error: "unauthorized" });
+
+    const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: "wrong_password" });
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await users.updateOne(
+      { _id: user._id },
+      { $set: { passwordHash: newHash, "security.updatedAt": new Date() } },
+    );
+    return res.json({ success: true });
+  } catch (e) {
+    console.error("CHANGE_PASSWORD_ERROR:", e?.stack || e);
+    return res.status(500).json({ error: "server_error" });
+  }
+});
+
 // --- LOGIN ---
 r.post("/login", async (req, res) => {
   try {
