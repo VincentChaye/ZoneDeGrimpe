@@ -62,7 +62,7 @@ export function RegisterPage() {
     if (form.username.length < 3) { setError(t('auth.username_invalid_format')); return; }
     if (usernameStatus === 'taken') { setError(t('auth.username_taken')); return; }
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { setError(t('auth.invalid_email')); return; }
-    if (!PASSWORD_RULES.every(r => r.test(form.password))) { setError(t('auth.invalid_password')); return; }
+    if (form.password.length < 8) { setError(t('auth.invalid_password')); return; }
     if (form.password !== form.confirmPassword) { setError(t('auth.password_mismatch')); return; }
 
     setLoading(true);
