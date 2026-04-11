@@ -80,18 +80,18 @@ export function Header() {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        {/* Login / Register if not authenticated */}
+        {/* Login / Register if not authenticated — desktop only (mobile menu handles it) */}
         {!isAuthenticated && (
           <>
             <Link
               to="/login"
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-text-secondary no-underline transition-colors hover:bg-sage-muted hover:text-sage"
+              className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-text-secondary no-underline transition-colors hover:bg-sage-muted hover:text-sage md:block"
             >
               {t('auth.login')}
             </Link>
             <Link
               to="/register"
-              className="rounded-[var(--radius-sm)] bg-sage px-3 py-1.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover"
+              className="hidden rounded-[var(--radius-sm)] bg-sage px-3 py-1.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover md:block"
             >
               {t('auth.register')}
             </Link>
