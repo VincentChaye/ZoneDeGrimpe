@@ -211,18 +211,23 @@ function ChatView({ myUid, conversation, messages, hasMore, typing, isOnline, on
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="relative shrink-0">
-          <Avatar name={other.displayName} src={other.avatarUrl} size={9} />
-          {isOnline && (
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-surface bg-green-500" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-text-primary">{other.displayName}</p>
-          <p className="text-[10px] text-text-secondary">
-            {isOnline ? t('messages.online') : t('messages.offline')}
-          </p>
-        </div>
+        <Link
+          to={`/profile?id=${other.uid}`}
+          className="flex items-center gap-3 min-w-0 flex-1 no-underline group"
+        >
+          <div className="relative shrink-0">
+            <Avatar name={other.displayName} src={other.avatarUrl} size={9} />
+            {isOnline && (
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-surface bg-green-500" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-text-primary group-hover:text-sage transition-colors">{other.displayName}</p>
+            <p className="text-[10px] text-text-secondary">
+              {isOnline ? t('messages.online') : t('messages.offline')}
+            </p>
+          </div>
+        </Link>
       </div>
 
       {/* Messages */}
