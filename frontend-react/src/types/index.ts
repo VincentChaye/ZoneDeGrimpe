@@ -66,6 +66,8 @@ export interface ClimbingRoute {
   height?: number;
   bolts?: number;
   description?: string;
+  imageUrl?: string;
+  status?: 'approved' | 'pending' | 'rejected';
   createdBy: UserRef;
   createdAt: string;
 }
@@ -98,8 +100,8 @@ export interface LogbookEntry {
 export interface LogbookStats {
   total: number;
   uniqueSpots: number;
-  gradePyramid: Record<string, number>;
-  monthly: Array<{ month: string; count: number }>;
+  gradePyramid: Array<{ grade: string; count: number }>;
+  monthly: Array<{ year: number; month: number; count: number }>;
   styles: Record<string, number>;
 }
 
@@ -110,7 +112,7 @@ export interface UserProfile {
   avatarUrl?: string;
   level?: string;
   roles: string[];
-  memberSince: string;
+  memberSince: string | null;
   stats: {
     spotsContributed: number;
     spotsApproved: number;
@@ -242,8 +244,6 @@ export interface FeedItem {
   type: 'review' | 'logbook' | 'spot';
   userId: string;
   username?: string;
-  displayName: string;
-  avatarUrl?: string;
   data: Record<string, unknown>;
   createdAt: string;
 }

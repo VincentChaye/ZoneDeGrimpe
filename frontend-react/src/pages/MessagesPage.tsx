@@ -357,11 +357,11 @@ function NewConversationModal({ onClose, onSelect }: NewConversationModalProps) 
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = await apiFetch<{ items: UserSearchResult[] }>(
-          `/api/users?search=${encodeURIComponent(query.trim())}&limit=10`,
+        const data = await apiFetch<UserSearchResult[]>(
+          `/api/users/search?q=${encodeURIComponent(query.trim())}`,
           { auth: true }
         );
-        setResults(data?.items ?? []);
+        setResults(data ?? []);
       } catch {
         setResults([]);
       } finally {

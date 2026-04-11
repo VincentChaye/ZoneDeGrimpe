@@ -2,6 +2,7 @@
 import http from "http";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import { connectToDb } from "./src/db.js";
 import { spotsRouter } from "./src/routes/spots.routes.js";
@@ -29,6 +30,14 @@ dotenv.config();
 
 const app = express();
 const httpServer = http.createServer(app);
+
+// --- Sécurité : désactiver X-Powered-By + headers de sécurité
+app.disable("x-powered-by");
+app.use(helmet({
+  crossOriginResourcePolicy: false, // désactivé : géré par CORS
+  contentSecurityPolicy: false,     // désactivé : API pure, pas de HTML applicatif
+}));
+
 app.use(express.json({ limit: "100kb" }));
 
 // --- CORS : env + dev defaults
@@ -109,8 +118,10 @@ if (hasUri) {
   app.use("/api/spots", spotsRouter(db));
   app.use("/api/users", usersRouter(db));
   app.use("/api/auth", authRouter(db));
+  // FEATURE_PENDING: routes matériel — tab "Matériel" affiche "coming soon" côté frontend
   app.use("/api/user_materiel", userMaterielRouter(db));
   app.use("/api/materiel_specs", materielSpecsRouter(db));
+  // FEATURE_PENDING: routes admin-only sans usage frontend actuel
   app.use("/api/analytics", analyticsRouter(db));
   app.use("/api/advice", adviceRouter(db));
   app.use("/api/spot-edits", spotEditsRouter(db));
@@ -143,6 +154,26 @@ if (hasUri) {
 
   console.warn("MONGODB_URI manquante → mode sans DB (listes vides)");
 }
+
+// --- Gestionnaire d'erreur global — empêche la fuite de stack traces en prod
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  // CORS rejection
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({ error: "cors_forbidden" });
+  }
+  // Payload trop grand
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ error: "payload_too_large" });
+  }
+  // JSON malformé
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({ error: "invalid_json" });
+  }
+  console.error("[server_error]", err.message);
+  res.status(status).json({ error: "server_error" });
+});
 
 // --- Listen (0.0.0.0 pour conteneur)
 const port = process.env.PORT || 3000;

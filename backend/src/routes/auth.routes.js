@@ -7,9 +7,19 @@ import rateLimit from "express-rate-limit";
 import crypto from "crypto";
 import { sendPasswordResetEmail } from "../email.js";
 
+// Limiter commun (login, forgot-password, reset-password, change-password)
 const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 20, // max 20 tentatives par IP
+	windowMs: 15 * 60 * 1000,
+	max: 20,
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: { error: "too_many_requests", detail: "Try again later" },
+});
+
+// Limiter dédié au register — budget séparé pour ne pas pénaliser les logins légitimes
+const registerLimiter = rateLimit({
+	windowMs: 60 * 60 * 1000, // 1 heure
+	max: 10,                   // 10 comptes max par IP par heure
 	standardHeaders: true,
 	legacyHeaders: false,
 	message: { error: "too_many_requests", detail: "Try again later" },
@@ -17,7 +27,6 @@ const authLimiter = rateLimit({
 
 export function authRouter(db) {
 	const r = Router();
-	r.use(authLimiter);
 	const users = db.collection("users");
 
 	const PUBLIC_PROJECTION = {
@@ -31,7 +40,7 @@ export function authRouter(db) {
 	}
 
 // --- REGISTER (conforme au validator users) ---
-r.post("/register", async (req, res) => {
+r.post("/register", registerLimiter, async (req, res) => {
   try {
     let { email, password, displayName, username, level } = req.body || {};
     if (!email || !password) {
@@ -140,7 +149,7 @@ r.post("/register", async (req, res) => {
 });
 
 // --- FORGOT PASSWORD ---
-r.post("/forgot-password", async (req, res) => {
+r.post("/forgot-password", authLimiter, async (req, res) => {
   try {
     const { email } = req.body || {};
     if (!email) return res.status(400).json({ error: "missing_fields" });
@@ -178,7 +187,7 @@ r.post("/forgot-password", async (req, res) => {
 });
 
 // --- RESET PASSWORD ---
-r.post("/reset-password", async (req, res) => {
+r.post("/reset-password", authLimiter, async (req, res) => {
   try {
     const { token, newPassword } = req.body || {};
     if (!token || !newPassword) return res.status(400).json({ error: "missing_fields" });
@@ -211,7 +220,7 @@ r.post("/reset-password", async (req, res) => {
 });
 
 // --- CHANGE PASSWORD ---
-r.patch("/change-password", async (req, res) => {
+r.patch("/change-password", authLimiter, async (req, res) => {
   try {
     // Verify JWT manually (no requireAuth middleware on this router)
     const authHeader = req.headers.authorization || "";
@@ -252,7 +261,7 @@ r.patch("/change-password", async (req, res) => {
 });
 
 // --- LOGIN ---
-r.post("/login", async (req, res) => {
+r.post("/login", authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {

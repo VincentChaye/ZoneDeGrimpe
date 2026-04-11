@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
-import { requireAuth } from "../auth.js";
+import { requireAuth, optionalAuth } from "../auth.js";
 
 export function logbookRouter(db) {
   const r = Router();
   const logbook = db.collection("logbook_entries");
   const spots = db.collection("climbing_spot");
   const routes = db.collection("climbing_routes");
+  const users = db.collection("users");
+  const friendships = db.collection("friendships");
 
   // Indexes
   logbook.createIndex({ userId: 1, date: -1 }).catch(() => {});
@@ -191,21 +193,56 @@ export function logbookRouter(db) {
     }
   });
 
-  // --- GET /api/logbook/user/:userId --- public (profil)
-  r.get("/user/:userId", async (req, res) => {
+  // --- GET /api/logbook/user/:userId --- profil (visibilité contrôlée)
+  r.get("/user/:userId", optionalAuth, async (req, res) => {
     try {
+      const { userId } = req.params;
+      const viewerId = req.auth?.uid || null;
+
+      // Vérifier la visibilité du logbook
+      const targetUser = await users.findOne(
+        { _id: new ObjectId(userId) },
+        { projection: { "privacy.logbookVisibility": 1 } }
+      );
+      const visibility = targetUser?.privacy?.logbookVisibility ?? "public";
+
+      if (visibility === "private") {
+        if (viewerId !== userId) {
+          return res.status(403).json({ error: "private_logbook" });
+        }
+      } else if (visibility === "friends") {
+        if (!viewerId || viewerId === userId) {
+          // non connecté ou soi-même → accès si soi-même, sinon 403
+          if (viewerId !== userId) {
+            return res.status(403).json({ error: "friends_only_logbook" });
+          }
+        } else {
+          // Vérifier l'amitié
+          const friendship = await friendships.findOne({
+            status: "accepted",
+            $or: [
+              { requesterId: viewerId, addresseeId: userId },
+              { requesterId: userId, addresseeId: viewerId },
+            ],
+          });
+          if (!friendship) {
+            return res.status(403).json({ error: "friends_only_logbook" });
+          }
+        }
+      }
+
       const limit = Math.min(parseInt(req.query.limit) || 20, 100);
       const skip = Math.max(parseInt(req.query.skip) || 0, 0);
 
       const items = await logbook
-        .find({ userId: req.params.userId })
+        .find({ userId })
         .sort({ date: -1 })
         .skip(skip)
         .limit(limit)
         .project({ notes: 0 }) // don't expose personal notes publicly
         .toArray();
 
-      const total = await logbook.countDocuments({ userId: req.params.userId });
+      const total = await logbook.countDocuments({ userId });
       return res.json({ items, total });
     } catch (e) {
       console.error(e);

@@ -4,6 +4,7 @@ import { createSpotSchema, updateSpotSchema } from "../validators.js";
 import { requireAuth, requireAdmin } from "../auth.js";
 import { upload, cloudinary } from "../upload.js";
 import { createNotification } from "../notifications.js";
+import { getDisplayName } from "../helpers.js";
 
 export function spotsRouter(db) {
   const r = Router();
@@ -39,19 +40,6 @@ export function spotsRouter(db) {
   // Filtre spots publics : approved ou sans status (spots OSM importés)
   const PUBLIC_FILTER = { status: { $nin: ["pending", "rejected"] } };
 
-  // --- Helper : récupère displayName d'un user ---
-  async function getDisplayName(uid) {
-    try {
-      const u = await users.findOne(
-        { _id: new ObjectId(uid) },
-        { projection: { displayName: 1 } }
-      );
-      return u?.displayName || "Utilisateur";
-    } catch {
-      return "Utilisateur";
-    }
-  }
-
   // ================================================================
   // POST / — Soumettre un spot (tout utilisateur connecté)
   // Admin → approved directement ; User → pending
@@ -60,7 +48,7 @@ export function spotsRouter(db) {
     try {
       const parsed = createSpotSchema.parse(req.body);
       const isAdmin = req.auth.roles?.includes("admin");
-      const displayName = await getDisplayName(req.auth.uid);
+      const displayName = await getDisplayName(users, req.auth.uid);
 
       const author = { uid: req.auth.uid, displayName };
       const now = new Date();
@@ -280,7 +268,7 @@ export function spotsRouter(db) {
       return res.status(400).json({ error: "bad_id" });
     }
     try {
-      const displayName = await getDisplayName(req.auth.uid);
+      const displayName = await getDisplayName(users, req.auth.uid);
       const result = await spots.findOneAndUpdate(
         { _id: new ObjectId(req.params.id) },
         {
@@ -321,7 +309,7 @@ export function spotsRouter(db) {
     }
     try {
       const { reason } = req.body || {};
-      const displayName = await getDisplayName(req.auth.uid);
+      const displayName = await getDisplayName(users, req.auth.uid);
       const result = await spots.findOneAndUpdate(
         { _id: new ObjectId(req.params.id) },
         {
@@ -363,7 +351,7 @@ export function spotsRouter(db) {
     }
     try {
       const updates = updateSpotSchema.parse(req.body);
-      const displayName = await getDisplayName(req.auth.uid);
+      const displayName = await getDisplayName(users, req.auth.uid);
 
       const result = await spots.findOneAndUpdate(
         { _id: new ObjectId(req.params.id) },
@@ -431,12 +419,12 @@ export function spotsRouter(db) {
       }
 
       const currentCount = spot.photos?.length ?? 0;
-      if (currentCount + req.files.length > 10) {
+      if (currentCount + req.files.length > 5) {
         await Promise.all(req.files.map(f => cloudinary.uploader.destroy(f.filename)));
-        return res.status(400).json({ error: "too_many_photos", max: 10, current: currentCount });
+        return res.status(400).json({ error: "too_many_photos", max: 5, current: currentCount });
       }
 
-      const displayName = await getDisplayName(req.auth.uid);
+      const displayName = await getDisplayName(users, req.auth.uid);
       const newPhotos = req.files.map(f => ({
         _id: new ObjectId(),
         url: f.path,

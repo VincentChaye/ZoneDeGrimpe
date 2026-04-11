@@ -17,14 +17,31 @@ const storage = new CloudinaryStorage({
   },
 });
 
+const routeImageStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "zonedegrimpe/routes",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation: [{ width: 1920, height: 1080, crop: "limit", quality: "auto:good" }],
+  },
+});
+
+const fileFilter = (_, file, cb) => {
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  if (allowed.includes(file.mimetype)) cb(null, true);
+  else cb(new Error("format_invalide"));
+};
+
 export const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max par fichier
-  fileFilter: (_, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
-    if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error("format_invalide"));
-  },
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter,
+});
+
+export const uploadRouteImage = multer({
+  storage: routeImageStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter,
 });
 
 export { cloudinary };

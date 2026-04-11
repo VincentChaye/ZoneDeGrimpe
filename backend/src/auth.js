@@ -30,3 +30,18 @@ export function requireAdmin(req, res, next) {
     next();
   });
 }
+
+/** Middleware optionnel : tente de décoder le JWT sans bloquer si absent/invalide */
+export function optionalAuth(req, res, next) {
+  try {
+    const auth = req.headers.authorization || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+    if (token && process.env.JWT_SECRET) {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      if (payload?.uid) {
+        req.auth = { uid: payload.uid, roles: Array.isArray(payload.roles) ? payload.roles : ["user"] };
+      }
+    }
+  } catch { /* token invalide, on ignore */ }
+  next();
+}

@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "../auth.js";
 import { createNotification } from "../notifications.js";
+import { getDisplayName } from "../helpers.js";
 
 const changesSchema = z
   .object({
@@ -35,16 +36,6 @@ export function spotEditsRouter(db) {
   const spots     = db.collection("climbing_spot");
   const users     = db.collection("users");
 
-  async function getDisplayName(uid) {
-    try {
-      const u = await users.findOne(
-        { _id: new ObjectId(uid) },
-        { projection: { displayName: 1 } }
-      );
-      return u?.displayName || "Utilisateur";
-    } catch { return "Utilisateur"; }
-  }
-
   // ================================================================
   // POST / — Proposer une modification
   // Admin → appliqué immédiatement ; User → pending
@@ -62,7 +53,7 @@ export function spotEditsRouter(db) {
       catch { return res.status(400).json({ error: "ID invalide" }); }
       if (!spot) return res.status(404).json({ error: "Spot introuvable" });
 
-      const displayName = await getDisplayName(req.auth.uid);
+      const displayName = await getDisplayName(users, req.auth.uid);
       const isAdmin = req.auth.roles?.includes("admin");
 
       if (isAdmin) {
@@ -126,7 +117,7 @@ export function spotEditsRouter(db) {
       const edit = await spotEdits.findOne({ _id: editId, status: "pending" });
       if (!edit) return res.status(404).json({ error: "Demande introuvable ou déjà traitée" });
 
-      const displayName = await getDisplayName(req.auth.uid);
+      const displayName = await getDisplayName(users, req.auth.uid);
       // Atomic check: re-verify pending status to prevent double-approve
       const editUpdate = await spotEdits.updateOne(
         { _id: editId, status: "pending" },
@@ -140,10 +131,10 @@ export function spotEditsRouter(db) {
         { $set: { ...edit.changes, updatedAt: new Date(), updatedBy: { uid: req.auth.uid, displayName } } }
       );
       // Notify proposer
-      if (edit.userId) {
+      if (edit.proposedBy?.uid) {
         const spot = await spots.findOne({ _id: edit.spotId });
         createNotification(db, {
-          userId: edit.userId,
+          userId: edit.proposedBy.uid,
           type: "spot_approved",
           fromUserId: req.auth.uid,
           fromUsername: displayName,
@@ -169,7 +160,7 @@ export function spotEditsRouter(db) {
       const edit = await spotEdits.findOne({ _id: editId, status: "pending" });
       if (!edit) return res.status(404).json({ error: "Demande introuvable ou déjà traitée" });
 
-      const displayName = await getDisplayName(req.auth.uid);
+      const displayName = await getDisplayName(users, req.auth.uid);
       const reason = req.body?.reason ?? null;
       await spotEdits.updateOne(
         { _id: editId },
@@ -181,10 +172,10 @@ export function spotEditsRouter(db) {
         }}
       );
       // Notify proposer
-      if (edit.userId) {
+      if (edit.proposedBy?.uid) {
         const spot = await spots.findOne({ _id: edit.spotId });
         createNotification(db, {
-          userId: edit.userId,
+          userId: edit.proposedBy.uid,
           type: "spot_rejected",
           fromUserId: req.auth.uid,
           fromUsername: displayName,

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import {
   Navigation, Compass, Zap, Bookmark, Share2, MapPin, Star,
   ArrowUpRight, ChevronLeft, ChevronRight, Route as RouteIcon,
-  Plus, X, Pencil, Trash2, BookOpen, Loader2, Maximize2,
+  Plus, X, Pencil, Trash2, BookOpen, Loader2, Maximize2, Clock, ImagePlus,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { cn, getGradeLevel, ORIENT_DEG, SPOT_TYPES } from '@/lib/utils';
@@ -124,6 +124,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
   const [routesLoading, setRoutesLoading] = useState(true);
   const [showAddRoute, setShowAddRoute] = useState(false);
   const [newRoute, setNewRoute] = useState({ name: '', grade: '', style: 'sport' as ClimbingStyle });
+  const [newRouteImage, setNewRouteImage] = useState<File | null>(null);
   const [addingRoute, setAddingRoute] = useState(false);
 
   useEffect(() => {
@@ -143,10 +144,27 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
         auth: true,
         body: JSON.stringify({ spotId: spot.id, name: newRoute.name, grade: newRoute.grade || undefined, style: newRoute.style }),
       });
-      setRoutes((prev) => [...prev, res.route]);
+      // Upload image si sélectionnée
+      if (newRouteImage && res.route._id) {
+        const form = new FormData();
+        form.append('image', newRouteImage);
+        await apiFetch(`/api/climbing-routes/${res.route._id}/image`, {
+          method: 'POST',
+          auth: true,
+          body: form,
+        }).catch(() => {});
+      }
+      // Afficher voie pending seulement à l'auteur/admin
+      if (res.route.status === 'pending') {
+        setRoutes((prev) => [...prev, res.route]);
+        toast.success(t('toast.route_pending'));
+      } else {
+        setRoutes((prev) => [...prev, res.route]);
+        toast.success(t('toast.route_added'));
+      }
       setNewRoute({ name: '', grade: '', style: 'sport' });
+      setNewRouteImage(null);
       setShowAddRoute(false);
-      toast.success(t('toast.route_added'));
     } catch {
       toast.error(t('common.error'));
     } finally {
@@ -516,27 +534,48 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                     {routes.map((r) => (
                       <div
                         key={r._id}
-                        className="flex items-center gap-2 rounded-lg bg-surface-2/40 px-3 py-2"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <span className="text-sm font-medium text-text-primary">{r.name}</span>
-                          <div className="flex items-center gap-2 text-[11px] text-text-secondary">
-                            {r.grade && <span className="font-bold">{r.grade}</span>}
-                            {r.style && <span>{t(STYLE_KEYS[r.style])}</span>}
-                            {r.height && <span>{r.height}m</span>}
-                            {r.bolts != null && <span>{r.bolts} pts</span>}
-                          </div>
-                        </div>
-                        {isAuthenticated && (isAdmin || r.createdBy?.uid === useAuthStore.getState().user?._id) && (
-                          <button
-                            onClick={() => handleDeleteRoute(r._id)}
-                            className="shrink-0 rounded p-1 text-text-secondary/40 transition-colors hover:bg-red-50 hover:text-red-500"
-                            type="button"
-                            title={t('common.delete')}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                        className={cn(
+                          'rounded-lg bg-surface-2/40 overflow-hidden',
+                          r.status === 'pending' && 'border border-amber-brand/30',
                         )}
+                      >
+                        {r.imageUrl && (
+                          <img
+                            src={r.imageUrl}
+                            alt={r.name}
+                            className="h-28 w-full object-cover"
+                            loading="lazy"
+                          />
+                        )}
+                        <div className="flex items-center gap-2 px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-medium text-text-primary">{r.name}</span>
+                              {r.status === 'pending' && (
+                                <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold bg-amber-brand/10 text-amber-brand">
+                                  <Clock className="h-2.5 w-2.5" />
+                                  {t('admin.status_pending')}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-text-secondary">
+                              {r.grade && <span className="font-bold">{r.grade}</span>}
+                              {r.style && <span>{t(STYLE_KEYS[r.style])}</span>}
+                              {r.height && <span>{r.height}m</span>}
+                              {r.bolts != null && <span>{r.bolts} pts</span>}
+                            </div>
+                          </div>
+                          {isAuthenticated && (isAdmin || r.createdBy?.uid === useAuthStore.getState().user?._id) && (
+                            <button
+                              onClick={() => handleDeleteRoute(r._id)}
+                              className="shrink-0 rounded p-1 text-text-secondary/40 transition-colors hover:bg-red-50 hover:text-red-500"
+                              type="button"
+                              title={t('common.delete')}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -570,6 +609,26 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                         ))}
                       </select>
                     </div>
+                    {/* Image upload */}
+                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border-subtle bg-surface px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-2">
+                      <ImagePlus className="h-4 w-4 shrink-0" />
+                      {newRouteImage
+                        ? <span className="truncate text-text-primary">{newRouteImage.name}</span>
+                        : <span>{t('spot.route_image_optional')}</span>
+                      }
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={(e) => setNewRouteImage(e.target.files?.[0] ?? null)}
+                      />
+                    </label>
+                    {!isAdmin && (
+                      <p className="flex items-center gap-1 text-[11px] text-amber-brand">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        {t('spot.route_pending_notice')}
+                      </p>
+                    )}
                     <div className="flex gap-2">
                       <button
                         onClick={handleAddRoute}
@@ -577,10 +636,10 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                         className="flex-1 rounded-lg bg-sage px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
                         type="button"
                       >
-                        {addingRoute ? '...' : t('common.add')}
+                        {addingRoute ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : t('common.add')}
                       </button>
                       <button
-                        onClick={() => setShowAddRoute(false)}
+                        onClick={() => { setShowAddRoute(false); setNewRouteImage(null); }}
                         className="rounded-lg border border-border-subtle px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-2"
                         type="button"
                       >

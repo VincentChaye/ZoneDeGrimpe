@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { ObjectId } from "mongodb";
 import { requireAuth } from "../auth.js";
 import { createNotification } from "../notifications.js";
+import { getDisplayName } from "../helpers.js";
+import { ObjectId } from "mongodb";
 
 export function friendsRouter(db) {
   const r = Router();
@@ -14,18 +15,6 @@ export function friendsRouter(db) {
   friendships.createIndex({ requesterId: 1, status: 1 }).catch(() => {});
 
   const userProjection = { displayName: 1, username: 1, avatarUrl: 1 };
-
-  async function getDisplayName(uid) {
-    try {
-      const u = await users.findOne(
-        { _id: new ObjectId(uid) },
-        { projection: { displayName: 1, username: 1 } }
-      );
-      return u?.displayName || u?.username || "Utilisateur";
-    } catch {
-      return "Utilisateur";
-    }
-  }
 
   // POST /api/friends/request/:userId — send friend request
   r.post("/request/:userId", requireAuth, async (req, res) => {
@@ -56,7 +45,7 @@ export function friendsRouter(db) {
       });
 
       // Notify addressee
-      const fromName = await getDisplayName(req.auth.uid);
+      const fromName = await getDisplayName(users, req.auth.uid);
       createNotification(db, {
         userId,
         type: "friend_request",
@@ -98,7 +87,7 @@ export function friendsRouter(db) {
       );
 
       // Notify requester
-      const fromName = await getDisplayName(req.auth.uid);
+      const fromName = await getDisplayName(users, req.auth.uid);
       createNotification(db, {
         userId: doc.requesterId,
         type: "friend_accepted",
