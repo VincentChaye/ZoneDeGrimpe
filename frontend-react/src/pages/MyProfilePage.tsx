@@ -40,7 +40,7 @@ export function MyProfilePage() {
   const isAdmin = user.roles?.includes('admin');
 
   return (
-    <div className="pb-[var(--spacing-tabbar)] md:pb-0">
+    <div>
       {/* Profile header */}
       <div className="border-b border-border-subtle bg-surface">
         <div className="mx-auto max-w-lg px-4 pt-6 pb-0">

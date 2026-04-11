@@ -471,7 +471,10 @@ export function MessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-var(--spacing-header)-var(--spacing-tabbar))] md:h-[calc(100dvh-var(--spacing-header))]">
+    <div
+      className="flex md:h-[calc(100dvh-var(--spacing-header))]"
+      style={{ height: 'calc(100dvh - var(--spacing-header) - var(--spacing-tabbar) - env(safe-area-inset-bottom))' }}
+    >
       {showNewModal && (
         <NewConversationModal
           onClose={() => setShowNewModal(false)}

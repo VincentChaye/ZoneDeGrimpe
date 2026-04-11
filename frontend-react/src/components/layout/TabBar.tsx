@@ -20,10 +20,9 @@ export function TabBar() {
     <nav
       className={cn(
         'fixed inset-x-0 bottom-0 z-50 md:hidden',
-        'flex h-[var(--spacing-tabbar)] items-stretch',
-        'bg-surface/95 backdrop-blur-md',
-        'border-t border-border-subtle',
+        'flex flex-col bg-surface/95 backdrop-blur-md border-t border-border-subtle',
       )}
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       aria-label="Navigation mobile"
     >
       {/* Sliding active indicator */}
@@ -37,6 +36,7 @@ export function TabBar() {
         />
       )}
 
+      <div className="flex h-[var(--spacing-tabbar)] w-full items-stretch">
       {TABS.map(({ to, key, icon: Icon }) => {
         const isActive = location.pathname === to;
         return (
@@ -73,6 +73,7 @@ export function TabBar() {
           </Link>
         );
       })}
+      </div>
     </nav>
   );
 }
