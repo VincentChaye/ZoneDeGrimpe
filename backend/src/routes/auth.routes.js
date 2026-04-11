@@ -37,8 +37,14 @@ r.post("/register", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: "missing_fields", detail: "email_and_password_required" });
     }
-    if (typeof password !== "string" || password.length < 8 || password.length > 128) {
-      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_8_to_128_chars" });
+    if (
+      typeof password !== "string" ||
+      password.length < 8 ||
+      password.length > 128 ||
+      !/[A-Z]/.test(password) ||
+      !/[0-9]/.test(password)
+    ) {
+      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_8_chars_uppercase_digit" });
     }
 
     // Username validation

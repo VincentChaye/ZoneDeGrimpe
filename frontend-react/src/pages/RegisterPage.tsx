@@ -62,7 +62,7 @@ export function RegisterPage() {
     if (form.username.length < 3) { setError(t('auth.username_invalid_format')); return; }
     if (usernameStatus === 'taken') { setError(t('auth.username_taken')); return; }
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { setError(t('auth.invalid_email')); return; }
-    if (form.password.length < 8) { setError(t('auth.invalid_password')); return; }
+    if (!PASSWORD_RULES.every(r => r.test(form.password))) { setError(t('auth.invalid_password')); return; }
     if (form.password !== form.confirmPassword) { setError(t('auth.password_mismatch')); return; }
 
     setLoading(true);
@@ -158,6 +158,7 @@ export function RegisterPage() {
                 </button>
               }
             />
+            <PasswordStrength password={form.password} />
             <InputField
               icon={<Lock className="h-4 w-4" />}
               label={t('auth.confirm_password')}
@@ -213,6 +214,33 @@ export function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+const PASSWORD_RULES = [
+  { key: 'len',   label: '8 caractères minimum',  test: (p: string) => p.length >= 8 },
+  { key: 'upper', label: '1 lettre majuscule',     test: (p: string) => /[A-Z]/.test(p) },
+  { key: 'digit', label: '1 chiffre',              test: (p: string) => /[0-9]/.test(p) },
+];
+
+function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null;
+  return (
+    <ul className="flex flex-col gap-1 pl-1">
+      {PASSWORD_RULES.map(({ key, label, test }) => {
+        const ok = test(password);
+        return (
+          <li key={key} className="flex items-center gap-2">
+            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${ok ? 'bg-green-500 text-white' : 'bg-border-subtle text-text-secondary'}`}>
+              {ok ? '✓' : '·'}
+            </span>
+            <span className={`text-xs transition-colors ${ok ? 'text-green-600 dark:text-green-400' : 'text-text-secondary'}`}>
+              {label}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
