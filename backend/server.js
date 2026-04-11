@@ -1,4 +1,5 @@
 // backend/server.js
+import http from "http";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -18,13 +19,16 @@ import { logbookRouter } from "./src/routes/logbook.routes.js";
 import { followsRouter } from "./src/routes/follows.routes.js";
 import { friendsRouter } from "./src/routes/friends.routes.js";
 import { notificationsRouter } from "./src/routes/notifications.routes.js";
+import { messagesRouter } from "./src/routes/messages.routes.js";
 import { initWebPush } from "./src/notifications.js";
+import { initSocketIO } from "./src/socket.js";
 
 
 
 dotenv.config();
 
 const app = express();
+const httpServer = http.createServer(app);
 app.use(express.json({ limit: "100kb" }));
 
 // --- CORS : env + dev defaults
@@ -117,9 +121,13 @@ if (hasUri) {
   app.use("/api/follows", followsRouter(db));
   app.use("/api/friends", friendsRouter(db));
   app.use("/api/notifications", notificationsRouter(db));
+  app.use("/api/messages", messagesRouter(db));
 
   // Init Web Push (si VAPID configure)
   initWebPush();
+
+  // Init Socket.io
+  initSocketIO(httpServer, db);
 
   console.log("MongoDB mode activé");
 } else {
@@ -138,4 +146,4 @@ if (hasUri) {
 
 // --- Listen (0.0.0.0 pour conteneur)
 const port = process.env.PORT || 3000;
-app.listen(port, "0.0.0.0", () => console.log(`API running on :${port}`));
+httpServer.listen(port, "0.0.0.0", () => console.log(`API running on :${port}`));

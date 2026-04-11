@@ -74,7 +74,7 @@ export function HomePage() {
           <img
             src={logo}
             alt=""
-            className="h-20 w-20 animate-[float_6s_ease-in-out_infinite] opacity-40"
+            className="h-20 w-20 animate-[float_6s_ease-in-out_infinite]"
             aria-hidden="true"
           />
         </div>

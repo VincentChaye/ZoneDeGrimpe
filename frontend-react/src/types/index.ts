@@ -117,6 +117,20 @@ export interface UserProfile {
   };
 }
 
+export interface NotificationPreferences {
+  friendRequest?: boolean;
+  friendAccepted?: boolean;
+  newFollower?: boolean;
+  spotApproved?: boolean;
+  spotRejected?: boolean;
+  newReview?: boolean;
+  quietMode?: {
+    enabled?: boolean;
+    startHour?: number;
+    endHour?: number;
+  };
+}
+
 export interface AuthUser {
   _id: string;
   email: string;
@@ -124,9 +138,17 @@ export interface AuthUser {
   username?: string;
   avatarUrl?: string;
   phone?: string;
-  level?: string;
   roles: string[];
   preferences?: { lang?: string };
+  profile?: {
+    level?: string;
+    bio?: string;
+  };
+  privacy?: {
+    isPrivate?: boolean;
+    logbookVisibility?: 'public' | 'friends' | 'private';
+  };
+  notificationPreferences?: NotificationPreferences;
 }
 
 export interface AuthState {
@@ -182,6 +204,39 @@ export type FriendshipCheck =
   | { status: 'accepted'; friendshipId: string }
   | { status: 'pending_sent'; friendshipId: string }
   | { status: 'pending_received'; friendshipId: string };
+
+// ---- Messaging ----
+
+export interface ParticipantInfo {
+  uid: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface LastMessage {
+  content: string;
+  senderUid: string;
+  createdAt: string;
+}
+
+export interface Conversation {
+  _id: string;
+  participants: string[];
+  participantInfo: ParticipantInfo[];
+  lastMessage: LastMessage | null;
+  unread: Record<string, number>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Message {
+  _id: string;
+  conversationId: string;
+  senderUid: string;
+  content: string;
+  status: 'sent' | 'delivered' | 'read';
+  createdAt: string;
+}
 
 export interface FeedItem {
   type: 'review' | 'logbook' | 'spot';

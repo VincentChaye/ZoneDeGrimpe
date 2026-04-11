@@ -182,8 +182,8 @@ r.post("/reset-password", async (req, res) => {
   try {
     const { token, newPassword } = req.body || {};
     if (!token || !newPassword) return res.status(400).json({ error: "missing_fields" });
-    if (typeof newPassword !== "string" || newPassword.length < 8 || newPassword.length > 128) {
-      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_8_to_128_chars" });
+    if (typeof newPassword !== "string" || newPassword.length < 12 || newPassword.length > 128) {
+      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_12_to_128_chars" });
     }
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
@@ -229,8 +229,8 @@ r.patch("/change-password", async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: "missing_fields" });
     }
-    if (typeof newPassword !== "string" || newPassword.length < 8 || newPassword.length > 128) {
-      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_8_to_128_chars" });
+    if (typeof newPassword !== "string" || newPassword.length < 12 || newPassword.length > 128) {
+      return res.status(400).json({ error: "invalid_password", detail: "password_must_be_12_to_128_chars" });
     }
 
     const user = await users.findOne({ _id: new ObjectId(payload.uid) });

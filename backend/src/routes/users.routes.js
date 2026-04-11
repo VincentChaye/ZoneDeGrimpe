@@ -97,6 +97,45 @@ export function usersRouter(db) {
         if (!lvl) return res.status(400).json({ error: "invalid_level", allowed: LEVELS });
         $set["profile.level"] = lvl;
       }
+      if (body.bio !== undefined) {
+        if (body.bio !== null && typeof body.bio !== "string") {
+          return res.status(400).json({ error: "invalid_payload", detail: "bio must be string or null" });
+        }
+        const bio = body.bio === "" ? null : String(body.bio || "").trim().slice(0, 160);
+        $set["profile.bio"] = bio;
+      }
+      if (body.isPrivate !== undefined) {
+        $set["privacy.isPrivate"] = !!body.isPrivate;
+      }
+      if (body.logbookVisibility !== undefined) {
+        const allowed = ["public", "friends", "private"];
+        if (!allowed.includes(body.logbookVisibility)) {
+          return res.status(400).json({ error: "invalid_logbook_visibility", allowed });
+        }
+        $set["privacy.logbookVisibility"] = body.logbookVisibility;
+      }
+      if (body.notificationPreferences !== undefined) {
+        const np = body.notificationPreferences;
+        if (typeof np !== "object" || Array.isArray(np)) {
+          return res.status(400).json({ error: "invalid_payload", detail: "notificationPreferences must be object" });
+        }
+        const boolKeys = ["friendRequest", "friendAccepted", "newFollower", "spotApproved", "spotRejected", "newReview"];
+        for (const k of boolKeys) {
+          if (np[k] !== undefined) $set[`notificationPreferences.${k}`] = !!np[k];
+        }
+        if (np.quietMode !== undefined && typeof np.quietMode === "object") {
+          const qm = np.quietMode;
+          if (qm.enabled !== undefined) $set["notificationPreferences.quietMode.enabled"] = !!qm.enabled;
+          if (qm.startHour !== undefined) {
+            const h = parseInt(qm.startHour, 10);
+            if (h >= 0 && h <= 23) $set["notificationPreferences.quietMode.startHour"] = h;
+          }
+          if (qm.endHour !== undefined) {
+            const h = parseInt(qm.endHour, 10);
+            if (h >= 0 && h <= 23) $set["notificationPreferences.quietMode.endHour"] = h;
+          }
+        }
+      }
 
       if (!Object.keys($set).length) {
         const user0 = await users.findOne({ _id: uid }, { projection: SAFE_PROJECTION });

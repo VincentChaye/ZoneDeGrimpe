@@ -15,11 +15,9 @@ const PUBLIC_LINKS = [
 ];
 
 const AUTH_LINKS = [
-  { to: '/logbook', key: 'nav.logbook' },
   { to: '/feed', key: 'nav.feed' },
-  { to: '/friends', key: 'nav.friends' },
-  { to: '/my-spots', key: 'nav.my_spots' },
-  { to: '/settings', key: 'nav.profile' },
+  { to: '/messages', key: 'nav.messages' },
+  { to: '/me', key: 'nav.profile' },
 ];
 
 export function Header() {
