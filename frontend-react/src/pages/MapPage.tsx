@@ -436,10 +436,7 @@ export function MapPage() {
   const hasActiveFilters = filterGradeMin || filterDistance > 0 || filterOrientation || filterRock;
 
   return (
-    <div
-      className="relative md:h-[calc(100dvh-var(--spacing-header))]"
-      style={{ height: 'calc(100dvh - var(--spacing-header) - var(--spacing-tabbar) - env(safe-area-inset-bottom))' }}
-    >
+    <div className="relative h-full">
       {/* Map */}
       <MapContainer
         center={[46.5, 2.5]}
@@ -712,7 +709,10 @@ export function MapPage() {
       )}
 
       {/* Filter chips — bottom of map */}
-      <div className="absolute bottom-3 left-3 right-3 z-[1000] flex items-center gap-2 overflow-x-auto pb-safe scrollbar-none">
+      <div
+        className="absolute left-3 right-3 z-[1000] flex items-center gap-2 overflow-x-auto scrollbar-none"
+        style={{ bottom: 'calc(0.75rem + var(--spacing-tabbar) + env(safe-area-inset-bottom))' }}
+      >
         {/* Propose button (authenticated) */}
         {isAuthenticated && (
           <button
