@@ -68,9 +68,9 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-var(--spacing-header)-var(--spacing-tabbar))] items-center justify-center px-4 py-12">
+    <div className="flex min-h-full items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-sm">
-        <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-8 shadow-card">
+        <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-6 shadow-card sm:p-8">
           {/* Logo */}
           <div className="mb-6 text-center">
             <img src={logo} alt="" className="mx-auto mb-3 h-10 w-10" />

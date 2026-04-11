@@ -100,9 +100,9 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-var(--spacing-header)-var(--spacing-tabbar))] items-center justify-center px-4 py-12">
+    <div className="flex min-h-full items-start justify-center px-4 py-6 sm:items-center sm:py-12">
       <div className="w-full max-w-sm">
-        <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-8 shadow-card">
+        <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-5 shadow-card sm:p-8">
           <div className="mb-6 text-center">
             <img src={logo} alt="" className="mx-auto mb-3 h-10 w-10" />
             <h2 className="font-heading text-xl font-bold text-text-primary">

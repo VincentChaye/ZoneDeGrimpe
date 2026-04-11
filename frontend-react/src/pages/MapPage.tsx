@@ -436,7 +436,10 @@ export function MapPage() {
   const hasActiveFilters = filterGradeMin || filterDistance > 0 || filterOrientation || filterRock;
 
   return (
-    <div className="relative h-[calc(100vh-var(--spacing-header))]">
+    <div
+      className="relative md:h-[calc(100dvh-var(--spacing-header))]"
+      style={{ height: 'calc(100dvh - var(--spacing-header) - var(--spacing-tabbar) - env(safe-area-inset-bottom))' }}
+    >
       {/* Map */}
       <MapContainer
         center={[46.5, 2.5]}
