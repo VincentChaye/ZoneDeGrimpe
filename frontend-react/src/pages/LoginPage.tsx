@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
 import type { AuthState } from '@/types';
@@ -23,6 +23,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const next = searchParams.get('next') || '/map';
 
@@ -104,7 +105,7 @@ export function LoginPage() {
               <div className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-border-subtle bg-bg px-3 py-2.5 focus-within:border-sage focus-within:ring-1 focus-within:ring-sage">
                 <Lock className="h-4 w-4 shrink-0 text-text-secondary" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -112,6 +113,9 @@ export function LoginPage() {
                   placeholder={t('auth.password_placeholder')}
                   className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-secondary"
                 />
+                <button type="button" onClick={() => setShowPassword(v => !v)} className="shrink-0 text-text-secondary hover:text-text-primary">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </label>
 

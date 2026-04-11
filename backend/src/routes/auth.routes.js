@@ -33,7 +33,7 @@ export function authRouter(db) {
 // --- REGISTER (conforme au validator users) ---
 r.post("/register", async (req, res) => {
   try {
-    let { email, password, displayName, username } = req.body || {};
+    let { email, password, displayName, username, level } = req.body || {};
     if (!email || !password) {
       return res.status(400).json({ error: "missing_fields", detail: "email_and_password_required" });
     }
@@ -112,7 +112,7 @@ r.post("/register", async (req, res) => {
       status: "active",                // autorisé: active|banned|pending
       emailVerified: false,            // autorisé: bool
       preferences: {},                 // autorisé: object
-      profile: {},                     // autorisé: object
+      profile: (level && ['debutant', 'intermediaire', 'avance'].includes(level)) ? { level } : {},
       // security est REQUIRED avec createdAt (date). updatedAt/lastLoginAt optionnels.
       security: {
         createdAt: new Date(),
