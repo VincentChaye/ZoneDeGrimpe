@@ -148,6 +148,25 @@ r.post("/register", registerLimiter, async (req, res) => {
   }
 });
 
+// --- TEST EMAIL (diagnostic, à supprimer après) ---
+r.get("/test-email", async (req, res) => {
+  const to = req.query.to;
+  if (!to) return res.status(400).json({ error: "missing ?to=email" });
+  const cfg = {
+    SMTP_HOST: process.env.SMTP_HOST || "(non défini)",
+    SMTP_PORT: process.env.SMTP_PORT || "(non défini)",
+    SMTP_USER: process.env.SMTP_USER || "(non défini)",
+    SMTP_PASS: process.env.SMTP_PASS ? `${process.env.SMTP_PASS.length} chars` : "(non défini)",
+    SMTP_SECURE: process.env.SMTP_SECURE || "(non défini)",
+  };
+  try {
+    await sendPasswordResetEmail(to, "https://test.example.com/reset?token=TEST", "fr");
+    return res.json({ ok: true, sent: true, config: cfg });
+  } catch (e) {
+    return res.json({ ok: false, error: e.message, config: cfg });
+  }
+});
+
 // --- FORGOT PASSWORD ---
 r.post("/forgot-password", authLimiter, async (req, res) => {
   try {
