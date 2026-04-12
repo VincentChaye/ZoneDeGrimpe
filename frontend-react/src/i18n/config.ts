@@ -43,6 +43,9 @@ i18n.use(initReactI18next).init({
   interpolation: {
     escapeValue: false, // React already escapes
   },
+  react: {
+    useSuspense: false, // translations are bundled synchronously — no need to suspend
+  },
 });
 
 export default i18n;
