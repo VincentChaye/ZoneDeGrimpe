@@ -329,6 +329,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-[1001] bg-black/25 backdrop-blur-[2px] md:hidden" />
         <Drawer.Content
+          aria-describedby={undefined}
           className={cn(
             'fixed inset-x-0 bottom-0 z-[1002] outline-none',
             'md:absolute md:bottom-4 md:left-4 md:right-auto md:w-[400px]',

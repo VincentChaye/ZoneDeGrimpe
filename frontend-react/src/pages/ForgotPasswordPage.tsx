@@ -12,7 +12,7 @@ export function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
-  async function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -20,16 +20,13 @@ export function ForgotPasswordPage() {
       return;
     }
     setLoading(true);
-    try {
-      await apiFetch('/api/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
-      });
-      setSent(true);
-    } catch {
-      setError(t('common.error'));
-    }
-    setLoading(false);
+    apiFetch('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    })
+      .then(() => { setSent(true); })
+      .catch(() => { setError(t('common.error')); })
+      .finally(() => { setLoading(false); });
   }
 
   return (
