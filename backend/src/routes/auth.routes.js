@@ -166,7 +166,7 @@ r.post("/forgot-password", authLimiter, async (req, res) => {
 
     await users.updateOne(
       { _id: user._id },
-      { $set: { "passwordReset.tokenHash": tokenHash, "passwordReset.expiresAt": expiresAt } },
+      { $set: { "security.passwordReset.tokenHash": tokenHash, "security.passwordReset.expiresAt": expiresAt } },
     );
 
     const frontendUrl = process.env.FRONTEND_URL || "https://vincentchaye.github.io/ZoneDeGrimpe";
@@ -197,8 +197,8 @@ r.post("/reset-password", authLimiter, async (req, res) => {
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const user = await users.findOne({
-      "passwordReset.tokenHash": tokenHash,
-      "passwordReset.expiresAt": { $gt: new Date() },
+      "security.passwordReset.tokenHash": tokenHash,
+      "security.passwordReset.expiresAt": { $gt: new Date() },
     });
 
     if (!user) return res.status(400).json({ error: "invalid_or_expired_token" });
@@ -208,7 +208,7 @@ r.post("/reset-password", authLimiter, async (req, res) => {
       { _id: user._id },
       {
         $set: { passwordHash, "security.updatedAt": new Date() },
-        $unset: { passwordReset: "" },
+        $unset: { "security.passwordReset": "" },
       },
     );
 
