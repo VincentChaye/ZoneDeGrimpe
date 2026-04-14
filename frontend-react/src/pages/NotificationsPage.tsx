@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Bell, UserPlus, UserCheck, Star, CheckCircle, XCircle, Users, Loader2, CheckCheck,
+  Bell, UserPlus, UserCheck, Star, CheckCircle, XCircle, Users, Loader2, CheckCheck, ImagePlus,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationsStore } from '@/stores/notifications.store';
@@ -16,6 +16,9 @@ const NOTIF_ICONS: Record<NotificationType, typeof Bell> = {
   spot_approved: CheckCircle,
   spot_rejected: XCircle,
   new_follower: Users,
+  photo_pending: ImagePlus,
+  photo_approved: CheckCircle,
+  photo_rejected: XCircle,
 };
 
 const NOTIF_COLORS: Record<NotificationType, string> = {
@@ -25,6 +28,9 @@ const NOTIF_COLORS: Record<NotificationType, string> = {
   spot_approved: 'bg-green-100 text-green-600',
   spot_rejected: 'bg-red-100 text-red-500',
   new_follower: 'bg-blue-100 text-blue-600',
+  photo_pending: 'bg-amber-brand/10 text-amber-brand',
+  photo_approved: 'bg-green-100 text-green-600',
+  photo_rejected: 'bg-red-100 text-red-500',
 };
 
 function useRelativeDate() {
