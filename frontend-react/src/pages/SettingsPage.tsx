@@ -141,6 +141,17 @@ export function SettingsPage() {
   // ── Auto-save for toggles ──
   const [savingField, setSavingField] = useState<string | null>(null);
 
+  // ── Auto-save patch — must be before any early return ──
+  const autoPatch = useCallback(async (field: string, body: Record<string, unknown>) => {
+    setSavingField(field);
+    try {
+      await apiFetch('/api/users/me', { method: 'PATCH', auth: true, body: JSON.stringify(body) });
+    } catch {
+      toast.error(t('common.error'));
+    }
+    setSavingField(null);
+  }, [t]);
+
   if (!isAuthenticated || !user) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
@@ -206,17 +217,6 @@ export function SettingsPage() {
     }
     setSavingProfile(false);
   }
-
-  // ── Auto-save patch ──
-  const autoPatch = useCallback(async (field: string, body: Record<string, unknown>) => {
-    setSavingField(field);
-    try {
-      await apiFetch('/api/users/me', { method: 'PATCH', auth: true, body: JSON.stringify(body) });
-    } catch {
-      toast.error(t('common.error'));
-    }
-    setSavingField(null);
-  }, [t]);
 
   async function togglePrivate(v: boolean) {
     updateUser({ privacy: { ...user!.privacy, isPrivate: v } });

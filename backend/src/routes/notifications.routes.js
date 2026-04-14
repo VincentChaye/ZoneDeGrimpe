@@ -5,12 +5,10 @@ import { requireAuth } from "../auth.js";
 export function notificationsRouter(db) {
   const r = Router();
   const notifications = db.collection("notifications");
-  const pushSubs = db.collection("push_subscriptions");
 
   // Indexes
   notifications.createIndex({ userId: 1, read: 1, createdAt: -1 }).catch(() => {});
   notifications.createIndex({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 3600 }).catch(() => {});
-  pushSubs.createIndex({ userId: 1 }).catch(() => {});
 
   // GET /api/notifications — paginated list
   r.get("/", requireAuth, async (req, res) => {
@@ -74,45 +72,6 @@ export function notificationsRouter(db) {
         { userId: req.auth.uid, read: false },
         { $set: { read: true } }
       );
-      res.json({ ok: true });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "server_error" });
-    }
-  });
-
-  // POST /api/notifications/push-subscribe — save push subscription
-  r.post("/push-subscribe", requireAuth, async (req, res) => {
-    try {
-      const { subscription } = req.body;
-      if (!subscription?.endpoint) {
-        return res.status(400).json({ error: "missing_subscription" });
-      }
-
-      await pushSubs.updateOne(
-        { userId: req.auth.uid, "subscription.endpoint": subscription.endpoint },
-        {
-          $set: { userId: req.auth.uid, subscription, createdAt: new Date() },
-        },
-        { upsert: true }
-      );
-
-      res.status(201).json({ ok: true });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "server_error" });
-    }
-  });
-
-  // DELETE /api/notifications/push-subscribe — remove push subscription
-  r.delete("/push-subscribe", requireAuth, async (req, res) => {
-    try {
-      const { endpoint } = req.body || {};
-      const filter = endpoint
-        ? { userId: req.auth.uid, "subscription.endpoint": endpoint }
-        : { userId: req.auth.uid };
-
-      await pushSubs.deleteMany(filter);
       res.json({ ok: true });
     } catch (e) {
       console.error(e);

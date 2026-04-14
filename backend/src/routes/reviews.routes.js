@@ -50,43 +50,6 @@ export function reviewsRouter(db) {
     }
   });
 
-  // --- GET /api/reviews/spot/:spotId/summary --- public
-  r.get("/spot/:spotId/summary", async (req, res) => {
-    try {
-      const { spotId } = req.params;
-      const pipeline = [
-        { $match: { spotId } },
-        {
-          $group: {
-            _id: null,
-            avgRating: { $avg: "$rating" },
-            count: { $sum: 1 },
-          },
-        },
-      ];
-      const [result] = await reviews.aggregate(pipeline).toArray();
-
-      // Distribution par etoile
-      const distPipeline = [
-        { $match: { spotId } },
-        { $group: { _id: "$rating", count: { $sum: 1 } } },
-      ];
-      const dist = await reviews.aggregate(distPipeline).toArray();
-      const distribution = {};
-      for (let i = 1; i <= 5; i++) distribution[i] = 0;
-      for (const d of dist) distribution[d._id] = d.count;
-
-      return res.json({
-        avgRating: result ? Math.round(result.avgRating * 10) / 10 : null,
-        count: result ? result.count : 0,
-        distribution,
-      });
-    } catch (e) {
-      console.error(e);
-      return res.status(500).json({ error: "server_error" });
-    }
-  });
-
   // --- POST /api/reviews --- requireAuth, upsert
   r.post("/", requireAuth, async (req, res) => {
     try {

@@ -2,7 +2,6 @@ import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { createSpotSchema, updateSpotSchema } from "../validators.js";
 import { requireAuth, requireAdmin } from "../auth.js";
-import { upload, cloudinary } from "../upload.js";
 import { createNotification } from "../notifications.js";
 import { getDisplayName } from "../helpers.js";
 
@@ -121,47 +120,6 @@ export function spotsRouter(db) {
   });
 
   // ================================================================
-  // GET /near — Spots proches (public, approved only)
-  // ================================================================
-  r.get("/near", async (req, res) => {
-    const { lng, lat, radius = 5000, limit = 100, format = "geojson" } = req.query;
-    if (lng == null || lat == null) {
-      return res.status(400).json({ error: "missing_params", detail: "lng and lat are required" });
-    }
-
-    const lngNum = parseFloat(lng);
-    const latNum = parseFloat(lat);
-    const radNum = Math.min(parseFloat(radius), 100000);
-    const limNum = Math.max(1, Math.min(parseInt(limit, 10) || 100, 5000));
-
-    try {
-      const docs = await spots
-        .find(
-          {
-            ...PUBLIC_FILTER,
-            location: {
-              $near: {
-                $geometry: { type: "Point", coordinates: [lngNum, latNum] },
-                $maxDistance: radNum,
-              },
-            },
-          },
-          { projection: MAP_PROJECTION }
-        )
-        .limit(limNum)
-        .toArray();
-
-      if (format === "flat") {
-        return res.json(docs.map(toFlat));
-      }
-      return res.json({ type: "FeatureCollection", features: docs.map(toFeature) });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "server_error" });
-    }
-  });
-
-  // ================================================================
   // GET /count — Nombre total de spots approuvés — public
   // ================================================================
   r.get("/count", async (req, res) => {
@@ -208,35 +166,6 @@ export function spotsRouter(db) {
 
       if (format === "flat") return res.json(docs.map(toFlat));
       return res.json({ type: "FeatureCollection", features: docs.map(toFeature) });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "server_error" });
-    }
-  });
-
-  // ================================================================
-  // GET /admin — Liste paginée admin (tous statuts, requireAdmin)
-  // ================================================================
-  r.get("/admin", requireAdmin, async (req, res) => {
-    try {
-      const { limit = 20, skip = 0, name = "", status = "" } = req.query;
-      const lim = Math.max(1, Math.min(parseInt(limit, 10) || 20, 100));
-      const sk  = Math.max(0, parseInt(skip, 10) || 0);
-
-      const filter = {};
-      if (name) filter.name = { $regex: name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
-      if (status === "approved") filter.status = { $nin: ["pending", "rejected"] };
-      else if (status) filter.status = status;
-
-      const [items, total, totalAll, totalApproved] = await Promise.all([
-        spots.find(filter, { projection: MAP_PROJECTION })
-          .sort({ createdAt: -1 }).skip(sk).limit(lim).toArray(),
-        spots.countDocuments(filter),
-        spots.countDocuments({}),
-        spots.countDocuments({ status: { $nin: ["pending", "rejected"] } }),
-      ]);
-
-      res.json({ items: items.map(toFlat), total, totalAll, totalApproved, limit: lim, skip: sk });
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: "server_error" });
@@ -391,90 +320,6 @@ export function spotsRouter(db) {
       res.json({ deleted: result.deletedCount === 1 });
     } catch (e) {
       console.error(e);
-      res.status(500).json({ error: "server_error" });
-    }
-  });
-
-  // ================================================================
-  // POST /:id/photos — Ajouter des photos à un spot (utilisateur connecté)
-  // Max 5 fichiers par upload, max 10 photos par spot
-  // ================================================================
-  r.post("/:id/photos", requireAuth, upload.array("photos", 5), async (req, res) => {
-    if (!ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: "bad_id" });
-    }
-    if (!req.files?.length) {
-      return res.status(400).json({ error: "no_files" });
-    }
-    try {
-      const spot = await spots.findOne({ _id: new ObjectId(req.params.id) });
-      if (!spot) return res.status(404).json({ error: "not_found" });
-
-      const isAdmin = req.auth.roles?.includes("admin");
-      const isOwner = spot.createdBy?.uid === req.auth.uid;
-      if (!isAdmin && !isOwner) {
-        // Supprimer les fichiers déjà uploadés sur Cloudinary
-        await Promise.all(req.files.map(f => cloudinary.uploader.destroy(f.filename)));
-        return res.status(403).json({ error: "forbidden" });
-      }
-
-      const currentCount = spot.photos?.length ?? 0;
-      if (currentCount + req.files.length > 5) {
-        await Promise.all(req.files.map(f => cloudinary.uploader.destroy(f.filename)));
-        return res.status(400).json({ error: "too_many_photos", max: 5, current: currentCount });
-      }
-
-      const displayName = await getDisplayName(users, req.auth.uid);
-      const newPhotos = req.files.map(f => ({
-        _id: new ObjectId(),
-        url: f.path,
-        publicId: f.filename,
-        uploadedBy: { uid: req.auth.uid, displayName },
-        uploadedAt: new Date(),
-      }));
-
-      await spots.updateOne(
-        { _id: new ObjectId(req.params.id) },
-        { $push: { photos: { $each: newPhotos } } }
-      );
-
-      res.status(201).json({ ok: true, photos: newPhotos });
-    } catch (e) {
-      console.error("[POST /spots/:id/photos]", e);
-      res.status(500).json({ error: "server_error" });
-    }
-  });
-
-  // ================================================================
-  // DELETE /:id/photos/:photoId — Supprimer une photo d'un spot
-  // Propriétaire de la photo ou admin
-  // ================================================================
-  r.delete("/:id/photos/:photoId", requireAuth, async (req, res) => {
-    if (!ObjectId.isValid(req.params.id) || !ObjectId.isValid(req.params.photoId)) {
-      return res.status(400).json({ error: "bad_id" });
-    }
-    try {
-      const spot = await spots.findOne({ _id: new ObjectId(req.params.id) });
-      if (!spot) return res.status(404).json({ error: "not_found" });
-
-      const photo = spot.photos?.find(p => p._id.toString() === req.params.photoId);
-      if (!photo) return res.status(404).json({ error: "photo_not_found" });
-
-      const isAdmin = req.auth.roles?.includes("admin");
-      const isUploader = photo.uploadedBy?.uid === req.auth.uid;
-      if (!isAdmin && !isUploader) {
-        return res.status(403).json({ error: "forbidden" });
-      }
-
-      await cloudinary.uploader.destroy(photo.publicId);
-      await spots.updateOne(
-        { _id: new ObjectId(req.params.id) },
-        { $pull: { photos: { _id: new ObjectId(req.params.photoId) } } }
-      );
-
-      res.json({ ok: true });
-    } catch (e) {
-      console.error("[DELETE /spots/:id/photos/:photoId]", e);
       res.status(500).json({ error: "server_error" });
     }
   });

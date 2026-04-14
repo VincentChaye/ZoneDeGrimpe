@@ -15,17 +15,6 @@ const createRouteSchema = z.object({
   description: z.string().max(2000).optional(),
 });
 
-const updateRouteSchema = z.object({
-  name: z.string().min(1).max(120).optional(),
-  grade: z.string().max(10).optional(),
-  style: z.enum(["sport", "trad", "boulder", "multi", "other"]).optional(),
-  height: z.number().positive().max(2000).nullable().optional(),
-  bolts: z.number().int().min(0).max(100).nullable().optional(),
-  description: z.string().max(2000).nullable().optional(),
-}).refine(data => Object.keys(data).length > 0, {
-  message: "Au moins un champ requis",
-});
-
 export function climbingRoutesRouter(db) {
   const r = Router();
   const routes = db.collection("climbing_routes");
@@ -182,48 +171,6 @@ export function climbingRoutesRouter(db) {
     }
   });
 
-  // PATCH /api/climbing-routes/:id — Modifier une voie (admin ou auteur)
-  r.patch("/:id", requireAuth, async (req, res) => {
-    if (!ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: "bad_id" });
-    }
-
-    try {
-      const existing = await routes.findOne({ _id: new ObjectId(req.params.id) });
-      if (!existing) return res.status(404).json({ error: "not_found" });
-
-      const isAdmin = req.auth.roles?.includes("admin");
-      const isAuthor = existing.createdBy?.uid === req.auth.uid;
-      if (!isAdmin && !isAuthor) {
-        return res.status(403).json({ error: "forbidden" });
-      }
-
-      const updates = updateRouteSchema.parse(req.body);
-      const displayName = await getDisplayName(users, req.auth.uid);
-
-      const result = await routes.findOneAndUpdate(
-        { _id: new ObjectId(req.params.id) },
-        {
-          $set: {
-            ...updates,
-            updatedAt: new Date(),
-            updatedBy: { uid: req.auth.uid, displayName },
-          },
-        },
-        { returnDocument: "after" }
-      );
-
-      if (!result) return res.status(404).json({ error: "not_found" });
-      res.json({ ok: true, route: result });
-    } catch (e) {
-      if (e.name === "ZodError") {
-        return res.status(400).json({ error: "invalid_payload", detail: String(e) });
-      }
-      console.error(e);
-      res.status(500).json({ error: "server_error" });
-    }
-  });
-
   // DELETE /api/climbing-routes/:id — Supprimer une voie (admin ou auteur)
   r.delete("/:id", requireAuth, async (req, res) => {
     if (!ObjectId.isValid(req.params.id)) {
@@ -247,22 +194,6 @@ export function climbingRoutesRouter(db) {
 
       await routes.deleteOne({ _id: new ObjectId(req.params.id) });
       res.json({ ok: true });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "server_error" });
-    }
-  });
-
-  // GET /api/climbing-routes/count/:spotId — Nombre de voies approuvées d'un spot
-  r.get("/count/:spotId", async (req, res) => {
-    const { spotId } = req.params;
-    if (!ObjectId.isValid(spotId)) {
-      return res.status(400).json({ error: "bad_id" });
-    }
-
-    try {
-      const count = await routes.countDocuments({ spotId, status: { $nin: ["pending", "rejected"] } });
-      res.json({ count });
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: "server_error" });

@@ -8,10 +8,6 @@ import { connectToDb } from "./src/db.js";
 import { spotsRouter } from "./src/routes/spots.routes.js";
 import { usersRouter } from "./src/routes/users.routes.js";
 import { authRouter } from "./src/routes/auth.routes.js";
-import { userMaterielRouter } from "./src/routes/userMateriel.routes.js";
-import { materielSpecsRouter } from "./src/routes/materielSpecs.routes.js";
-import { analyticsRouter } from "./src/routes/analytics.routes.js";
-import { adviceRouter } from "./src/routes/advice.routes.js";
 import { spotEditsRouter } from "./src/routes/spot-edits.routes.js";
 import { bookmarksRouter } from "./src/routes/bookmarks.routes.js";
 import { climbingRoutesRouter } from "./src/routes/climbing-routes.routes.js";
@@ -118,12 +114,6 @@ if (hasUri) {
   app.use("/api/spots", spotsRouter(db));
   app.use("/api/users", usersRouter(db));
   app.use("/api/auth", authRouter(db));
-  // FEATURE_PENDING: routes matériel — tab "Matériel" affiche "coming soon" côté frontend
-  app.use("/api/user_materiel", userMaterielRouter(db));
-  app.use("/api/materiel_specs", materielSpecsRouter(db));
-  // FEATURE_PENDING: routes admin-only sans usage frontend actuel
-  app.use("/api/analytics", analyticsRouter(db));
-  app.use("/api/advice", adviceRouter(db));
   app.use("/api/spot-edits", spotEditsRouter(db));
   app.use("/api/bookmarks", bookmarksRouter(db));
   app.use("/api/climbing-routes", climbingRoutesRouter(db));
@@ -146,10 +136,6 @@ if (hasUri) {
   app.get("/api/spots", (_, res) => res.json({ type: "FeatureCollection", features: [] }));
   app.get("/api/users", (_, res) => res.json({ items: [], total: 0 }));
   app.get("/api/auth", (_, res) => res.status(401).json({ error: "no_db" }));
-  app.get("/api/user_materiel", (_, res) => res.json({ items: [], total: 0 }));
-  app.get("/api/materiel_specs", (_, res) => res.json({ items: [], total: 0 }));
-  app.get("/api/analytics", (_, res) => res.json({ items: [] }));
-  app.get("/api/advice", (_, res) => res.json({ items: [] }));
 
 
   console.warn("MONGODB_URI manquante → mode sans DB (listes vides)");

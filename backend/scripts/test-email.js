@@ -1,45 +1,34 @@
 // backend/scripts/test-email.js
-// Usage: SMTP_HOST=smtp.gmail.com SMTP_PORT=587 SMTP_USER=xxx@gmail.com SMTP_PASS=xxx node scripts/test-email.js
+// Usage: RESEND_API_KEY=re_xxx node scripts/test-email.js --to=email@example.com
 
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 dotenv.config();
 
-const host   = process.env.SMTP_HOST;
-const port   = parseInt(process.env.SMTP_PORT || "587");
-const secure = process.env.SMTP_SECURE === "true";
-const user   = process.env.SMTP_USER;
-const pass   = process.env.SMTP_PASS;
-const to     = process.env.SMTP_TEST_TO || user;
+const apiKey = process.env.RESEND_API_KEY;
+const to = process.argv.find((a) => a.startsWith("--to="))?.slice(5) || process.env.SMTP_TEST_TO;
 
-if (!host || !user || !pass) {
-  console.error("❌  Variables manquantes. Exemple :");
-  console.error("    SMTP_HOST=smtp.gmail.com SMTP_USER=ton@gmail.com SMTP_PASS=xxxx node scripts/test-email.js");
+if (!apiKey) {
+  console.error("❌  RESEND_API_KEY manquant");
+  process.exit(1);
+}
+if (!to) {
+  console.error("❌  Usage: RESEND_API_KEY=re_xxx node scripts/test-email.js --to=email@example.com");
   process.exit(1);
 }
 
-console.log(`🔧  Config : host=${host} port=${port} secure=${secure} user=${user}`);
 console.log(`📬  Envoi vers : ${to}`);
+const client = new Resend(apiKey);
 
-const transport = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
+const { data, error } = await client.emails.send({
+  from: process.env.EMAIL_FROM || "ZoneDeGrimpe <onboarding@resend.dev>",
+  to,
+  subject: "Test email ZoneDeGrimpe",
+  text: "Si tu reçois ce message, l'envoi d'emails fonctionne correctement.",
+});
 
-try {
-  await transport.verify();
-  console.log("✅  Connexion SMTP OK");
-} catch (err) {
-  console.error("❌  Connexion SMTP échouée :", err.message);
+if (error) {
+  console.error("❌  Erreur :", error.message);
   process.exit(1);
 }
-
-try {
-  const info = await transport.sendMail({
-    from: `"ZoneDeGrimpe Test" <${user}>`,
-    to,
-    subject: "Test email ZoneDeGrimpe",
-    text: "Si tu reçois ce message, l'envoi d'emails fonctionne correctement.",
-  });
-  console.log("✅  Email envoyé. MessageId :", info.messageId);
-} catch (err) {
-  console.error("❌  Envoi échoué :", err.message);
-  process.exit(1);
-}
+console.log("✅  Email envoyé. Id :", data?.id);

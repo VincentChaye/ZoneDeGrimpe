@@ -1,31 +1,22 @@
 // backend/src/email.js
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-function createTransport() {
-  if (!process.env.SMTP_HOST) return null;
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+function getClient() {
+  if (!process.env.RESEND_API_KEY) return null;
+  return new Resend(process.env.RESEND_API_KEY);
 }
 
 /**
- * Send a password reset email.
- * @param {string} to - Recipient email
- * @param {string} resetUrl - Full reset URL with token
- * @param {string} lang - 'fr' | 'en' | 'es'
+ * Send a password reset email via Resend.
  */
 export async function sendPasswordResetEmail(to, resetUrl, lang = "fr") {
-  const transport = createTransport();
-  if (!transport) {
-    console.warn("[email] SMTP not configured — skipping email send");
+  const client = getClient();
+  if (!client) {
+    console.warn("[email] RESEND_API_KEY non configuré — email ignoré");
     return;
   }
+
+  const from = process.env.EMAIL_FROM || "ZoneDeGrimpe <onboarding@resend.dev>";
 
   const subjects = {
     fr: "Réinitialisation de votre mot de passe — ZoneDeGrimpe",
@@ -33,7 +24,7 @@ export async function sendPasswordResetEmail(to, resetUrl, lang = "fr") {
     es: "Restablece tu contraseña — ZoneDeGrimpe",
   };
 
-  const bodies = {
+  const textBodies = {
     fr: `Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe sur ZoneDeGrimpe.\n\nCliquez sur le lien suivant pour choisir un nouveau mot de passe (valable 15 minutes) :\n\n${resetUrl}\n\nSi vous n'avez pas fait cette demande, ignorez cet email.\n\nL'équipe ZoneDeGrimpe`,
     en: `Hello,\n\nYou requested a password reset on ZoneDeGrimpe.\n\nClick the link below to set a new password (valid for 15 minutes):\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.\n\nThe ZoneDeGrimpe team`,
     es: `Hola,\n\nHas solicitado restablecer tu contraseña en ZoneDeGrimpe.\n\nHaz clic en el siguiente enlace para establecer una nueva contraseña (válido por 15 minutos):\n\n${resetUrl}\n\nSi no solicitaste esto, ignora este correo.\n\nEl equipo de ZoneDeGrimpe`,
@@ -47,11 +38,13 @@ export async function sendPasswordResetEmail(to, resetUrl, lang = "fr") {
 
   const l = ["fr", "en", "es"].includes(lang) ? lang : "fr";
 
-  await transport.sendMail({
-    from: process.env.SMTP_FROM || `"ZoneDeGrimpe" <${process.env.SMTP_USER}>`,
+  const { error } = await client.emails.send({
+    from,
     to,
     subject: subjects[l],
-    text: bodies[l],
+    text: textBodies[l],
     html: htmlBodies[l],
   });
+
+  if (error) throw new Error(error.message);
 }
