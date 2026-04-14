@@ -11,10 +11,6 @@ export function followsRouter(db) {
   const reviews = db.collection("reviews");
   const logbook = db.collection("logbook_entries");
 
-  // Indexes
-  follows.createIndex({ followerId: 1, followingId: 1 }, { unique: true }).catch(() => {});
-  follows.createIndex({ followingId: 1 }).catch(() => {});
-
   const userProjection = { displayName: 1, username: 1, avatarUrl: 1 };
 
   // POST /api/follows/:userId — follow a user

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Shield, Check, X, Trash2, MapPin, Loader2, FileEdit, Route as RouteIcon,
+  Shield, Check, X, Trash2, MapPin, Loader2, FileEdit, Route as RouteIcon, ImagePlus,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -42,7 +42,19 @@ interface PendingRoute {
   createdAt: string;
 }
 
-type Tab = 'pending' | 'edits' | 'routes';
+interface PendingPhoto {
+  spotId: string;
+  spotName: string;
+  photo: {
+    _id: string;
+    url: string;
+    publicId?: string;
+    uploadedBy?: { uid: string; displayName: string };
+    createdAt?: string;
+  };
+}
+
+type Tab = 'pending' | 'edits' | 'routes' | 'photos';
 
 export function AdminSpotsPage() {
   const { t } = useTranslation();
@@ -52,14 +64,16 @@ export function AdminSpotsPage() {
   const [spots, setSpots] = useState<PendingSpot[]>([]);
   const [edits, setEdits] = useState<PendingEdit[]>([]);
   const [pendingRoutes, setPendingRoutes] = useState<PendingRoute[]>([]);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const [totalSpots, setTotalSpots] = useState(0);
   const [totalEdits, setTotalEdits] = useState(0);
   const [totalRoutes, setTotalRoutes] = useState(0);
+  const [totalPhotos, setTotalPhotos] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [rejectType, setRejectType] = useState<'spot' | 'edit' | 'route'>('spot');
+  const [rejectType, setRejectType] = useState<'spot' | 'edit' | 'route' | 'photo'>('spot');
   const [filterType, setFilterType] = useState('');
 
   const loadPendingSpots = useCallback(async () => {
@@ -92,11 +106,21 @@ export function AdminSpotsPage() {
     }
   }, []);
 
+  const loadPendingPhotos = useCallback(async () => {
+    try {
+      const data = await apiFetch<{ items: PendingPhoto[]; total: number }>('/api/spots/photos/pending?limit=50', { auth: true });
+      setPendingPhotos(data?.items ?? []);
+      setTotalPhotos(data?.total ?? 0);
+    } catch (err) {
+      console.error('loadPendingPhotos:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAdmin) return;
     setLoading(true);
-    Promise.all([loadPendingSpots(), loadPendingEdits(), loadPendingRoutes()]).finally(() => setLoading(false));
-  }, [isAdmin, loadPendingSpots, loadPendingEdits, loadPendingRoutes]);
+    Promise.all([loadPendingSpots(), loadPendingEdits(), loadPendingRoutes(), loadPendingPhotos()]).finally(() => setLoading(false));
+  }, [isAdmin, loadPendingSpots, loadPendingEdits, loadPendingRoutes, loadPendingPhotos]);
 
   const approveSpot = async (id: string) => {
     setActionLoading(id);
@@ -180,6 +204,37 @@ export function AdminSpotsPage() {
       setTotalRoutes((n) => n - 1);
     } catch (err) {
       console.error('rejectRoute:', err);
+    } finally {
+      setActionLoading(null);
+      setRejectId(null);
+      setRejectReason('');
+    }
+  };
+
+  const approvePhoto = async (spotId: string, photoId: string) => {
+    setActionLoading(photoId);
+    try {
+      await apiFetch(`/api/spots/${spotId}/photos/${photoId}/approve`, { method: 'PATCH', auth: true });
+      setPendingPhotos((p) => p.filter((ph) => ph.photo._id !== photoId));
+      setTotalPhotos((n) => n - 1);
+    } catch (err) {
+      console.error('approvePhoto:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const rejectPhoto = async (spotId: string, photoId: string, reason: string) => {
+    setActionLoading(photoId);
+    try {
+      await apiFetch(`/api/spots/${spotId}/photos/${photoId}/reject`, {
+        method: 'PATCH', auth: true,
+        body: JSON.stringify({ reason: reason || undefined }),
+      });
+      setPendingPhotos((p) => p.filter((ph) => ph.photo._id !== photoId));
+      setTotalPhotos((n) => n - 1);
+    } catch (err) {
+      console.error('rejectPhoto:', err);
     } finally {
       setActionLoading(null);
       setRejectId(null);
@@ -283,6 +338,24 @@ export function AdminSpotsPage() {
           {totalRoutes > 0 && (
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-grade-hard px-1.5 text-[10px] font-bold text-white">
               {totalRoutes}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setTab('photos')}
+          className={cn(
+            'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all',
+            tab === 'photos'
+              ? 'bg-surface text-text-primary shadow-soft'
+              : 'text-text-secondary hover:text-text-primary',
+          )}
+          type="button"
+        >
+          <ImagePlus className="h-4 w-4" />
+          {t('admin.tab_photos')}
+          {totalPhotos > 0 && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-type-indoor px-1.5 text-[10px] font-bold text-white">
+              {totalPhotos}
             </span>
           )}
         </button>
@@ -524,6 +597,79 @@ export function AdminSpotsPage() {
         )
       )}
 
+      {/* Tab photos */}
+      {!loading && tab === 'photos' && (
+        pendingPhotos.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-16 text-center">
+            <Check className="mb-3 h-10 w-10 text-grade-easy/30" />
+            <p className="text-sm font-medium text-text-secondary">{t('admin.no_pending_photos')}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pendingPhotos.map(({ spotId, spotName, photo }) => {
+              const isLoading = actionLoading === photo._id;
+              return (
+                <div
+                  key={photo._id}
+                  className="overflow-hidden rounded-xl border border-border-subtle bg-surface shadow-soft transition-shadow hover:shadow-card"
+                >
+                  <img
+                    src={photo.url}
+                    alt={spotName}
+                    className="h-48 w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-type-indoor/10 text-type-indoor">
+                        <ImagePlus className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-text-primary">{spotName}</h3>
+                        {photo.uploadedBy && (
+                          <p className="mt-0.5 text-[11px] text-text-secondary/60">
+                            {t('admin.proposed_by')}{' '}
+                            <Link
+                              to={`/profile?id=${photo.uploadedBy.uid}`}
+                              className="font-medium text-sage no-underline hover:underline"
+                            >
+                              {photo.uploadedBy.displayName}
+                            </Link>
+                            {photo.createdAt && (
+                              <>{' '}&middot; {new Date(photo.createdAt).toLocaleDateString()}</>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-2 border-t border-border-subtle/50 pt-3">
+                      <button
+                        onClick={() => approvePhoto(spotId, photo._id)}
+                        disabled={isLoading}
+                        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg bg-sage px-3 text-xs font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50 active:scale-95"
+                        type="button"
+                      >
+                        {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                        {t('admin.approve')}
+                      </button>
+                      <button
+                        onClick={() => { setRejectId(`${spotId}|${photo._id}`); setRejectType('photo'); }}
+                        disabled={isLoading}
+                        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-border-subtle px-3 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-2 disabled:opacity-50 active:scale-95"
+                        type="button"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        {t('admin.reject')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      )}
+
       {/* Reject modal */}
       {rejectId && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => setRejectId(null)}>
@@ -551,7 +697,10 @@ export function AdminSpotsPage() {
                 onClick={() => {
                   if (rejectType === 'spot') rejectSpot(rejectId, rejectReason);
                   else if (rejectType === 'route') rejectRoute(rejectId, rejectReason);
-                  else rejectEdit(rejectId, rejectReason);
+                  else if (rejectType === 'photo') {
+                    const [sId, pId] = rejectId.split('|');
+                    rejectPhoto(sId, pId, rejectReason);
+                  } else rejectEdit(rejectId, rejectReason);
                 }}
                 className="cursor-pointer rounded-lg bg-grade-expert px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-grade-expert/90"
                 type="button"

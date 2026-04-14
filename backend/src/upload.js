@@ -26,6 +26,15 @@ const routeImageStorage = new CloudinaryStorage({
   },
 });
 
+const avatarStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "zonedegrimpe/avatars",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation: [{ width: 512, height: 512, crop: "fill", gravity: "face", quality: "auto:good" }],
+  },
+});
+
 const fileFilter = (_, file, cb) => {
   const allowed = ["image/jpeg", "image/png", "image/webp"];
   if (allowed.includes(file.mimetype)) cb(null, true);
@@ -41,6 +50,12 @@ export const upload = multer({
 export const uploadRouteImage = multer({
   storage: routeImageStorage,
   limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter,
+});
+
+export const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter,
 });
 

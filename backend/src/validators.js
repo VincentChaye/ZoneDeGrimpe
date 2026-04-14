@@ -4,6 +4,16 @@ import { z } from "zod";
 const lon = z.number().min(-180).max(180);
 const lat = z.number().min(-90).max(90);
 
+/** Photo d'un spot */
+export const photoSchema = z.object({
+  _id      : z.string().optional(),
+  url      : z.string().url(),
+  publicId : z.string().optional(),
+  uploadedBy: z.object({ uid: z.string(), displayName: z.string() }).optional(),
+  createdAt : z.coerce.date().optional(),
+  status   : z.enum(["pending", "approved", "rejected"]).optional(),
+});
+
 /** Point GeoJSON : { type:"Point", coordinates:[lng,lat] } */
 export const pointSchema = z.object({
   type: z.literal("Point"),
@@ -35,6 +45,8 @@ export const createSpotSchema = z.object({
     rock       : z.string().max(50).nullable().optional(),
     orientation: z.string().max(10).nullable().optional(),
   }).nullable().optional(),
+  // photos : champ en lecture seule via PATCH — les photos passent par /api/spots/:id/photos
+  photos     : z.array(photoSchema).max(20).optional(),
 });
 
 /** Username unique (3-30 chars, alphanum + underscore) */
@@ -62,6 +74,7 @@ export const updateSpotSchema = z.object({
     rock       : z.string().max(50).nullable().optional(),
     orientation: z.string().max(10).nullable().optional(),
   }).nullable().optional(),
+  // photos intentionnellement absent : les modifs passent par /api/spots/:id/photos
 }).refine(
   (data) => Object.keys(data).length > 0,
   { message: "Au moins un champ doit être fourni pour la mise à jour" }

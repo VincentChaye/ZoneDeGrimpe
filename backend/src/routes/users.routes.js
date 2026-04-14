@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { requireAuth, requireAdmin } from "../auth.js";
+import { uploadAvatar, cloudinary } from "../upload.js";
 
 export function usersRouter(db) {
   const r = Router();
@@ -80,12 +81,7 @@ export function usersRouter(db) {
         }
         $set.displayName = body.displayName.trim();
       }
-      if (body.avatarUrl !== undefined) {
-        if (body.avatarUrl !== null && typeof body.avatarUrl !== "string") {
-          return res.status(400).json({ error: "invalid_payload", detail: "avatarUrl must be string or null" });
-        }
-        $set.avatarUrl = body.avatarUrl === "" ? null : body.avatarUrl;
-      }
+      // avatarUrl intentionnellement ignoré : passer par POST /api/users/me/avatar
       if (body.phone !== undefined) {
         if (body.phone !== null && typeof body.phone !== "string") {
           return res.status(400).json({ error: "invalid_payload", detail: "phone must be string or null" });
@@ -155,6 +151,61 @@ export function usersRouter(db) {
       return res.json(user);
     } catch (e) {
       console.error(e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // --- POST /api/users/me/avatar --- Upload avatar via Cloudinary
+  r.post("/me/avatar", requireAuth, (req, res, next) => {
+    uploadAvatar.single("avatar")(req, res, (err) => {
+      if (err) {
+        console.error("[multer/cloudinary avatar error]", err.message);
+        return res.status(500).json({ error: "upload_failed", detail: err.message });
+      }
+      next();
+    });
+  }, async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "no_file" });
+    try {
+      const uid = new ObjectId(req.auth.uid);
+      const current = await users.findOne({ _id: uid }, { projection: { avatarPublicId: 1 } });
+
+      // Supprimer l'ancienne si elle existe dans Cloudinary
+      if (current?.avatarPublicId) {
+        await cloudinary.uploader.destroy(current.avatarPublicId).catch(() => {});
+      }
+
+      await users.updateOne(
+        { _id: uid },
+        { $set: { avatarUrl: req.file.path, avatarPublicId: req.file.filename, "security.updatedAt": new Date() } }
+      );
+
+      const updated = await users.findOne({ _id: uid }, { projection: { passwordHash: 0 } });
+      return res.json(updated);
+    } catch (e) {
+      console.error("[POST /users/me/avatar]", e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // --- DELETE /api/users/me/avatar --- Supprimer avatar
+  r.delete("/me/avatar", requireAuth, async (req, res) => {
+    try {
+      const uid = new ObjectId(req.auth.uid);
+      const current = await users.findOne({ _id: uid }, { projection: { avatarPublicId: 1 } });
+
+      if (current?.avatarPublicId) {
+        await cloudinary.uploader.destroy(current.avatarPublicId).catch(() => {});
+      }
+
+      await users.updateOne(
+        { _id: uid },
+        { $unset: { avatarUrl: "", avatarPublicId: "" }, $set: { "security.updatedAt": new Date() } }
+      );
+
+      return res.json({ ok: true });
+    } catch (e) {
+      console.error("[DELETE /users/me/avatar]", e);
       return res.status(500).json({ error: "server_error" });
     }
   });
@@ -382,11 +433,7 @@ function sanitizePartialUpdate(body = {}, isAdmin = false) {
     if (!isAdmin) throw new Error("Forbidden: only admin can change emailVerified");
     set.emailVerified = !!body.emailVerified;
   }
-  if (body.avatarUrl !== undefined) {
-    if (body.avatarUrl !== null && typeof body.avatarUrl !== "string") throw new Error("Invalid 'avatarUrl'");
-    if (body.avatarUrl && !/^https?:\/\/.+/.test(body.avatarUrl)) throw new Error("Invalid 'avatarUrl': must be http(s) URL");
-    set.avatarUrl = body.avatarUrl;
-  }
+  // avatarUrl intentionnellement ignoré : passer par POST /api/users/me/avatar
   if (body.phone !== undefined) {
     if (body.phone !== null && typeof body.phone !== "string") throw new Error("Invalid 'phone'");
     set.phone = body.phone;

@@ -10,11 +10,7 @@ export function logbookRouter(db) {
   const users = db.collection("users");
   const friendships = db.collection("friendships");
 
-  // Indexes
-  logbook.createIndex({ userId: 1, date: -1 }).catch(() => {});
-  logbook.createIndex({ userId: 1, spotId: 1 }).catch(() => {});
-
-  const VALID_STYLES = ["onsight", "flash", "redpoint", "repeat"];
+const VALID_STYLES = ["onsight", "flash", "redpoint", "repeat"];
 
   // --- GET /api/logbook --- mes entrees (requireAuth)
   // Query params optionnels : spotId, limit, skip

@@ -57,11 +57,51 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
 
   /* ---------- Photo carousel ---------- */
   const [photoIdx, setPhotoIdx] = useState(0);
-  const hasPhotos = spot.photos.length > 0;
-  const photoCount = spot.photos.length;
+  // Photos locales : approved du backend + photos pending ajoutées dans cette session
+  const [localPhotos, setLocalPhotos] = useState(spot.photos);
+  const hasPhotos = localPhotos.length > 0;
+  const photoCount = localPhotos.length;
 
   const prevPhoto = () => setPhotoIdx((i) => (i - 1 + photoCount) % photoCount);
   const nextPhoto = () => setPhotoIdx((i) => (i + 1) % photoCount);
+
+  /* ---------- Photo upload ---------- */
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const meId = useAuthStore.getState().user?._id;
+
+  const handleUploadPhoto = async (file: File) => {
+    setUploadingPhoto(true);
+    try {
+      const form = new FormData();
+      form.append('photo', file);
+      const result = await apiFetch<{ ok: boolean; photo: import('@/types').SpotPhoto }>(
+        `/api/spots/${spot.id}/photos`,
+        { method: 'POST', auth: true, body: form }
+      );
+      setLocalPhotos((prev) => [...prev, result.photo]);
+      setPhotoIdx(localPhotos.length); // afficher la nouvelle photo
+      if (result.photo.status === 'pending') {
+        toast.success(t('toast.photo_pending'));
+      } else {
+        toast.success(t('toast.photos_added', { count: 1 }));
+      }
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string, idx: number) => {
+    try {
+      await apiFetch(`/api/spots/${spot.id}/photos/${photoId}`, { method: 'DELETE', auth: true });
+      setLocalPhotos((prev) => prev.filter((p) => p._id !== photoId));
+      setPhotoIdx((i) => Math.max(0, i >= idx ? i - 1 : i));
+      toast.success(t('toast.photo_deleted'));
+    } catch {
+      toast.error(t('common.error'));
+    }
+  };
 
   /* ---------- Bookmark ---------- */
   const [bookmarked, setBookmarked] = useState(false);
@@ -192,7 +232,6 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
-  const meId = useAuthStore.getState().user?._id;
 
   useEffect(() => {
     setReviewsLoading(true);
@@ -321,7 +360,10 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   /* ---------- Reset photo index on spot change ---------- */
-  useEffect(() => { setPhotoIdx(0); }, [spot.id]);
+  useEffect(() => {
+    setPhotoIdx(0);
+    setLocalPhotos(spot.photos);
+  }, [spot.id, spot.photos]);
 
   return (
     <>
@@ -424,16 +466,22 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
             </div>
 
             {/* Photo carousel */}
-            {hasPhotos && (
-              <div className="relative px-5 pb-3">
+            <div className="px-5 pb-3">
+              {hasPhotos && (
                 <div className="relative overflow-hidden rounded-xl ring-1 ring-border-subtle/50">
                   <img
-                    src={spot.photos[photoIdx].url}
+                    src={localPhotos[photoIdx].url}
                     alt={`Photo ${photoIdx + 1} de ${spot.name}`}
                     className="h-44 w-full cursor-zoom-in object-cover transition-opacity duration-200"
                     loading="lazy"
                     onClick={() => setLightboxOpen(true)}
                   />
+                  {/* Badge pending */}
+                  {localPhotos[photoIdx].status === 'pending' && (
+                    <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-amber-500/80 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                      <Clock className="h-3 w-3" /> {t('common.pending')}
+                    </span>
+                  )}
                   <button
                     onClick={() => setLightboxOpen(true)}
                     className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
@@ -442,6 +490,19 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                   >
                     <Maximize2 className="h-3.5 w-3.5" />
                   </button>
+                  {/* Bouton supprimer (auteur ou admin) */}
+                  {isAuthenticated && localPhotos[photoIdx]._id && (
+                    (isAdmin || localPhotos[photoIdx].uploadedBy?.uid === meId)
+                  ) && (
+                    <button
+                      onClick={() => handleDeletePhoto(localPhotos[photoIdx]._id!, photoIdx)}
+                      className="absolute left-2 bottom-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600/80 text-white backdrop-blur-sm transition-colors hover:bg-red-700"
+                      type="button"
+                      title={t('common.delete')}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   {photoCount > 1 && (
                     <>
                       <button
@@ -464,26 +525,50 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
                     </>
                   )}
                 </div>
-                {/* Thumbnail strip */}
-                {photoCount > 1 && (
-                  <div className="mt-1.5 flex gap-1 overflow-x-auto scrollbar-none">
-                    {spot.photos.map((p, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPhotoIdx(i)}
-                        className={cn(
-                          'h-10 w-10 shrink-0 rounded-lg object-cover transition-all',
-                          i === photoIdx ? 'ring-2 ring-sage opacity-100' : 'opacity-50 hover:opacity-80',
-                        )}
-                        type="button"
-                      >
-                        <img src={p.url} alt="" className="h-full w-full rounded-lg object-cover" loading="lazy" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+              {/* Thumbnail strip */}
+              {photoCount > 1 && (
+                <div className="mt-1.5 flex gap-1 overflow-x-auto scrollbar-none">
+                  {localPhotos.map((p, i) => (
+                    <button
+                      key={p._id ?? i}
+                      onClick={() => setPhotoIdx(i)}
+                      className={cn(
+                        'relative h-10 w-10 shrink-0 rounded-lg object-cover transition-all',
+                        i === photoIdx ? 'ring-2 ring-sage opacity-100' : 'opacity-50 hover:opacity-80',
+                      )}
+                      type="button"
+                    >
+                      <img src={p.url} alt="" className="h-full w-full rounded-lg object-cover" loading="lazy" />
+                      {p.status === 'pending' && (
+                        <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-amber-500/40">
+                          <Clock className="h-3 w-3 text-white" />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Bouton ajouter une photo */}
+              {isAuthenticated && (
+                <label className={cn(
+                  'mt-2 flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border-subtle bg-surface px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-2',
+                  uploadingPhoto && 'pointer-events-none opacity-50',
+                )}>
+                  {uploadingPhoto
+                    ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                    : <ImagePlus className="h-4 w-4 shrink-0" />}
+                  <span>{t('spot.add_photos')}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(f); e.target.value = ''; }}
+                    disabled={uploadingPhoto}
+                  />
+                </label>
+              )}
+            </div>
 
             {/* Description */}
             {spot.description && (
@@ -988,7 +1073,7 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
         </button>
 
         <img
-          src={spot.photos[photoIdx].url}
+          src={localPhotos[photoIdx]?.url}
           alt={`Photo ${photoIdx + 1} de ${spot.name}`}
           className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
           onClick={(e) => e.stopPropagation()}

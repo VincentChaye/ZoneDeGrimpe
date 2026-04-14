@@ -123,11 +123,11 @@ export function SettingsPage() {
   const [profileForm, setProfileForm] = useState({
     displayName: '',
     username: '',
-    avatarUrl: '',
     bio: '',
     level: '',
   });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // ── Section 5: Sécurité ──
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
@@ -180,7 +180,6 @@ export function SettingsPage() {
     setProfileForm({
       displayName: user!.displayName,
       username: user!.username || '',
-      avatarUrl: user!.avatarUrl || '',
       bio: bio || '',
       level: level || 'debutant',
     });
@@ -196,7 +195,6 @@ export function SettingsPage() {
         body: JSON.stringify({
           displayName: profileForm.displayName.trim(),
           username: profileForm.username.trim().toLowerCase(),
-          avatarUrl: profileForm.avatarUrl.trim() || null,
           bio: profileForm.bio.trim() || null,
           level: profileForm.level,
         }),
@@ -204,7 +202,6 @@ export function SettingsPage() {
       updateUser({
         displayName: (data.displayName as string) || profileForm.displayName,
         username: (data.username as string) || profileForm.username,
-        avatarUrl: (data.avatarUrl as string | undefined) ?? undefined,
         profile: {
           level: profileForm.level,
           bio: profileForm.bio.trim() || undefined,
@@ -216,6 +213,34 @@ export function SettingsPage() {
       toast.error(t('common.error'));
     }
     setSavingProfile(false);
+  }
+
+  async function handleAvatarUpload(file: File) {
+    setUploadingAvatar(true);
+    try {
+      const form = new FormData();
+      form.append('avatar', file);
+      const data = await apiFetch<Record<string, unknown>>('/api/users/me/avatar', {
+        method: 'POST', auth: true, body: form,
+      });
+      updateUser({ avatarUrl: (data.avatarUrl as string | undefined) ?? undefined });
+      toast.success(t('settings.saved'));
+    } catch {
+      toast.error(t('common.error'));
+    }
+    setUploadingAvatar(false);
+  }
+
+  async function handleAvatarDelete() {
+    setUploadingAvatar(true);
+    try {
+      await apiFetch('/api/users/me/avatar', { method: 'DELETE', auth: true });
+      updateUser({ avatarUrl: undefined });
+      toast.success(t('settings.saved'));
+    } catch {
+      toast.error(t('common.error'));
+    }
+    setUploadingAvatar(false);
   }
 
   async function togglePrivate(v: boolean) {
@@ -326,31 +351,43 @@ export function SettingsPage() {
         </div>
 
         {/* Avatar preview */}
-        {editingProfile ? (
-          <div className="mb-4 flex items-center gap-3">
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border-subtle bg-surface-2">
-              {profileForm.avatarUrl ? (
-                <img src={profileForm.avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm font-bold text-sage">
-                  {(profileForm.displayName || '?')[0].toUpperCase()}
-                </div>
-              )}
-            </div>
+        {/* Avatar — toujours visible, upload via Cloudinary */}
+        <div className="mb-4 flex items-center gap-3">
+          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border-subtle bg-surface-2">
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user.displayName} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-sage">
+                {(user.displayName || '?')[0].toUpperCase()}
+              </div>
+            )}
+          </div>
+          <label className={cn(
+            'flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-2',
+            uploadingAvatar && 'pointer-events-none opacity-50',
+          )}>
+            {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+            {t('settings.change_avatar')}
             <input
-              type="url"
-              value={profileForm.avatarUrl}
-              onChange={(e) => setProfileForm((f) => ({ ...f, avatarUrl: e.target.value }))}
-              placeholder={t('settings.avatar_url_placeholder')}
-              className="flex-1 rounded-md border border-border-subtle bg-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); e.target.value = ''; }}
+              disabled={uploadingAvatar}
             />
-          </div>
-        ) : user.avatarUrl ? (
-          <div className="mb-4 flex items-center gap-3">
-            <img src={user.avatarUrl} alt={user.displayName} className="h-12 w-12 rounded-xl border border-border-subtle object-cover" />
-            <span className="text-xs text-text-secondary">{t('settings.avatar_current')}</span>
-          </div>
-        ) : null}
+          </label>
+          {user.avatarUrl && (
+            <button
+              type="button"
+              onClick={handleAvatarDelete}
+              disabled={uploadingAvatar}
+              className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-800/40 dark:hover:bg-red-900/20"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t('common.delete')}
+            </button>
+          )}
+        </div>
 
         <div className="space-y-3">
           {editingProfile ? (

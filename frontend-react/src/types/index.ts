@@ -15,7 +15,10 @@ export type NotificationType =
   | 'new_review'
   | 'spot_approved'
   | 'spot_rejected'
-  | 'new_follower';
+  | 'new_follower'
+  | 'photo_pending'
+  | 'photo_approved'
+  | 'photo_rejected';
 
 export interface UserRef {
   uid: string;
@@ -51,10 +54,13 @@ export interface Spot {
 }
 
 export interface SpotPhoto {
+  _id?: string;
   url: string;
   publicId?: string;
   uploadedBy?: UserRef;
-  uploadedAt?: string;
+  createdAt?: string;
+  /** undefined = legacy photo (toujours affichée) */
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface ClimbingRoute {
@@ -139,6 +145,7 @@ export interface AuthUser {
   displayName: string;
   username?: string;
   avatarUrl?: string;
+  avatarPublicId?: string;
   phone?: string;
   roles: string[];
   preferences?: { lang?: string };

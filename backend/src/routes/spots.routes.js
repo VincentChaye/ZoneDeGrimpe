@@ -4,6 +4,7 @@ import { createSpotSchema, updateSpotSchema } from "../validators.js";
 import { requireAuth, requireAdmin } from "../auth.js";
 import { createNotification } from "../notifications.js";
 import { getDisplayName } from "../helpers.js";
+import { upload, cloudinary } from "../upload.js";
 
 export function spotsRouter(db) {
   const r = Router();
@@ -126,6 +127,49 @@ export function spotsRouter(db) {
     try {
       const count = await spots.countDocuments(PUBLIC_FILTER);
       res.json({ count });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
+  // GET /photos/pending — Photos en attente de modération (admin)
+  // ================================================================
+  r.get("/photos/pending", requireAdmin, async (req, res) => {
+    try {
+      const limit = Math.max(1, Math.min(parseInt(req.query.limit, 10) || 50, 200));
+      const skip  = Math.max(0, parseInt(req.query.skip, 10) || 0);
+
+      const pipeline = [
+        { $match: { "photos.status": "pending" } },
+        { $unwind: "$photos" },
+        { $match: { "photos.status": "pending" } },
+        { $sort: { "photos.createdAt": -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $project: {
+            spotId: { $toString: "$_id" },
+            spotName: "$name",
+            photo: "$photos",
+          },
+        },
+      ];
+
+      const countPipeline = [
+        { $match: { "photos.status": "pending" } },
+        { $unwind: "$photos" },
+        { $match: { "photos.status": "pending" } },
+        { $count: "total" },
+      ];
+
+      const [items, countResult] = await Promise.all([
+        spots.aggregate(pipeline).toArray(),
+        spots.aggregate(countPipeline).toArray(),
+      ]);
+
+      res.json({ items, total: countResult[0]?.total ?? 0, limit, skip });
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: "server_error" });
@@ -309,6 +353,184 @@ export function spotsRouter(db) {
   });
 
   // ================================================================
+  // POST /:id/photos — Uploader une photo sur un spot (tout user connecté)
+  // Admin → approved ; User → pending (modération)
+  // ================================================================
+  r.post("/:id/photos", requireAuth, (req, res, next) => {
+    upload.single("photo")(req, res, (err) => {
+      if (err) {
+        console.error("[multer/cloudinary upload error]", err.message);
+        return res.status(500).json({ error: "upload_failed", detail: err.message });
+      }
+      next();
+    });
+  }, async (req, res) => {
+    if (!ObjectId.isValid(req.params.id)) {
+      if (req.file) await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
+      return res.status(400).json({ error: "bad_id" });
+    }
+    if (!req.file) return res.status(400).json({ error: "no_file" });
+
+    try {
+      const spot = await spots.findOne({ _id: new ObjectId(req.params.id), ...PUBLIC_FILTER });
+      if (!spot) {
+        await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
+        return res.status(404).json({ error: "not_found" });
+      }
+
+      const isAdmin = req.auth.roles?.includes("admin");
+      const displayName = await getDisplayName(users, req.auth.uid);
+
+      const photo = {
+        _id: new ObjectId(),
+        url: req.file.path,
+        publicId: req.file.filename,
+        uploadedBy: { uid: req.auth.uid, displayName },
+        createdAt: new Date(),
+        status: isAdmin ? "approved" : "pending",
+      };
+
+      await spots.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $push: { photos: photo } }
+      );
+
+      if (!isAdmin) {
+        // Chercher les admins pour notifier (best-effort)
+        const adminUsers = await users.find({ roles: "admin" }, { projection: { _id: 1 } }).limit(10).toArray();
+        for (const admin of adminUsers) {
+          createNotification(db, {
+            userId: admin._id.toString(),
+            type: "photo_pending",
+            fromUserId: req.auth.uid,
+            fromUsername: displayName,
+            data: { spotId: spot._id.toString(), spotName: spot.name },
+            message: `Nouvelle photo en attente pour "${spot.name}"`,
+          }).catch(() => {});
+        }
+      }
+
+      res.status(201).json({ ok: true, photo });
+    } catch (e) {
+      console.error("[POST /spots/:id/photos]", e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
+  // PATCH /:id/photos/:photoId/approve — Approuver une photo (admin)
+  // ================================================================
+  r.patch("/:id/photos/:photoId/approve", requireAdmin, async (req, res) => {
+    if (!ObjectId.isValid(req.params.id) || !ObjectId.isValid(req.params.photoId)) {
+      return res.status(400).json({ error: "bad_id" });
+    }
+    try {
+      const photoOid = new ObjectId(req.params.photoId);
+      const result = await spots.findOneAndUpdate(
+        { _id: new ObjectId(req.params.id), "photos._id": photoOid },
+        { $set: { "photos.$[p].status": "approved" } },
+        { arrayFilters: [{ "p._id": photoOid }], returnDocument: "after" }
+      );
+      if (!result) return res.status(404).json({ error: "not_found" });
+
+      // Notifier l'uploader
+      const photo = result.photos?.find((p) => p._id?.toString() === req.params.photoId);
+      if (photo?.uploadedBy?.uid) {
+        createNotification(db, {
+          userId: photo.uploadedBy.uid,
+          type: "photo_approved",
+          fromUserId: req.auth.uid,
+          fromUsername: await getDisplayName(users, req.auth.uid),
+          data: { spotId: result._id.toString(), spotName: result.name },
+          message: `Votre photo pour "${result.name}" a été approuvée !`,
+        }).catch(() => {});
+      }
+
+      res.json({ ok: true });
+    } catch (e) {
+      console.error("[PATCH /spots/:id/photos/:photoId/approve]", e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
+  // PATCH /:id/photos/:photoId/reject — Rejeter une photo (admin)
+  // ================================================================
+  r.patch("/:id/photos/:photoId/reject", requireAdmin, async (req, res) => {
+    if (!ObjectId.isValid(req.params.id) || !ObjectId.isValid(req.params.photoId)) {
+      return res.status(400).json({ error: "bad_id" });
+    }
+    try {
+      const { reason } = req.body || {};
+      const photoOid = new ObjectId(req.params.photoId);
+
+      const spot = await spots.findOne({ _id: new ObjectId(req.params.id) });
+      if (!spot) return res.status(404).json({ error: "not_found" });
+
+      const photo = spot.photos?.find((p) => p._id?.toString() === req.params.photoId);
+      if (!photo) return res.status(404).json({ error: "photo_not_found" });
+
+      // Cleanup Cloudinary
+      if (photo.publicId) await cloudinary.uploader.destroy(photo.publicId).catch(() => {});
+
+      await spots.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $pull: { photos: { _id: photoOid } } }
+      );
+
+      if (photo.uploadedBy?.uid) {
+        createNotification(db, {
+          userId: photo.uploadedBy.uid,
+          type: "photo_rejected",
+          fromUserId: req.auth.uid,
+          fromUsername: await getDisplayName(users, req.auth.uid),
+          data: { spotId: spot._id.toString(), spotName: spot.name, reason: reason || null },
+          message: `Votre photo pour "${spot.name}" a été refusée.${reason ? ` Raison : ${reason}` : ""}`,
+        }).catch(() => {});
+      }
+
+      res.json({ ok: true });
+    } catch (e) {
+      console.error("[PATCH /spots/:id/photos/:photoId/reject]", e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
+  // DELETE /:id/photos/:photoId — Supprimer une photo (auteur ou admin)
+  // ================================================================
+  r.delete("/:id/photos/:photoId", requireAuth, async (req, res) => {
+    if (!ObjectId.isValid(req.params.id) || !ObjectId.isValid(req.params.photoId)) {
+      return res.status(400).json({ error: "bad_id" });
+    }
+    try {
+      const photoOid = new ObjectId(req.params.photoId);
+      const spot = await spots.findOne({ _id: new ObjectId(req.params.id) });
+      if (!spot) return res.status(404).json({ error: "not_found" });
+
+      const photo = spot.photos?.find((p) => p._id?.toString() === req.params.photoId);
+      if (!photo) return res.status(404).json({ error: "photo_not_found" });
+
+      const isAdmin = req.auth.roles?.includes("admin");
+      if (photo.uploadedBy?.uid !== req.auth.uid && !isAdmin) {
+        return res.status(403).json({ error: "forbidden" });
+      }
+
+      if (photo.publicId) await cloudinary.uploader.destroy(photo.publicId).catch(() => {});
+
+      await spots.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $pull: { photos: { _id: photoOid } } }
+      );
+
+      res.json({ ok: true });
+    } catch (e) {
+      console.error("[DELETE /spots/:id/photos/:photoId]", e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // ================================================================
   // DELETE /:id — Supprimer un spot (admin uniquement)
   // ================================================================
   r.delete("/:id", requireAdmin, async (req, res) => {
@@ -316,6 +538,12 @@ export function spotsRouter(db) {
       return res.status(400).json({ error: "bad_id" });
     }
     try {
+      const doc = await spots.findOne({ _id: new ObjectId(req.params.id) });
+      if (doc?.photos?.length) {
+        await Promise.allSettled(
+          doc.photos.filter((p) => p.publicId).map((p) => cloudinary.uploader.destroy(p.publicId))
+        );
+      }
       const result = await spots.deleteOne({ _id: new ObjectId(req.params.id) });
       res.json({ deleted: result.deletedCount === 1 });
     } catch (e) {
@@ -354,7 +582,7 @@ function toFlat(d) {
     acces: d.acces ?? null,
     equipement: d.equipement ?? null,
     hauteur: d.hauteur ?? null,
-    photos: d.photos ?? [],
+    photos: (d.photos ?? []).filter((p) => !p.status || p.status === "approved"),
   };
 }
 
@@ -383,7 +611,7 @@ function toFeature(d) {
       acces: d.acces ?? null,
       equipement: d.equipement ?? null,
       hauteur: d.hauteur ?? null,
-      photos: d.photos ?? [],
+      photos: (d.photos ?? []).filter((p) => !p.status || p.status === "approved"),
     },
   };
 }

@@ -21,11 +21,7 @@ export function climbingRoutesRouter(db) {
   const spots = db.collection("climbing_spot");
   const users = db.collection("users");
 
-  // Indexes
-  routes.createIndex({ spotId: 1 }).catch(() => {});
-  routes.createIndex({ status: 1 }).catch(() => {});
-
-  // GET /api/climbing-routes/pending — Voies en attente (admin)
+// GET /api/climbing-routes/pending — Voies en attente (admin)
   r.get("/pending", requireAdmin, async (req, res) => {
     try {
       const { limit = 50, skip = 0 } = req.query;

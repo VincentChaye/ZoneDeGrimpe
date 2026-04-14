@@ -8,12 +8,7 @@ export function reviewsRouter(db) {
   const spots = db.collection("climbing_spot");
   const users = db.collection("users");
 
-  // Indexes
-  reviews.createIndex({ spotId: 1, userId: 1 }, { unique: true }).catch(() => {});
-  reviews.createIndex({ spotId: 1, createdAt: -1 }).catch(() => {});
-  reviews.createIndex({ userId: 1, createdAt: -1 }).catch(() => {});
-
-  /** Recalcule avgRating + reviewCount sur le spot */
+/** Recalcule avgRating + reviewCount sur le spot */
   async function recalcSpotRating(spotId) {
     const pipeline = [
       { $match: { spotId } },

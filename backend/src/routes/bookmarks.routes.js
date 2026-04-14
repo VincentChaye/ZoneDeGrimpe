@@ -7,10 +7,7 @@ export function bookmarksRouter(db) {
   const bookmarks = db.collection("user_bookmarks");
   const spots = db.collection("climbing_spot");
 
-  // Index unique pour éviter les doublons
-  bookmarks.createIndex({ uid: 1, spotId: 1 }, { unique: true }).catch(() => {});
-
-  // GET /api/bookmarks — Liste des bookmarks de l'utilisateur
+// GET /api/bookmarks — Liste des bookmarks de l'utilisateur
   r.get("/", requireAuth, async (req, res) => {
     try {
       const docs = await bookmarks

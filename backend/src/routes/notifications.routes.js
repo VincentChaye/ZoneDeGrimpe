@@ -6,10 +6,6 @@ export function notificationsRouter(db) {
   const r = Router();
   const notifications = db.collection("notifications");
 
-  // Indexes
-  notifications.createIndex({ userId: 1, read: 1, createdAt: -1 }).catch(() => {});
-  notifications.createIndex({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 3600 }).catch(() => {});
-
   // GET /api/notifications — paginated list
   r.get("/", requireAuth, async (req, res) => {
     try {
