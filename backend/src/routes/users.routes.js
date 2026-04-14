@@ -248,23 +248,21 @@ export function usersRouter(db) {
       );
       if (!doc) return res.status(404).json({ error: "not_found" });
 
-      // Compter les spots proposés par cet utilisateur
       const spots = db.collection("climbing_spot");
-      const spotsCount = await spots.countDocuments({
-        $or: [
-          { "createdBy.uid": uid },
-          { "submittedBy.uid": uid },
-        ],
-        status: { $nin: ["pending", "rejected"] },
-      });
+      const follows = db.collection("follows");
+      const friendships = db.collection("friendships");
 
-      const spotsApproved = await spots.countDocuments({
-        $or: [
-          { "createdBy.uid": uid },
-          { "submittedBy.uid": uid },
-        ],
-        status: "approved",
-      });
+      const [spotsCount, followersCount, friendsCount] = await Promise.all([
+        spots.countDocuments({
+          $or: [{ "createdBy.uid": uid }, { "submittedBy.uid": uid }],
+          status: { $nin: ["pending", "rejected"] },
+        }),
+        follows.countDocuments({ followingId: uid }),
+        friendships.countDocuments({
+          $or: [{ requesterId: uid }, { addresseeId: uid }],
+          status: "accepted",
+        }),
+      ]);
 
       return res.json({
         _id: doc._id,
@@ -276,7 +274,8 @@ export function usersRouter(db) {
         memberSince: doc.security?.createdAt || null,
         stats: {
           spotsContributed: spotsCount,
-          spotsApproved: spotsApproved,
+          followersCount,
+          friendsCount,
         },
       });
     } catch (e) {

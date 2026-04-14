@@ -3,8 +3,8 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  MapPin, CheckCircle2, Crown, Calendar, Loader2, ArrowLeft,
-  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star,
+  MapPin, Crown, Calendar, Loader2, ArrowLeft,
+  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star, Heart,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -47,7 +47,8 @@ interface PublicProfile {
   memberSince: string;
   stats: {
     spotsContributed: number;
-    spotsApproved: number;
+    followersCount: number;
+    friendsCount: number;
   };
 }
 
@@ -226,20 +227,27 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-px border-t border-border-subtle bg-border-subtle">
-          <div className="flex flex-col items-center gap-1 bg-surface px-4 py-5">
-            <div className="flex items-center gap-1.5 text-sage">
-              <MapPin className="h-4 w-4" />
-              <span className="font-heading text-2xl font-bold">{profile.stats.spotsContributed}</span>
+        <div className="grid grid-cols-3 gap-px border-t border-border-subtle bg-border-subtle">
+          <div className="flex flex-col items-center gap-1 bg-surface px-3 py-4">
+            <div className="flex items-center gap-1 text-sage">
+              <MapPin className="h-3.5 w-3.5" />
+              <span className="font-heading text-xl font-bold">{profile.stats.spotsContributed}</span>
             </div>
-            <span className="text-xs font-medium text-text-secondary">{t('profile.spots_contributed')}</span>
+            <span className="text-center text-[10px] font-medium leading-tight text-text-secondary">{t('profile.spots_contributed')}</span>
           </div>
-          <div className="flex flex-col items-center gap-1 bg-surface px-4 py-5">
-            <div className="flex items-center gap-1.5 text-grade-easy">
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="font-heading text-2xl font-bold">{profile.stats.spotsApproved}</span>
+          <div className="flex flex-col items-center gap-1 bg-surface px-3 py-4">
+            <div className="flex items-center gap-1 text-amber-brand">
+              <Users className="h-3.5 w-3.5" />
+              <span className="font-heading text-xl font-bold">{profile.stats.followersCount}</span>
             </div>
-            <span className="text-xs font-medium text-text-secondary">{t('profile.spots_approved')}</span>
+            <span className="text-center text-[10px] font-medium leading-tight text-text-secondary">{t('profile.followers_count')}</span>
+          </div>
+          <div className="flex flex-col items-center gap-1 bg-surface px-3 py-4">
+            <div className="flex items-center gap-1 text-grade-hard">
+              <Heart className="h-3.5 w-3.5" />
+              <span className="font-heading text-xl font-bold">{profile.stats.friendsCount}</span>
+            </div>
+            <span className="text-center text-[10px] font-medium leading-tight text-text-secondary">{t('profile.friends_count')}</span>
           </div>
         </div>
       </div>
