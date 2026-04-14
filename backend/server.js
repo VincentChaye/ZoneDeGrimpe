@@ -28,6 +28,7 @@ const app = express();
 const httpServer = http.createServer(app);
 
 // --- Sécurité : désactiver X-Powered-By + headers de sécurité
+app.set("trust proxy", 1); // Render / reverse-proxy envoie X-Forwarded-For
 app.disable("x-powered-by");
 app.use(helmet({
   crossOriginResourcePolicy: false, // désactivé : géré par CORS
@@ -131,8 +132,6 @@ if (hasUri) {
   initSocketIO(httpServer, db);
 
   console.log("MongoDB mode activé");
-  console.log("[email] RESEND_API_KEY:", process.env.RESEND_API_KEY ? "SET (" + process.env.RESEND_API_KEY.slice(0, 8) + "...)" : "MISSING");
-  console.log("[email] EMAIL_FROM:", process.env.EMAIL_FROM || "NOT SET (fallback onboarding@resend.dev)");
 } else {
   // Fallback sans DB
   app.get("/api/spots", (_, res) => res.json({ type: "FeatureCollection", features: [] }));
