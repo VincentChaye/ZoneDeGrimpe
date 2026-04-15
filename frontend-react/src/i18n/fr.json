@@ -138,7 +138,7 @@
   "review.placeholder": "Partage ton experience sur ce spot...",
   "review.comment_placeholder": "Partage ton experience...",
   "review.stars": "{{count}} etoile(s)",
-  "review.avg": "{avg}/5",
+  "review.avg": "{{avg}}/5",
   "review.count": "{{count}} avis",
 
   "logbook.title": "Carnet de grimpe",
@@ -182,12 +182,12 @@
   "notif.mark_read": "Marquer comme lu",
   "notif.mark_all_read": "Tout marquer comme lu",
   "notif.no_notifications": "Aucune notification.",
-  "notif.friend_request": "{user} vous a envoye une demande d'amitie",
-  "notif.friend_accepted": "{user} a accepte votre demande d'amitie",
-  "notif.new_review": "{user} a laisse un avis sur {spot}",
-  "notif.spot_approved": "Votre spot \"{spot}\" a ete approuve",
-  "notif.spot_rejected": "Votre spot \"{spot}\" a ete refuse",
-  "notif.new_follower": "{user} vous suit maintenant",
+  "notif.friend_request": "{{user}} vous a envoye une demande d'amitie",
+  "notif.friend_accepted": "{{user}} a accepte votre demande d'amitie",
+  "notif.new_review": "{{user}} a laisse un avis sur {{spot}}",
+  "notif.spot_approved": "Votre spot \"{{spot}}\" a ete approuve",
+  "notif.spot_rejected": "Votre spot \"{{spot}}\" a ete refuse",
+  "notif.new_follower": "{{user}} vous suit maintenant",
   "notif.enable_push": "Activer les notifications push",
 
   "profile.public": "Profil public",
@@ -228,7 +228,7 @@
   "spot.share": "Partager",
   "spot.sheet": "Fiche",
   "spot.delete_spot": "Supprimer ce spot",
-  "spot.delete_confirm": "Supprimer le spot \"{name}\" ? Cette action est irreversible.",
+  "spot.delete_confirm": "Supprimer le spot \"{{name}}\" ? Cette action est irreversible.",
   "spot.add_photos": "Ajouter des photos",
   "spot.photos_fullscreen": "Voir en plein ecran",
   "spot.route_count": "{{count}} voie(s)",
@@ -296,7 +296,7 @@
   "toast.max_photos": "Maximum 5 photos par upload.",
   "toast.login_required": "Tu dois etre connecte.",
 
-  "share.text": "Decouvre ce spot de grimpe : {name}",
+  "share.text": "Decouvre ce spot de grimpe : {{name}}",
   "share.copied": "Lien copie dans le presse-papier !",
   "share.link": "Lien du spot",
 
@@ -475,7 +475,7 @@
   "admin.promote_admin": "Promouvoir admin",
   "admin.unban": "Debannir",
   "admin.ban": "Bannir",
-  "admin.delete_user_confirm": "Supprimer definitivement {name} ?",
+  "admin.delete_user_confirm": "Supprimer definitivement {{name}} ?",
 
   "feed.title": "Fil d'activite",
   "feed.subtitle": "L'activite recente de vos amis et abonnements",
@@ -493,7 +493,7 @@
   "feed.filter_spots": "Spots",
 
   "time.just_now": "a l'instant",
-  "time.minutes_ago": "il y a {{{count}}} min",
+  "time.minutes_ago": "il y a {{count}} min",
   "time.hours_ago": "il y a {{count}}h",
   "time.yesterday": "hier",
   "time.days_ago": "il y a {{count}}j",

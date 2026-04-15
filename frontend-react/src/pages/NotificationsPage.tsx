@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Bell, UserPlus, UserCheck, Star, CheckCircle, XCircle, Users, Loader2, CheckCheck, ImagePlus,
@@ -7,7 +7,27 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationsStore } from '@/stores/notifications.store';
 import { cn } from '@/lib/utils';
-import type { NotificationType } from '@/types';
+import type { Notification, NotificationType } from '@/types';
+
+function getNotifLink(notif: Notification): string | null {
+  switch (notif.type) {
+    case 'friend_request':
+      return '/friends';
+    case 'friend_accepted':
+    case 'new_follower':
+      return notif.fromUserId ? `/profile?id=${notif.fromUserId}` : null;
+    case 'new_review':
+    case 'spot_approved':
+    case 'spot_rejected':
+    case 'photo_approved':
+    case 'photo_rejected':
+      return '/my-spots';
+    case 'photo_pending':
+      return '/admin/spots';
+    default:
+      return null;
+  }
+}
 
 const NOTIF_ICONS: Record<NotificationType, typeof Bell> = {
   friend_request: UserPlus,
@@ -52,6 +72,7 @@ function useRelativeDate() {
 
 export function NotificationsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const {
     notifications, loading, unreadCount,
@@ -129,7 +150,11 @@ export function NotificationsPage() {
             return (
               <button
                 key={notif._id}
-                onClick={() => { if (!notif.read) markRead(notif._id); }}
+                onClick={() => {
+                  if (!notif.read) markRead(notif._id);
+                  const link = getNotifLink(notif);
+                  if (link) navigate(link);
+                }}
                 className={cn(
                   'flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all',
                   notif.read
