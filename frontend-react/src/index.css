@@ -75,6 +75,13 @@
   --shadow-elevated: 0 14px 44px oklch(0 0 0 / 0.70);
 }
 
+/* In dark mode, --color-sage becomes gold/beige (#E3CD8B).
+   Elements using bg-sage as a background need dark text for contrast.
+   This rule sits outside @layer so it overrides Tailwind's text-white utility. */
+.dark .bg-sage {
+  color: #2C2720;
+}
+
 /* ============================================
    Base Styles
    ============================================ */
