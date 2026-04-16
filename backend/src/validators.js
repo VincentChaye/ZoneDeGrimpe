@@ -57,6 +57,58 @@ export const idParamSchema = z.object({
   id: z.string().regex(/^[a-f\d]{24}$/i, "invalid_object_id"),
 });
 
+/** Catégories de matériel */
+const GEAR_CATEGORIES = ["rope", "harness", "quickdraw", "helmet", "shoes", "nuts", "cams", "belay", "sling", "bag", "other"];
+
+/** Création d'une entrée catalogue (admin) */
+export const createMaterielSpecSchema = z.object({
+  category       : z.enum(GEAR_CATEGORIES),
+  brand          : z.string().min(1).max(100),
+  model          : z.string().min(1).max(150),
+  description    : z.string().max(1000).nullable().optional(),
+  imageUrl       : z.string().url().nullable().optional(),
+  uiaaLifetimeYears: z.number().int().positive().max(100).nullable().optional(),
+  epiTracked     : z.boolean().optional().default(true),
+});
+
+/** Mise à jour partielle d'une entrée catalogue */
+export const updateMaterielSpecSchema = z.object({
+  category       : z.enum(GEAR_CATEGORIES).optional(),
+  brand          : z.string().min(1).max(100).optional(),
+  model          : z.string().min(1).max(150).optional(),
+  description    : z.string().max(1000).nullable().optional(),
+  imageUrl       : z.string().url().nullable().optional(),
+  uiaaLifetimeYears: z.number().int().positive().max(100).nullable().optional(),
+  epiTracked     : z.boolean().optional(),
+}).refine((d) => Object.keys(d).length > 0, { message: "Au moins un champ requis" });
+
+/** Ajout d'un item dans l'inventaire perso */
+export const createUserMaterielSchema = z.object({
+  specId       : z.string().regex(/^[a-f\d]{24}$/i).nullable().optional(),
+  category     : z.enum(GEAR_CATEGORIES).optional(),    // obligatoire si pas de specId
+  customName   : z.string().min(1).max(200).nullable().optional(),
+  brand        : z.string().max(100).nullable().optional(),
+  model        : z.string().max(150).nullable().optional(),
+  photoUrl     : z.string().url().nullable().optional(),
+  purchaseDate : z.coerce.date().nullable().optional(),
+  firstUseDate : z.coerce.date().nullable().optional(),
+  notes        : z.string().max(1000).nullable().optional(),
+}).refine(
+  (d) => d.specId || d.category,
+  { message: "category requis si pas de specId" }
+);
+
+/** Mise à jour partielle d'un item perso */
+export const updateUserMaterielSchema = z.object({
+  customName   : z.string().min(1).max(200).nullable().optional(),
+  brand        : z.string().max(100).nullable().optional(),
+  model        : z.string().max(150).nullable().optional(),
+  photoUrl     : z.string().url().nullable().optional(),
+  purchaseDate : z.coerce.date().nullable().optional(),
+  firstUseDate : z.coerce.date().nullable().optional(),
+  notes        : z.string().max(1000).nullable().optional(),
+}).refine((d) => Object.keys(d).length > 0, { message: "Au moins un champ requis" });
+
 /** Schema pour la mise à jour partielle d'un spot (PATCH) */
 export const updateSpotSchema = z.object({
   name       : z.string().min(1).max(120).optional(),

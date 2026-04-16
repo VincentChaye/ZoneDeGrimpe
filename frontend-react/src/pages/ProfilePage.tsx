@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
   MapPin, Crown, Calendar, Loader2, ArrowLeft,
-  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star, Heart,
+  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star, Heart, Package,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
-import type { FriendshipCheck } from '@/types';
+import type { FriendshipCheck, UserMateriel } from '@/types';
+import { GearCard } from '@/components/gear/GearCard';
 
 interface RecentAscent {
   _id: string;
@@ -77,6 +78,7 @@ export function ProfilePage() {
   // Activity sections
   const [recentAscents, setRecentAscents] = useState<RecentAscent[]>([]);
   const [recentReviews, setRecentReviews] = useState<RecentReview[]>([]);
+  const [publicGear, setPublicGear] = useState<UserMateriel[] | null>(null); // null = not accessible
 
   useEffect(() => {
     if (!userId) { setError(t('profile.id_missing')); setLoading(false); return; }
@@ -84,12 +86,14 @@ export function ProfilePage() {
       apiFetch<PublicProfile>(`/api/users/${userId}/public`),
       apiFetch<{ items: RecentAscent[] }>(`/api/logbook/user/${userId}?limit=5`).catch(() => ({ items: [] })),
       apiFetch<{ items: RecentReview[] } | RecentReview[]>(`/api/reviews/user/${userId}?limit=5`).catch(() => ({ items: [] })),
+      apiFetch<{ items: UserMateriel[] }>(`/api/user-materiel/user/${userId}`).catch(() => null),
     ])
-      .then(([profileData, logData, reviewData]) => {
+      .then(([profileData, logData, reviewData, gearData]) => {
         setProfile(profileData);
         setRecentAscents(Array.isArray(logData) ? logData : logData.items ?? []);
         const rv = Array.isArray(reviewData) ? reviewData : (reviewData as { items?: RecentReview[] }).items ?? [];
         setRecentReviews(rv);
+        setPublicGear(gearData?.items ?? null);
       })
       .catch(() => setError(t('profile.not_found')))
       .finally(() => setLoading(false));
@@ -326,6 +330,21 @@ export function ProfilePage() {
           </div>
         )}
       </section>
+
+      {/* Public gear — only shown if accessible */}
+      {publicGear !== null && publicGear.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-3 flex items-center gap-2 font-heading text-base font-bold text-text-primary">
+            <Package className="h-4 w-4 text-sage" />
+            {t('gear.public_profile_title')}
+          </h2>
+          <div className="space-y-2">
+            {publicGear.slice(0, 5).map((item) => (
+              <GearCard key={item._id} item={item} readonly />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -67,6 +67,17 @@ export async function connectToDb(uri, dbName) {
     await notifications.createIndex({ userId: 1, read: 1, createdAt: -1 }).catch(() => {});
     await notifications.createIndex({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 3600 }).catch(() => {});
 
+    // ── materiel_specs ─────────────────────────────────────────────────────
+    const materielSpecs = db.collection("materiel_specs");
+    await materielSpecs.createIndex({ category: 1 }).catch(() => {});
+    await materielSpecs.createIndex({ brand: 1, model: 1 }, { unique: true }).catch(() => {});
+
+    // ── user_materiel ──────────────────────────────────────────────────────
+    const userMaterielColl = db.collection("user_materiel");
+    await userMaterielColl.createIndex({ userId: 1, category: 1 }).catch(() => {});
+    await userMaterielColl.createIndex({ userId: 1, createdAt: -1 }).catch(() => {});
+    await userMaterielColl.createIndex({ specId: 1 }).catch(() => {});
+
     console.log(`Connecté à MongoDB (${dbName}), tous les index initialisés`);
 
     return { client, db };

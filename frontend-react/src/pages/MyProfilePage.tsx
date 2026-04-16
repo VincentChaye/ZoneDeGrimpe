@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { FriendsPage } from './FriendsPage';
 import { MySpotsPage } from './MySpotsPage';
 import { LogbookPage } from './LogbookPage';
+import { GearPage } from './GearPage';
 import { cn } from '@/lib/utils';
 
 type Tab = 'friends' | 'spots' | 'logbook' | 'gear';
@@ -117,25 +118,9 @@ export function MyProfilePage() {
         {activeTab === 'friends' && <FriendsPage />}
         {activeTab === 'spots' && <MySpotsPage />}
         {activeTab === 'logbook' && <LogbookPage />}
-        {activeTab === 'gear' && <GearPlaceholder />}
+        {activeTab === 'gear' && <GearPage />}
       </div>
     </div>
   );
 }
 
-function GearPlaceholder() {
-  const { t } = useTranslation();
-  return (
-    <div className="mx-auto max-w-lg px-4 py-16 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sage/10">
-        <Package className="h-7 w-7 text-sage" />
-      </div>
-      <h2 className="font-heading text-base font-bold text-text-primary">
-        {t('gear.coming_soon_title')}
-      </h2>
-      <p className="mt-2 text-sm text-text-secondary">
-        {t('gear.coming_soon_desc')}
-      </p>
-    </div>
-  );
-}

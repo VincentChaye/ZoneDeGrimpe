@@ -18,7 +18,46 @@ export type NotificationType =
   | 'new_follower'
   | 'photo_pending'
   | 'photo_approved'
-  | 'photo_rejected';
+  | 'photo_rejected'
+  | 'gear_epi_warning'
+  | 'gear_epi_retire';
+
+export type GearCategory =
+  | 'rope' | 'harness' | 'quickdraw' | 'helmet'
+  | 'shoes' | 'nuts' | 'cams' | 'belay' | 'sling' | 'bag' | 'other';
+
+export type GearEpiStatus = 'ok' | 'watch' | 'retire';
+export type GearVisibility = 'public' | 'friends' | 'private';
+
+export interface MaterielSpec {
+  _id: string;
+  category: GearCategory;
+  brand: string;
+  model: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  uiaaLifetimeYears?: number | null;
+  epiTracked: boolean;
+  createdAt: string;
+}
+
+export interface UserMateriel {
+  _id: string;
+  userId: string;
+  specId?: string | null;
+  category: GearCategory;
+  brand?: string | null;
+  model?: string | null;
+  customName?: string | null;
+  photoUrl?: string | null;
+  purchaseDate?: string | null;
+  firstUseDate?: string | null;
+  notes?: string | null;
+  epiStatus: GearEpiStatus | null;
+  lastEpiNotifiedStatus?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface UserRef {
   uid: string;
@@ -156,6 +195,7 @@ export interface AuthUser {
   privacy?: {
     isPrivate?: boolean;
     logbookVisibility?: 'public' | 'friends' | 'private';
+    gearVisibility?: GearVisibility;
   };
   notificationPreferences?: NotificationPreferences;
 }

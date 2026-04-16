@@ -17,6 +17,8 @@ import { followsRouter } from "./src/routes/follows.routes.js";
 import { friendsRouter } from "./src/routes/friends.routes.js";
 import { notificationsRouter } from "./src/routes/notifications.routes.js";
 import { messagesRouter } from "./src/routes/messages.routes.js";
+import { materielSpecsRouter } from "./src/routes/materiel-specs.routes.js";
+import { userMaterielRouter } from "./src/routes/user-materiel.routes.js";
 import { initWebPush } from "./src/notifications.js";
 import { initSocketIO } from "./src/socket.js";
 
@@ -124,6 +126,8 @@ if (hasUri) {
   app.use("/api/friends", friendsRouter(db));
   app.use("/api/notifications", notificationsRouter(db));
   app.use("/api/messages", messagesRouter(db));
+  app.use("/api/materiel-specs", materielSpecsRouter(db));
+  app.use("/api/user-materiel", userMaterielRouter(db));
 
   // Init Web Push (si VAPID configure)
   initWebPush();

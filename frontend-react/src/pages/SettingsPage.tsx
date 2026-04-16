@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   User, LogOut, Trash2, Shield, Pencil, Check, X,
   Sun, Moon, Globe, Eye, Loader2, Lock, Bell, Crown,
-  EyeOff, BookOpen, Bookmark, Clock, ChevronRight,
+  EyeOff, BookOpen, Bookmark, Clock, ChevronRight, Package,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -16,6 +16,7 @@ import type { NotificationPreferences } from '@/types';
 
 const LEVELS = ['debutant', 'intermediaire', 'avance'] as const;
 const LOGBOOK_VISIBILITY = ['public', 'friends', 'private'] as const;
+const GEAR_VISIBILITY = ['public', 'friends', 'private'] as const;
 
 // ─── Reusable sub-components ───────────────────────────────────────────────
 
@@ -172,6 +173,7 @@ export function SettingsPage() {
   const bio = user.profile?.bio;
   const isPrivate = user.privacy?.isPrivate ?? false;
   const logbookVisibility = user.privacy?.logbookVisibility ?? 'public';
+  const gearVisibility = user.privacy?.gearVisibility ?? 'private';
   const notifPrefs: NotificationPreferences = user.notificationPreferences ?? {};
   const quietMode = notifPrefs.quietMode ?? { enabled: false, startHour: 22, endHour: 7 };
 
@@ -251,6 +253,11 @@ export function SettingsPage() {
   async function changeLogbookVisibility(v: string) {
     updateUser({ privacy: { ...user!.privacy, logbookVisibility: v as 'public' | 'friends' | 'private' } });
     await autoPatch('logbookVisibility', { logbookVisibility: v });
+  }
+
+  async function changeGearVisibility(v: string) {
+    updateUser({ privacy: { ...user!.privacy, gearVisibility: v as 'public' | 'friends' | 'private' } });
+    await autoPatch('gearVisibility', { gearVisibility: v });
   }
 
   async function toggleNotif(key: keyof NotificationPreferences, value: boolean) {
@@ -462,6 +469,25 @@ export function SettingsPage() {
               className="h-8 cursor-pointer rounded-md border border-border-subtle bg-surface px-2.5 text-xs font-medium text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage disabled:opacity-50"
             >
               {LOGBOOK_VISIBILITY.map((v) => (
+                <option key={v} value={v}>{t(`settings.visibility_${v}`)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center justify-between gap-4 pt-3">
+            <div>
+              <p className="text-sm font-medium text-text-primary flex items-center gap-1.5">
+                <Package className="h-3.5 w-3.5 text-text-secondary" />
+                {t('settings.gear_visibility')}
+              </p>
+              <p className="text-xs text-text-secondary">{t('settings.gear_visibility_desc')}</p>
+            </div>
+            <select
+              value={gearVisibility}
+              onChange={(e) => changeGearVisibility(e.target.value)}
+              disabled={!!savingField}
+              className="h-8 cursor-pointer rounded-md border border-border-subtle bg-surface px-2.5 text-xs font-medium text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage disabled:opacity-50"
+            >
+              {GEAR_VISIBILITY.map((v) => (
                 <option key={v} value={v}>{t(`settings.visibility_${v}`)}</option>
               ))}
             </select>

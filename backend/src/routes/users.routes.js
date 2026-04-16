@@ -110,6 +110,13 @@ export function usersRouter(db) {
         }
         $set["privacy.logbookVisibility"] = body.logbookVisibility;
       }
+      if (body.gearVisibility !== undefined) {
+        const allowed = ["public", "friends", "private"];
+        if (!allowed.includes(body.gearVisibility)) {
+          return res.status(400).json({ error: "invalid_gear_visibility", allowed });
+        }
+        $set["privacy.gearVisibility"] = body.gearVisibility;
+      }
       if (body.notificationPreferences !== undefined) {
         const np = body.notificationPreferences;
         if (typeof np !== "object" || Array.isArray(np)) {
