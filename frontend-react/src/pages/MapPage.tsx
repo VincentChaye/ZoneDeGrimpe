@@ -588,7 +588,7 @@ export function MapPage() {
 
       {/* Advanced filters panel */}
       {showFilters && (
-        <div className="absolute right-3 top-[148px] z-[1001] w-64 animate-[fadeSlideDown_0.2s_ease-out]">
+        <div className="absolute right-3 top-[208px] z-[1001] w-64 animate-[fadeSlideDown_0.2s_ease-out]">
           <div className="rounded-xl border border-border-subtle/50 bg-surface/95 p-4 shadow-elevated backdrop-blur-md">
             <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-text-secondary">
               {t('filter.advanced')}

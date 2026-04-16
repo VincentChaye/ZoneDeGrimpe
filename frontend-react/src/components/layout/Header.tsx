@@ -39,8 +39,6 @@ export function Header() {
   // Close menu on route change
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
-  const isCompact = location.pathname === '/map';
-
   return (
     <header
       className={cn(
@@ -48,7 +46,6 @@ export function Header() {
         'h-[var(--spacing-header)] px-4',
         'bg-surface/95 backdrop-blur-md',
         'border-b border-border-subtle',
-        isCompact && 'absolute left-0 right-0',
       )}
     >
       {/* Brand */}
