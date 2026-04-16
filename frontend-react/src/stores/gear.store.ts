@@ -15,7 +15,7 @@ interface GearStore {
   deleteGear: (id: string) => Promise<void>;
 }
 
-export const useGearStore = create<GearStore>((set, get) => ({
+export const useGearStore = create<GearStore>((set) => ({
   items: [],
   catalog: [],
   loading: false,
