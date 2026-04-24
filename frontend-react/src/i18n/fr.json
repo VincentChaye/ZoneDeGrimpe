@@ -419,6 +419,10 @@
   "filter.distance": "Distance max",
   "filter.reset": "Reinitialiser",
   "filter.all": "Tous",
+  "filter.orientation": "Orientation",
+  "filter.all_orientations": "Toutes orientations",
+  "filter.rock_type": "Type de roche",
+  "filter.all_rocks": "Toutes roches",
   "filter.geo_required": "Activez la geolocalisation pour filtrer par distance",
 
   "common.add": "Ajouter",
@@ -615,6 +619,7 @@
   "settings.admin_section": "Administration",
   "settings.admin_spots": "Gestion des Spots",
   "settings.admin_users": "Gestion des Utilisateurs",
+  "settings.admin_gear": "Catalogue Materiel",
   "settings.account": "Compte",
   "settings.delete_account": "Supprimer le compte",
   "settings.confirm_delete": "Confirmer la suppression",

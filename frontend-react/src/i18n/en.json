@@ -419,6 +419,10 @@
   "filter.distance": "Max distance",
   "filter.reset": "Reset",
   "filter.all": "All",
+  "filter.orientation": "Orientation",
+  "filter.all_orientations": "All orientations",
+  "filter.rock_type": "Rock type",
+  "filter.all_rocks": "All rocks",
   "filter.geo_required": "Enable geolocation to filter by distance",
 
   "common.add": "Add",
@@ -615,6 +619,7 @@
   "settings.admin_section": "Administration",
   "settings.admin_spots": "Spot Management",
   "settings.admin_users": "User Management",
+  "settings.admin_gear": "Gear Catalog",
   "settings.account": "Account",
   "settings.delete_account": "Delete account",
   "settings.confirm_delete": "Confirm deletion",

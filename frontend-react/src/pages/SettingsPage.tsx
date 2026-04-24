@@ -669,6 +669,12 @@ export function SettingsPage() {
             >
               {t('settings.admin_users')}
             </Link>
+            <Link
+              to="/admin/gear"
+              className="rounded-[var(--radius-sm)] border border-border-subtle px-4 py-2 text-sm font-semibold text-text-primary no-underline transition-colors hover:bg-surface-2"
+            >
+              {t('settings.admin_gear')}
+            </Link>
           </div>
         </Section>
       )}

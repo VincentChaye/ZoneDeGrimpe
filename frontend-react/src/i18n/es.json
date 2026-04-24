@@ -419,6 +419,10 @@
   "filter.distance": "Distancia max",
   "filter.reset": "Reiniciar",
   "filter.all": "Todos",
+  "filter.orientation": "Orientacion",
+  "filter.all_orientations": "Todas las orientaciones",
+  "filter.rock_type": "Tipo de roca",
+  "filter.all_rocks": "Todas las rocas",
   "filter.geo_required": "Activa la geolocalizacion para filtrar por distancia",
 
   "common.add": "Anadir",
@@ -615,6 +619,7 @@
   "settings.admin_section": "Administracion",
   "settings.admin_spots": "Gestion de Spots",
   "settings.admin_users": "Gestion de Usuarios",
+  "settings.admin_gear": "Catalogo de Equipo",
   "settings.account": "Cuenta",
   "settings.delete_account": "Eliminar cuenta",
   "settings.confirm_delete": "Confirmar eliminacion",
