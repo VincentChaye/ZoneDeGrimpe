@@ -478,12 +478,11 @@ export function MessagesPage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const [creatingConv, setCreatingConv] = useState(false);
-  const [createError, setCreateError] = useState(false);
 
   if (!isAuthenticated || !user) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
-        <p className="text-sm text-text-secondary">{t('auth.login_required')}</p>
+        <p className="text-sm text-text-secondary">{t('toast.login_required')}</p>
         <Link
           to="/login"
           className="rounded-xl bg-sage px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover"
@@ -514,14 +513,12 @@ export function MessagesPage() {
 
   async function handleNewConversation(participantUid: string) {
     setShowNewModal(false);
-    setCreateError(false);
     setCreatingConv(true);
     setMobileShowChat(true);
     try {
       const conv = await startConversationWith(participantUid);
       await openConversation(conv._id);
     } catch {
-      setCreateError(true);
       setMobileShowChat(false);
     } finally {
       setCreatingConv(false);
@@ -531,7 +528,6 @@ export function MessagesPage() {
   function handleBack() {
     setMobileShowChat(false);
     setCreatingConv(false);
-    setCreateError(false);
     setActiveConversation(null);
   }
 

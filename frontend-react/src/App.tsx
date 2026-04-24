@@ -16,6 +16,7 @@ import { FeedPage } from '@/pages/FeedPage';
 import { AdminSpotsPage } from '@/pages/AdminSpotsPage';
 import { AdminUsersPage } from '@/pages/AdminUsersPage';
 import { AdminGearPage } from '@/pages/AdminGearPage';
+import { GearPage } from '@/pages/GearPage';
 import { MyProfilePage } from '@/pages/MyProfilePage';
 import { MessagesPage } from '@/pages/MessagesPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
@@ -80,6 +81,7 @@ function App() {
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/admin/spots" element={<AdminSpotsPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/gear" element={<GearPage />} />
           <Route path="/admin/gear" element={<AdminGearPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
