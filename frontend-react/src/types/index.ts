@@ -23,8 +23,8 @@ export type NotificationType =
   | 'gear_epi_retire';
 
 export type GearCategory =
-  | 'rope' | 'harness' | 'quickdraw' | 'helmet'
-  | 'shoes' | 'nuts' | 'cams' | 'belay' | 'sling' | 'bag' | 'other';
+  | 'rope' | 'quickdraw' | 'belay_auto' | 'belay_tube'
+  | 'harness' | 'shoes' | 'carabiner' | 'machard' | 'crashpad' | 'quicklink';
 
 export type GearEpiStatus = 'ok' | 'watch' | 'retire';
 export type GearVisibility = 'public' | 'friends' | 'private';
@@ -53,6 +53,8 @@ export interface UserMateriel {
   purchaseDate?: string | null;
   firstUseDate?: string | null;
   notes?: string | null;
+  quantity?: number;
+  specs?: Record<string, unknown>;
   epiStatus: GearEpiStatus | null;
   lastEpiNotifiedStatus?: string | null;
   createdAt: string;

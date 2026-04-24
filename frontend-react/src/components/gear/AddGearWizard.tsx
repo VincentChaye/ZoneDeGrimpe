@@ -1,90 +1,112 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Search, Package, Pencil, X, Loader2, ChevronLeft } from 'lucide-react';
+import { Package, X, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useGearStore } from '@/stores/gear.store';
 import { cn } from '@/lib/utils';
 import type { GearCategory, MaterielSpec } from '@/types';
 
 const CATEGORIES: GearCategory[] = [
-  'rope', 'harness', 'quickdraw', 'helmet', 'shoes',
-  'nuts', 'cams', 'belay', 'sling', 'bag', 'other',
+  'rope', 'quickdraw', 'belay_auto', 'belay_tube',
+  'harness', 'shoes', 'carabiner', 'machard', 'crashpad', 'quicklink',
 ];
+
+const STEP_KEYS = ['gear.add_step1_title', 'gear.add_step2_title', 'gear.step_details'];
 
 interface AddGearWizardProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-type Source = 'catalog' | 'custom' | null;
-
 export function AddGearWizard({ onClose, onSuccess }: AddGearWizardProps) {
   const { t } = useTranslation();
   const dialogRef = useRef<HTMLDialogElement>(null);
-
   const { fetchCatalog, catalog, addGear } = useGearStore();
 
-  const [step, setStep] = useState<1 | 2>(1);
-  const [source, setSource] = useState<Source>(null);
-
-  // Step 2 — catalog branch
-  const [catalogQuery, setCatalogQuery] = useState('');
-  const [catalogCategory, setCatalogCategory] = useState<GearCategory | ''>('');
-  const [selectedSpec, setSelectedSpec] = useState<MaterielSpec | null>(null);
-
-  // Step 2 — custom branch
+  const [step, setStep] = useState(0); // 0=category, 1=identification, 2=details
   const [form, setForm] = useState({
     category: '' as GearCategory | '',
     customName: '',
     brand: '',
     model: '',
+    quantity: 1,
     purchaseDate: '',
     firstUseDate: '',
     notes: '',
   });
-
+  const [specId, setSpecId] = useState<string | null>(null);
+  const [specs, setSpecs] = useState<Record<string, unknown>>({});
+  const [showDropdown, setShowDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { dialogRef.current?.showModal(); }, []);
 
-  // Fetch catalog on search change
+  // Fetch full category catalog once when entering step 1
   useEffect(() => {
-    if (source !== 'catalog') return;
-    fetchCatalog(catalogCategory || undefined, catalogQuery || undefined);
-  }, [source, catalogQuery, catalogCategory, fetchCatalog]);
+    if (step !== 1 || !form.category) return;
+    fetchCatalog(form.category as GearCategory);
+  }, [step, form.category, fetchCatalog]);
 
-  function chooseSource(s: Source) {
-    setSource(s);
-    setStep(2);
-    if (s === 'catalog') fetchCatalog();
+  // Local filtering of catalog based on typed text
+  const suggestions = useMemo<MaterielSpec[]>(() => {
+    const q = form.customName.toLowerCase().trim();
+    const filtered = q
+      ? catalog.filter((s) => `${s.brand} ${s.model}`.toLowerCase().includes(q))
+      : catalog;
+    return filtered.slice(0, 7);
+  }, [catalog, form.customName]);
+
+  function selectCategory(cat: GearCategory) {
+    setForm((f) => ({ ...f, category: cat }));
+    setSpecId(null);
+    setSpecs({});
+    setStep(1);
+  }
+
+  // Parse diameter from rope model name (e.g. "Volta 9.2 mm" → 9.2)
+  function parseRopeSpecs(model: string): Record<string, unknown> {
+    const match = model.match(/(\d+\.?\d*)\s*mm/i);
+    return match ? { diameter_mm: parseFloat(match[1]) } : {};
+  }
+
+  const selectSpec = useCallback((spec: MaterielSpec) => {
+    const name = `${spec.brand} ${spec.model}`.trim();
+    const autoSpecs = spec.category === 'rope' ? parseRopeSpecs(spec.model) : {};
+    setSpecId(spec._id);
+    setForm((f) => ({ ...f, customName: name, brand: spec.brand || '', model: spec.model || '' }));
+    setSpecs(autoSpecs);
+    setShowDropdown(false);
+    // Focus next relevant field after selection
+    setTimeout(() => nameRef.current?.blur(), 0);
+  }, []);
+
+  function goNext() {
+    if (step === 1 && !form.customName.trim()) {
+      toast.error(t('gear.name_required'));
+      return;
+    }
+    setShowDropdown(false);
+    setStep((s) => (s + 1) as 0 | 1 | 2);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (source === 'catalog') {
-        if (!selectedSpec) { toast.error(t('gear.search_catalog')); return; }
-        await addGear({
-          specId: selectedSpec._id,
-          purchaseDate: form.purchaseDate || undefined,
-          firstUseDate: form.firstUseDate || undefined,
-          notes: form.notes || undefined,
-        });
-      } else {
-        if (!form.category) { toast.error(t('gear.select_category')); return; }
-        const name = form.customName.trim() || form.brand.trim() + ' ' + form.model.trim();
-        if (!name.trim()) { toast.error(t('gear.name_label')); return; }
-        await addGear({
-          category: form.category,
-          customName: form.customName.trim() || undefined,
-          brand: form.brand.trim() || undefined,
-          model: form.model.trim() || undefined,
-          purchaseDate: form.purchaseDate || undefined,
-          firstUseDate: form.firstUseDate || undefined,
-          notes: form.notes || undefined,
-        });
-      }
+      const payload: Record<string, unknown> = {
+        category: form.category,
+        customName: form.customName.trim() || undefined,
+        brand: form.brand.trim() || undefined,
+        model: form.model.trim() || undefined,
+        quantity: form.quantity > 1 ? form.quantity : undefined,
+        specs: Object.values(specs).some((v) => v !== undefined && v !== '') ? specs : undefined,
+        purchaseDate: form.purchaseDate || undefined,
+        firstUseDate: form.firstUseDate || undefined,
+        notes: form.notes.trim() || undefined,
+      };
+      if (specId) payload.specId = specId;
+      await addGear(payload);
       toast.success(t('gear.add'));
       onSuccess?.();
       onClose();
@@ -97,6 +119,103 @@ export function AddGearWizard({ onClose, onSuccess }: AddGearWizardProps) {
 
   const inputCls = 'w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-sage focus:outline-none focus:ring-1 focus:ring-sage';
   const selectCls = `${inputCls} cursor-pointer`;
+  const labelCls = 'mb-1.5 block text-xs font-semibold text-text-secondary';
+  const progress = ((step + 1) / STEP_KEYS.length) * 100;
+
+  function renderCategorySpecs() {
+    switch (form.category) {
+      case 'rope':
+        return (
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className={labelCls}>{t('gear.specs.length_m')}</label>
+              <input type="number" min={1} max={300} step={1}
+                value={(specs.length_m as number | '') ?? ''}
+                onChange={(e) => setSpecs((s) => ({ ...s, length_m: e.target.value ? Number(e.target.value) : undefined }))}
+                placeholder="70" className={inputCls} />
+            </div>
+            <div className="flex-1">
+              <label className={labelCls}>{t('gear.specs.diameter_mm')}</label>
+              <input type="number" min={6} max={15} step={0.1}
+                value={(specs.diameter_mm as number | '') ?? ''}
+                onChange={(e) => setSpecs((s) => ({ ...s, diameter_mm: e.target.value ? Number(e.target.value) : undefined }))}
+                placeholder="9.5" className={inputCls} />
+            </div>
+          </div>
+        );
+      case 'harness':
+        return (
+          <div>
+            <label className={labelCls}>{t('gear.specs.size')}</label>
+            <select value={(specs.size as string) ?? ''}
+              onChange={(e) => setSpecs((s) => ({ ...s, size: e.target.value || undefined }))}
+              className={selectCls}>
+              <option value="">—</option>
+              {['XS', 'S', 'M', 'L', 'XL'].map((sz) => <option key={sz} value={sz}>{sz}</option>)}
+            </select>
+          </div>
+        );
+      case 'shoes':
+        return (
+          <div>
+            <label className={labelCls}>{t('gear.specs.shoe_size')}</label>
+            <input type="number" min={30} max={50} step={0.5}
+              value={(specs.shoeSize as number | '') ?? ''}
+              onChange={(e) => setSpecs((s) => ({ ...s, shoeSize: e.target.value ? Number(e.target.value) : undefined }))}
+              placeholder="42" className={cn(inputCls, 'w-24')} />
+          </div>
+        );
+      case 'carabiner':
+        return (
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className={labelCls}>{t('gear.specs.carabiner_type')}</label>
+              <select value={(specs.carabinerType as string) ?? ''}
+                onChange={(e) => setSpecs((s) => ({ ...s, carabinerType: e.target.value || undefined }))}
+                className={selectCls}>
+                <option value="">—</option>
+                <option value="screwlock">{t('gear.specs.carabiner_type.screwlock')}</option>
+                <option value="auto">{t('gear.specs.carabiner_type.auto')}</option>
+                <option value="wire">{t('gear.specs.carabiner_type.wire')}</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className={labelCls}>{t('gear.specs.carabiner_shape')}</label>
+              <select value={(specs.carabinerShape as string) ?? ''}
+                onChange={(e) => setSpecs((s) => ({ ...s, carabinerShape: e.target.value || undefined }))}
+                className={selectCls}>
+                <option value="">—</option>
+                <option value="D">D</option>
+                <option value="HMS">HMS</option>
+                <option value="oval">{t('gear.specs.carabiner_shape.oval')}</option>
+              </select>
+            </div>
+          </div>
+        );
+      case 'machard':
+        return (
+          <div>
+            <label className={labelCls}>{t('gear.specs.cord_length_cm')}</label>
+            <input type="number" min={10} max={200} step={1}
+              value={(specs.cordLength_cm as number | '') ?? ''}
+              onChange={(e) => setSpecs((s) => ({ ...s, cordLength_cm: e.target.value ? Number(e.target.value) : undefined }))}
+              placeholder="60" className={cn(inputCls, 'w-24')} />
+          </div>
+        );
+      case 'crashpad':
+        return (
+          <div>
+            <label className={labelCls}>{t('gear.specs.dimensions')}</label>
+            <input type="text"
+              value={(specs.dimensions as string) ?? ''}
+              onChange={(e) => setSpecs((s) => ({ ...s, dimensions: e.target.value || undefined }))}
+              placeholder="120×100×12" className={inputCls} />
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
     <dialog
@@ -112,181 +231,218 @@ export function AddGearWizard({ onClose, onSuccess }: AddGearWizardProps) {
         >
           {/* Header */}
           <div className="flex items-center gap-3 border-b border-border-subtle px-5 py-4">
-            {step === 2 && (
-              <button type="button" onClick={() => { setStep(1); setSource(null); setSelectedSpec(null); }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2">
+            {step > 0 && (
+              <button
+                type="button"
+                onClick={() => setStep((s) => (s - 1) as 0 | 1 | 2)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2"
+              >
                 <ChevronLeft className="h-4 w-4" />
               </button>
             )}
-            <h2 className="flex-1 font-heading text-base font-bold text-text-primary">
-              {step === 1 ? t('gear.add_step1_title') : t('gear.add_step2_title')}
-            </h2>
-            <button type="button" onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2">
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-base font-bold text-text-primary">{t('gear.add')}</h2>
+              <p className="text-xs text-text-secondary">
+                {t(STEP_KEYS[step])} · {step + 1}/{STEP_KEYS.length}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Step 1 — Choose source */}
-          {step === 1 && (
-            <div className="flex flex-col gap-3 p-5">
-              <button
-                type="button"
-                onClick={() => chooseSource('catalog')}
-                className="flex items-start gap-4 rounded-xl border-2 border-border-subtle bg-surface-2 p-4 text-left transition-colors hover:border-sage hover:bg-sage/5"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage/10 text-sage">
-                  <Search className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-text-primary">{t('gear.from_catalog')}</p>
-                  <p className="mt-0.5 text-xs text-text-secondary">{t('gear.from_catalog_desc')}</p>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => chooseSource('custom')}
-                className="flex items-start gap-4 rounded-xl border-2 border-border-subtle bg-surface-2 p-4 text-left transition-colors hover:border-sage hover:bg-sage/5"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage/10 text-sage">
-                  <Pencil className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-text-primary">{t('gear.custom')}</p>
-                  <p className="mt-0.5 text-xs text-text-secondary">{t('gear.custom_desc')}</p>
-                </div>
-              </button>
+          {/* Progress bar */}
+          <div className="h-1 bg-border-subtle">
+            <div className="h-full bg-sage transition-all duration-300" style={{ width: `${progress}%` }} />
+          </div>
+
+          {/* Step 0 — Category */}
+          {step === 0 && (
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => selectCategory(cat)}
+                    className={cn(
+                      'flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-colors',
+                      form.category === cat
+                        ? 'border-sage bg-sage/5 text-sage'
+                        : 'border-border-subtle text-text-primary hover:border-sage/50 hover:bg-surface-2',
+                    )}
+                  >
+                    <Package className="h-5 w-5" />
+                    <span className="text-xs font-medium leading-tight">{t(`gear.category.${cat}`)}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Step 2 — Details */}
-          {step === 2 && (
-            <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* Step 1 — Identification */}
+          {step === 1 && (
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
 
-                {/* Catalog branch */}
-                {source === 'catalog' && (
-                  <>
-                    <div className="flex gap-2">
-                      <select
-                        value={catalogCategory}
-                        onChange={(e) => setCatalogCategory(e.target.value as GearCategory | '')}
-                        className={cn(selectCls, 'w-auto flex-shrink-0')}
-                      >
-                        <option value="">{t('gear.all_categories')}</option>
-                        {CATEGORIES.map((c) => (
-                          <option key={c} value={c}>{t(`gear.category.${c}`)}</option>
-                        ))}
-                      </select>
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary/50" />
-                        <input
-                          type="text"
-                          value={catalogQuery}
-                          onChange={(e) => setCatalogQuery(e.target.value)}
-                          placeholder={t('gear.search_catalog')}
-                          className={cn(inputCls, 'pl-8')}
-                        />
+                {/* Name + autocomplete dropdown */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-text-secondary">
+                    {t('gear.name_label')} *
+                  </label>
+                  <div className="relative">
+                    <input
+                      ref={nameRef}
+                      type="text"
+                      value={form.customName}
+                      onChange={(e) => {
+                        setForm((f) => ({ ...f, customName: e.target.value, brand: '', model: '' }));
+                        setSpecId(null);
+                        setSpecs({});
+                        setShowDropdown(true);
+                      }}
+                      onFocus={() => setShowDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                      placeholder={t('gear.name_placeholder') ?? 'Ex: Petzl Corax 2'}
+                      className={inputCls}
+                      autoFocus
+                    />
+
+                    {/* Checkmark when a catalog entry is selected */}
+                    {specId && (
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                        <Check className="h-4 w-4 text-sage" />
                       </div>
-                    </div>
-                    <div className="max-h-40 overflow-y-auto rounded-xl border border-border-subtle">
-                      {catalog.length === 0 ? (
-                        <p className="p-4 text-center text-xs text-text-secondary">{t('gear.no_catalog_results')}</p>
-                      ) : (
-                        catalog.map((spec) => (
+                    )}
+
+                    {/* Autocomplete dropdown */}
+                    {showDropdown && suggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-border-subtle bg-surface shadow-elevated">
+                        {suggestions.map((spec) => (
                           <button
                             key={spec._id}
                             type="button"
-                            onClick={() => setSelectedSpec(spec)}
+                            onMouseDown={(e) => { e.preventDefault(); selectSpec(spec); }}
                             className={cn(
-                              'flex w-full items-center gap-3 border-b border-border-subtle px-4 py-3 text-left text-sm transition-colors last:border-0',
-                              selectedSpec?._id === spec._id
+                              'flex w-full items-center gap-3 border-b border-border-subtle px-4 py-2.5 text-left text-sm transition-colors last:border-0',
+                              specId === spec._id
                                 ? 'bg-sage/10 font-semibold text-sage'
                                 : 'text-text-primary hover:bg-surface-2',
                             )}
                           >
-                            <Package className="h-4 w-4 shrink-0 text-text-secondary" />
-                            <span className="flex-1 truncate">{spec.brand} {spec.model}</span>
-                            <span className="text-[10px] text-text-secondary">{t(`gear.category.${spec.category}`)}</span>
+                            {spec.imageUrl ? (
+                              <img src={spec.imageUrl} alt="" className="h-7 w-7 shrink-0 rounded-lg object-cover" />
+                            ) : (
+                              <Package className="h-4 w-4 shrink-0 text-text-secondary" />
+                            )}
+                            <span className="flex-1 truncate">
+                              <span className="font-medium">{spec.brand}</span>
+                              {' '}
+                              <span className="text-text-secondary">{spec.model}</span>
+                            </span>
                           </button>
-                        ))
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* Custom branch */}
-                {source === 'custom' && (
-                  <>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-text-secondary">{t('gear.category_label')} *</label>
-                      <select
-                        required
-                        value={form.category}
-                        onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as GearCategory }))}
-                        className={selectCls}
-                      >
-                        <option value="">{t('gear.select_category')}</option>
-                        {CATEGORIES.map((c) => (
-                          <option key={c} value={c}>{t(`gear.category.${c}`)}</option>
                         ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-text-secondary">{t('gear.name_label')}</label>
-                      <input type="text" value={form.customName}
-                        onChange={(e) => setForm((f) => ({ ...f, customName: e.target.value }))}
-                        placeholder="Ex: Petzl Corax 2" className={inputCls} />
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <label className="mb-1.5 block text-xs font-semibold text-text-secondary">{t('gear.brand_label')}</label>
-                        <input type="text" value={form.brand}
-                          onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))}
-                          placeholder="Petzl" className={inputCls} />
                       </div>
-                      <div className="flex-1">
-                        <label className="mb-1.5 block text-xs font-semibold text-text-secondary">{t('gear.model_label')}</label>
-                        <input type="text" value={form.model}
-                          onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
-                          placeholder="Corax 2" className={inputCls} />
-                      </div>
-                    </div>
-                  </>
-                )}
+                    )}
+                  </div>
+                </div>
 
-                {/* Common fields (both branches) */}
+                {/* Quantity */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-text-secondary">{t('gear.quantity')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={form.quantity}
+                    onChange={(e) => setForm((f) => ({ ...f, quantity: Math.max(1, Math.min(99, parseInt(e.target.value) || 1)) }))}
+                    className={cn(inputCls, 'w-24')}
+                  />
+                </div>
+
+                {/* Category-specific specs */}
+                {renderCategorySpecs()}
+
+              </div>
+
+              <div className="border-t border-border-subtle px-5 py-4">
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-hover"
+                >
+                  {t('common.next')}
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2 — Dates & Notes */}
+          {step === 2 && (
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+                {/* Mini recap */}
+                <div className="flex items-center gap-2 rounded-xl bg-surface-2 px-3 py-2.5">
+                  <Package className="h-4 w-4 shrink-0 text-sage" />
+                  <span className="flex-1 truncate text-sm font-medium text-text-primary">
+                    {form.customName || `${form.brand} ${form.model}`.trim() || t(`gear.category.${form.category}`)}
+                  </span>
+                  <span className="ml-auto shrink-0 text-xs text-text-secondary">
+                    {t(`gear.category.${form.category}`)}
+                  </span>
+                </div>
+
                 <div className="flex gap-3">
                   <div className="flex-1">
                     <label className="mb-1.5 block text-xs font-semibold text-text-secondary">{t('gear.purchase_date')}</label>
-                    <input type="date" value={form.purchaseDate}
+                    <input
+                      type="date"
+                      value={form.purchaseDate}
                       onChange={(e) => setForm((f) => ({ ...f, purchaseDate: e.target.value }))}
-                      className={inputCls} />
+                      className={inputCls}
+                    />
                   </div>
                   <div className="flex-1">
                     <label className="mb-1.5 block text-xs font-semibold text-text-secondary">{t('gear.first_use')}</label>
-                    <input type="date" value={form.firstUseDate}
+                    <input
+                      type="date"
+                      value={form.firstUseDate}
                       onChange={(e) => setForm((f) => ({ ...f, firstUseDate: e.target.value }))}
-                      className={inputCls} />
+                      className={inputCls}
+                    />
                   </div>
                 </div>
+
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-text-secondary">{t('gear.notes')}</label>
-                  <textarea rows={2} value={form.notes}
+                  <textarea
+                    rows={3}
+                    value={form.notes}
                     onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                     placeholder={t('gear.notes_placeholder')}
-                    className={cn(inputCls, 'resize-none')} />
+                    className={cn(inputCls, 'resize-none')}
+                  />
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="flex gap-3 border-t border-border-subtle px-5 py-4">
-                <button type="button" onClick={onClose}
-                  className="flex-1 rounded-xl border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 rounded-xl border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2"
+                >
                   {t('common.cancel')}
                 </button>
-                <button type="submit" disabled={submitting}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-hover disabled:opacity-50"
+                >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {t('gear.add')}
                 </button>

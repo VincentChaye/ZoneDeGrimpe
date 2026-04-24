@@ -9,3 +9,6 @@ Thumbs.db
 .idea/
 *.md
 ./ZoneDeGrimpe/
+ZoneDeGrimpe/
+.playwright-mcp/
+test-*.png

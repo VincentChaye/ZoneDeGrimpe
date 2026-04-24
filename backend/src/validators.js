@@ -58,7 +58,7 @@ export const idParamSchema = z.object({
 });
 
 /** Catégories de matériel */
-const GEAR_CATEGORIES = ["rope", "harness", "quickdraw", "helmet", "shoes", "nuts", "cams", "belay", "sling", "bag", "other"];
+const GEAR_CATEGORIES = ["rope", "quickdraw", "belay_auto", "belay_tube", "harness", "shoes", "carabiner", "machard", "crashpad", "quicklink"];
 
 /** Création d'une entrée catalogue (admin) */
 export const createMaterielSpecSchema = z.object({
@@ -93,6 +93,8 @@ export const createUserMaterielSchema = z.object({
   purchaseDate : z.coerce.date().nullable().optional(),
   firstUseDate : z.coerce.date().nullable().optional(),
   notes        : z.string().max(1000).nullable().optional(),
+  quantity     : z.number().int().min(1).max(99).optional().default(1),
+  specs        : z.record(z.unknown()).optional(),
 }).refine(
   (d) => d.specId || d.category,
   { message: "category requis si pas de specId" }
@@ -107,6 +109,8 @@ export const updateUserMaterielSchema = z.object({
   purchaseDate : z.coerce.date().nullable().optional(),
   firstUseDate : z.coerce.date().nullable().optional(),
   notes        : z.string().max(1000).nullable().optional(),
+  quantity     : z.number().int().min(1).max(99).optional(),
+  specs        : z.record(z.unknown()).optional(),
 }).refine((d) => Object.keys(d).length > 0, { message: "Au moins un champ requis" });
 
 /** Schema pour la mise à jour partielle d'un spot (PATCH) */

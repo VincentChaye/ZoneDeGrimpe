@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { X, Loader2 } from 'lucide-react';
 import { useGearStore } from '@/stores/gear.store';
 import { cn } from '@/lib/utils';
-import type { UserMateriel } from '@/types';
+import type { UserMateriel, GearCategory } from '@/types';
 
 interface EditGearModalProps {
   item: UserMateriel;
@@ -23,6 +23,7 @@ export function EditGearModal({ item, onClose }: EditGearModalProps) {
     firstUseDate: item.firstUseDate ? item.firstUseDate.slice(0, 10) : '',
     notes: item.notes ?? '',
   });
+  const [specs, setSpecs] = useState<Record<string, unknown>>(item.specs ?? {});
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -36,6 +37,7 @@ export function EditGearModal({ item, onClose }: EditGearModalProps) {
         purchaseDate: form.purchaseDate || undefined,
         firstUseDate: form.firstUseDate || undefined,
         notes: form.notes.trim() || undefined,
+        specs: Object.values(specs).some((v) => v !== undefined && v !== '') ? specs : undefined,
       });
       toast.success(t('common.saved') ?? 'Enregistré');
       onClose();
@@ -47,6 +49,103 @@ export function EditGearModal({ item, onClose }: EditGearModalProps) {
   }
 
   const inputCls = 'w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-sage focus:outline-none focus:ring-1 focus:ring-sage';
+  const selectCls = `${inputCls} cursor-pointer`;
+  const labelCls = 'mb-1.5 block text-xs font-semibold text-text-secondary';
+
+  function renderCategorySpecs() {
+    switch (item.category as GearCategory) {
+      case 'rope':
+        return (
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className={labelCls}>{t('gear.specs.length_m')}</label>
+              <input type="number" min={1} max={300} step={1}
+                value={(specs.length_m as number | '') ?? ''}
+                onChange={(e) => setSpecs((s) => ({ ...s, length_m: e.target.value ? Number(e.target.value) : undefined }))}
+                placeholder="70" className={inputCls} />
+            </div>
+            <div className="flex-1">
+              <label className={labelCls}>{t('gear.specs.diameter_mm')}</label>
+              <input type="number" min={6} max={15} step={0.1}
+                value={(specs.diameter_mm as number | '') ?? ''}
+                onChange={(e) => setSpecs((s) => ({ ...s, diameter_mm: e.target.value ? Number(e.target.value) : undefined }))}
+                placeholder="9.5" className={inputCls} />
+            </div>
+          </div>
+        );
+      case 'harness':
+        return (
+          <div>
+            <label className={labelCls}>{t('gear.specs.size')}</label>
+            <select value={(specs.size as string) ?? ''}
+              onChange={(e) => setSpecs((s) => ({ ...s, size: e.target.value || undefined }))}
+              className={selectCls}>
+              <option value="">—</option>
+              {['XS', 'S', 'M', 'L', 'XL'].map((sz) => <option key={sz} value={sz}>{sz}</option>)}
+            </select>
+          </div>
+        );
+      case 'shoes':
+        return (
+          <div>
+            <label className={labelCls}>{t('gear.specs.shoe_size')}</label>
+            <input type="number" min={30} max={50} step={0.5}
+              value={(specs.shoeSize as number | '') ?? ''}
+              onChange={(e) => setSpecs((s) => ({ ...s, shoeSize: e.target.value ? Number(e.target.value) : undefined }))}
+              placeholder="42" className={cn(inputCls, 'w-24')} />
+          </div>
+        );
+      case 'carabiner':
+        return (
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className={labelCls}>{t('gear.specs.carabiner_type')}</label>
+              <select value={(specs.carabinerType as string) ?? ''}
+                onChange={(e) => setSpecs((s) => ({ ...s, carabinerType: e.target.value || undefined }))}
+                className={selectCls}>
+                <option value="">—</option>
+                <option value="screwlock">{t('gear.specs.carabiner_type.screwlock')}</option>
+                <option value="auto">{t('gear.specs.carabiner_type.auto')}</option>
+                <option value="wire">{t('gear.specs.carabiner_type.wire')}</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className={labelCls}>{t('gear.specs.carabiner_shape')}</label>
+              <select value={(specs.carabinerShape as string) ?? ''}
+                onChange={(e) => setSpecs((s) => ({ ...s, carabinerShape: e.target.value || undefined }))}
+                className={selectCls}>
+                <option value="">—</option>
+                <option value="D">D</option>
+                <option value="HMS">HMS</option>
+                <option value="oval">{t('gear.specs.carabiner_shape.oval')}</option>
+              </select>
+            </div>
+          </div>
+        );
+      case 'machard':
+        return (
+          <div>
+            <label className={labelCls}>{t('gear.specs.cord_length_cm')}</label>
+            <input type="number" min={10} max={200} step={1}
+              value={(specs.cordLength_cm as number | '') ?? ''}
+              onChange={(e) => setSpecs((s) => ({ ...s, cordLength_cm: e.target.value ? Number(e.target.value) : undefined }))}
+              placeholder="60" className={cn(inputCls, 'w-24')} />
+          </div>
+        );
+      case 'crashpad':
+        return (
+          <div>
+            <label className={labelCls}>{t('gear.specs.dimensions')}</label>
+            <input type="text"
+              value={(specs.dimensions as string) ?? ''}
+              onChange={(e) => setSpecs((s) => ({ ...s, dimensions: e.target.value || undefined }))}
+              placeholder="120×100×12" className={inputCls} />
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
     <div
@@ -95,6 +194,9 @@ export function EditGearModal({ item, onClose }: EditGearModalProps) {
                   className={inputCls} />
               </div>
             </div>
+
+            {/* Category-specific specs */}
+            {renderCategorySpecs()}
 
             {/* EPI dates */}
             <div className="flex gap-3">

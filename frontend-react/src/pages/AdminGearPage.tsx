@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
 import type { MaterielSpec, GearCategory } from '@/types';
 
 const CATEGORIES: GearCategory[] = [
-  'rope', 'harness', 'quickdraw', 'helmet', 'shoes',
-  'nuts', 'cams', 'belay', 'sling', 'bag', 'other',
+  'rope', 'quickdraw', 'belay_auto', 'belay_tube',
+  'harness', 'shoes', 'carabiner', 'machard', 'crashpad', 'quicklink',
 ];
 
 const EMPTY_FORM = {

@@ -1,16 +1,15 @@
 /** Durées de vie UIAA/fabricant par défaut (années), null = non-EPI */
 export const EPI_DEFAULTS = {
-  rope:     10,
-  harness:  10,
-  quickdraw:10,
-  helmet:   10,
-  sling:    10,
-  belay:    null,
-  nuts:     null,
-  cams:     null,
-  shoes:    null,
-  bag:      null,
-  other:    null,
+  rope:       10,
+  quickdraw:  10,
+  belay_auto: null,   // appareil mécanique, pas de durée UIAA stricte
+  belay_tube: null,   // appareil mécanique
+  harness:    10,
+  shoes:      null,
+  carabiner:  10,
+  machard:    10,     // cordelette = EPI textile
+  crashpad:   null,
+  quicklink:  10,
 };
 
 /**
