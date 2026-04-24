@@ -620,7 +620,7 @@ export function SettingsPage() {
               className="w-full rounded-md border border-border-subtle bg-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-text-secondary">{t('settings.pw_new')}</label>
               <input
