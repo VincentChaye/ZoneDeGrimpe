@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Send, ArrowLeft, MessageSquare, Plus, Search } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Plus, Search, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMessagesStore } from '@/stores/messages.store';
 import { apiFetch } from '@/lib/api';
@@ -372,28 +372,31 @@ function NewConversationModal({ onClose, onSelect }: NewConversationModalProps) 
   }, [query]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
-      <div
-        className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl bg-surface shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+    <>
+      {/* Mobile: full-screen overlay so the keyboard doesn't bury the search bar */}
+      <div className="fixed inset-0 z-50 flex flex-col bg-surface sm:hidden">
+        <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-text-secondary hover:bg-surface-2 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <h3 className="font-heading text-sm font-bold text-text-primary">{t('messages.new')}</h3>
-          <button onClick={onClose} className="text-xs text-text-secondary hover:text-text-primary">{t('common.cancel')}</button>
         </div>
         <div className="px-4 pt-3 pb-2">
-          <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-2 px-3 py-2">
-            <Search className="h-4 w-4 text-text-secondary shrink-0" />
+          <div className="flex items-center gap-2 overflow-hidden rounded-xl border border-border-subtle bg-surface-2 px-3 py-2">
+            <Search className="h-4 w-4 shrink-0 text-text-secondary" />
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('messages.search_user')}
-              className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-secondary focus:outline-none"
+              className="min-w-0 flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-secondary focus:outline-none"
             />
           </div>
         </div>
-        <div className="max-h-64 overflow-y-auto pb-4">
+        <div className="flex-1 overflow-y-auto pb-4">
           {loading && <p className="px-4 py-3 text-xs text-text-secondary">{t('common.loading')}</p>}
           {!loading && query && results.length === 0 && (
             <p className="px-4 py-3 text-xs text-text-secondary">{t('messages.no_users_found')}</p>
@@ -405,15 +408,59 @@ function NewConversationModal({ onClose, onSelect }: NewConversationModalProps) 
               className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-surface-2 transition-colors"
             >
               <Avatar name={u.displayName} src={u.avatarUrl} size={8} />
-              <div className="text-left">
-                <p className="text-sm font-medium text-text-primary">{u.displayName}</p>
-                {u.username && <p className="text-xs text-text-secondary">@{u.username}</p>}
+              <div className="min-w-0 text-left">
+                <p className="truncate text-sm font-medium text-text-primary">{u.displayName}</p>
+                {u.username && <p className="truncate text-xs text-text-secondary">@{u.username}</p>}
               </div>
             </button>
           ))}
         </div>
       </div>
-    </div>
+
+      {/* Desktop: centered modal */}
+      <div className="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 sm:flex" onClick={onClose}>
+        <div
+          className="w-full max-w-sm rounded-2xl bg-surface shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+            <h3 className="font-heading text-sm font-bold text-text-primary">{t('messages.new')}</h3>
+            <button onClick={onClose} className="text-xs text-text-secondary hover:text-text-primary">{t('common.cancel')}</button>
+          </div>
+          <div className="px-4 pt-3 pb-2">
+            <div className="flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-2 px-3 py-2">
+              <Search className="h-4 w-4 text-text-secondary shrink-0" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('messages.search_user')}
+                className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-secondary focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="max-h-64 overflow-y-auto pb-4">
+            {loading && <p className="px-4 py-3 text-xs text-text-secondary">{t('common.loading')}</p>}
+            {!loading && query && results.length === 0 && (
+              <p className="px-4 py-3 text-xs text-text-secondary">{t('messages.no_users_found')}</p>
+            )}
+            {results.map((u) => (
+              <button
+                key={u._id}
+                onClick={() => onSelect(u._id)}
+                className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-surface-2 transition-colors"
+              >
+                <Avatar name={u.displayName} src={u.avatarUrl} size={8} />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-text-primary">{u.displayName}</p>
+                  {u.username && <p className="text-xs text-text-secondary">@{u.username}</p>}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -430,6 +477,8 @@ export function MessagesPage() {
 
   const [showNewModal, setShowNewModal] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [creatingConv, setCreatingConv] = useState(false);
+  const [createError, setCreateError] = useState(false);
 
   if (!isAuthenticated || !user) {
     return (
@@ -465,13 +514,24 @@ export function MessagesPage() {
 
   async function handleNewConversation(participantUid: string) {
     setShowNewModal(false);
-    const conv = await startConversationWith(participantUid);
-    await openConversation(conv._id);
+    setCreateError(false);
+    setCreatingConv(true);
     setMobileShowChat(true);
+    try {
+      const conv = await startConversationWith(participantUid);
+      await openConversation(conv._id);
+    } catch {
+      setCreateError(true);
+      setMobileShowChat(false);
+    } finally {
+      setCreatingConv(false);
+    }
   }
 
   function handleBack() {
     setMobileShowChat(false);
+    setCreatingConv(false);
+    setCreateError(false);
     setActiveConversation(null);
   }
 
@@ -512,6 +572,22 @@ export function MessagesPage() {
               onBack={handleBack}
               onLoadMore={() => loadMoreMessages(activeConv._id)}
             />
+          </div>
+        ) : creatingConv ? (
+          <div className="flex h-full w-full flex-col">
+            <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
+              <button
+                onClick={handleBack}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-text-secondary hover:bg-surface-2 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div className="h-4 w-32 rounded-lg bg-surface-2 animate-pulse" />
+            </div>
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center px-6">
+              <Loader2 className="h-8 w-8 animate-spin text-sage" />
+              <p className="text-sm text-text-secondary">{t('messages.opening')}</p>
+            </div>
           </div>
         ) : null}
       </div>

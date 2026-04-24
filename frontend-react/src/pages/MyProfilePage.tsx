@@ -106,7 +106,7 @@ export function MyProfilePage() {
                 )}
               >
                 <Icon className="h-4 w-4" strokeWidth={activeTab === id ? 2.25 : 1.75} />
-                <span className="hidden xs:inline">{t(labelKey)}</span>
+                <span className="text-[9px] leading-none">{t(labelKey)}</span>
               </button>
             ))}
           </div>

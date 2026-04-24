@@ -191,10 +191,10 @@ export function ProfilePage() {
         </div>
 
         <div className="px-5 pt-14 pb-5">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-heading text-xl font-bold text-text-primary">{profile.displayName}</h1>
+          <div className="flex flex-wrap items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2">
+                <h1 className="truncate font-heading text-xl font-bold text-text-primary">{profile.displayName}</h1>
                 {isAdmin && (
                   <span className="flex items-center gap-0.5 rounded-lg bg-sage/10 px-2 py-0.5 text-[11px] font-bold text-sage">
                     <Crown className="h-3 w-3" /> {t('admin.badge_admin')}

@@ -1,24 +1,23 @@
 import { useTranslation } from 'react-i18next';
 import {
-  Cable, Shield, Fingerprint, HardHat, Footprints, Wrench,
-  Magnet, Anchor, AlignJustify, Backpack, Package,
+  Cable, Shield, Footprints, Anchor, Package,
+  Lock, RotateCw, Square, Link, Link2, Circle,
   Pencil, Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UserMateriel, GearCategory } from '@/types';
 
 const CATEGORY_ICONS: Record<GearCategory, typeof Package> = {
-  rope:     Cable,
-  harness:  Shield,
-  quickdraw:Fingerprint,
-  helmet:   HardHat,
-  shoes:    Footprints,
-  nuts:     Magnet,
-  cams:     Wrench,
-  belay:    Anchor,
-  sling:    AlignJustify,
-  bag:      Backpack,
-  other:    Package,
+  rope:       Cable,
+  quickdraw:  Link,
+  belay_auto: Anchor,
+  belay_tube: Circle,
+  harness:    Shield,
+  shoes:      Footprints,
+  carabiner:  Lock,
+  machard:    RotateCw,
+  crashpad:   Square,
+  quicklink:  Link2,
 };
 
 const EPI_BADGE: Record<string, { label: string; cls: string }> = {
@@ -34,12 +33,41 @@ interface GearCardProps {
   readonly?: boolean;
 }
 
+function formatSpecs(category: GearCategory, specs: Record<string, unknown> | undefined, t: (k: string) => string): string | null {
+  if (!specs) return null;
+  switch (category) {
+    case 'rope': {
+      const parts: string[] = [];
+      if (specs.length_m) parts.push(`${specs.length_m}m`);
+      if (specs.diameter_mm) parts.push(`∅${specs.diameter_mm}mm`);
+      return parts.join(' · ') || null;
+    }
+    case 'harness':
+      return specs.size ? `${t('gear.specs.size')} ${specs.size}` : null;
+    case 'shoes':
+      return specs.shoeSize ? String(specs.shoeSize) : null;
+    case 'carabiner': {
+      const parts: string[] = [];
+      if (specs.carabinerType) parts.push(t(`gear.specs.carabiner_type.${specs.carabinerType}`));
+      if (specs.carabinerShape) parts.push(specs.carabinerShape === 'oval' ? t('gear.specs.carabiner_shape.oval') : String(specs.carabinerShape));
+      return parts.join(' · ') || null;
+    }
+    case 'machard':
+      return specs.cordLength_cm ? `${specs.cordLength_cm}cm` : null;
+    case 'crashpad':
+      return specs.dimensions ? `${specs.dimensions} cm` : null;
+    default:
+      return null;
+  }
+}
+
 export function GearCard({ item, onEdit, onDelete, readonly = false }: GearCardProps) {
   const { t } = useTranslation();
 
   const Icon = CATEGORY_ICONS[item.category] ?? Package;
   const displayName = item.customName || [item.brand, item.model].filter(Boolean).join(' ') || t(`gear.category.${item.category}`);
   const epi = item.epiStatus ? EPI_BADGE[item.epiStatus] : null;
+  const specsLine = formatSpecs(item.category, item.specs, t);
 
   function formatDate(iso?: string | null) {
     if (!iso) return null;
@@ -64,7 +92,14 @@ export function GearCard({ item, onEdit, onDelete, readonly = false }: GearCardP
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <p className="truncate text-sm font-semibold text-text-primary">{displayName}</p>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <p className="truncate text-sm font-semibold text-text-primary">{displayName}</p>
+            {(item.quantity ?? 1) > 1 && (
+              <span className="shrink-0 rounded-full bg-sage/10 px-1.5 py-0.5 text-[10px] font-bold text-sage">
+                ×{item.quantity}
+              </span>
+            )}
+          </div>
           {epi && (
             <span className={cn(
               'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
@@ -76,9 +111,12 @@ export function GearCard({ item, onEdit, onDelete, readonly = false }: GearCardP
         </div>
 
         <p className="mt-0.5 text-xs text-text-secondary">{t(`gear.category.${item.category}`)}</p>
+        {specsLine && (
+          <p className="mt-0.5 text-[11px] font-medium text-text-secondary/80">{specsLine}</p>
+        )}
 
         {(item.purchaseDate || item.firstUseDate) && (
-          <div className="mt-1 flex gap-2 text-[11px] text-text-secondary">
+          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-text-secondary">
             {item.purchaseDate && (
               <span>{t('gear.purchase_date')} : {formatDate(item.purchaseDate)}</span>
             )}

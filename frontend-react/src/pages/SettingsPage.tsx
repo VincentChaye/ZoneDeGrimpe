@@ -369,31 +369,33 @@ export function SettingsPage() {
               </div>
             )}
           </div>
-          <label className={cn(
-            'flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-2',
-            uploadingAvatar && 'pointer-events-none opacity-50',
-          )}>
-            {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
-            {t('settings.change_avatar')}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); e.target.value = ''; }}
-              disabled={uploadingAvatar}
-            />
-          </label>
-          {user.avatarUrl && (
-            <button
-              type="button"
-              onClick={handleAvatarDelete}
-              disabled={uploadingAvatar}
-              className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-800/40 dark:hover:bg-red-900/20"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              {t('common.delete')}
-            </button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            <label className={cn(
+              'flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-2',
+              uploadingAvatar && 'pointer-events-none opacity-50',
+            )}>
+              {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+              {t('settings.change_avatar')}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); e.target.value = ''; }}
+                disabled={uploadingAvatar}
+              />
+            </label>
+            {user.avatarUrl && (
+              <button
+                type="button"
+                onClick={handleAvatarDelete}
+                disabled={uploadingAvatar}
+                className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-800/40 dark:hover:bg-red-900/20"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t('common.delete')}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -455,7 +457,7 @@ export function SettingsPage() {
             disabled={savingField === 'isPrivate'}
           />
           <div className="flex items-center justify-between gap-4 pt-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-medium text-text-primary flex items-center gap-1.5">
                 <BookOpen className="h-3.5 w-3.5 text-text-secondary" />
                 {t('settings.privacy_logbook')}
@@ -466,7 +468,7 @@ export function SettingsPage() {
               value={logbookVisibility}
               onChange={(e) => changeLogbookVisibility(e.target.value)}
               disabled={!!savingField}
-              className="h-8 cursor-pointer rounded-md border border-border-subtle bg-surface px-2.5 text-xs font-medium text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage disabled:opacity-50"
+              className="h-8 shrink-0 cursor-pointer rounded-md border border-border-subtle bg-surface px-2.5 text-xs font-medium text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage disabled:opacity-50"
             >
               {LOGBOOK_VISIBILITY.map((v) => (
                 <option key={v} value={v}>{t(`settings.visibility_${v}`)}</option>
@@ -474,7 +476,7 @@ export function SettingsPage() {
             </select>
           </div>
           <div className="flex items-center justify-between gap-4 pt-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-medium text-text-primary flex items-center gap-1.5">
                 <Package className="h-3.5 w-3.5 text-text-secondary" />
                 {t('settings.gear_visibility')}
@@ -485,7 +487,7 @@ export function SettingsPage() {
               value={gearVisibility}
               onChange={(e) => changeGearVisibility(e.target.value)}
               disabled={!!savingField}
-              className="h-8 cursor-pointer rounded-md border border-border-subtle bg-surface px-2.5 text-xs font-medium text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage disabled:opacity-50"
+              className="h-8 shrink-0 cursor-pointer rounded-md border border-border-subtle bg-surface px-2.5 text-xs font-medium text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage disabled:opacity-50"
             >
               {GEAR_VISIBILITY.map((v) => (
                 <option key={v} value={v}>{t(`settings.visibility_${v}`)}</option>
@@ -493,7 +495,7 @@ export function SettingsPage() {
             </select>
           </div>
           <div className="flex items-center justify-between gap-4 pt-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-medium text-text-primary flex items-center gap-1.5">
                 <Bookmark className="h-3.5 w-3.5 text-text-secondary" />
                 {t('settings.privacy_spots')}
@@ -726,13 +728,13 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function EditRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="shrink-0 text-sm text-text-secondary">{label}</span>
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-medium text-text-secondary">{label}</span>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-48 rounded-md border border-border-subtle bg-bg px-2.5 py-1.5 text-right text-sm font-medium text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage"
+        className="w-full rounded-md border border-border-subtle bg-bg px-2.5 py-1.5 text-sm font-medium text-text-primary outline-none focus:border-sage focus:ring-1 focus:ring-sage"
       />
     </div>
   );

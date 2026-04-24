@@ -294,32 +294,32 @@ export function FriendsPage() {
                       {new Date(req.requestedAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex shrink-0 gap-2">
                     <button
                       onClick={() => handleAccept(req.friendshipId)}
                       disabled={isLoading}
                       className={cn(
-                        'flex h-9 cursor-pointer items-center gap-1.5 rounded-xl px-4 text-xs font-semibold',
+                        'flex h-9 cursor-pointer items-center gap-1.5 rounded-xl px-3 text-xs font-semibold',
                         'bg-sage text-white transition-all hover:bg-sage-hover disabled:opacity-50',
                         'active:scale-95',
                       )}
                       type="button"
                     >
                       {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                      {t('friends.accept') }
+                      <span className="hidden sm:inline">{t('friends.accept')}</span>
                     </button>
                     <button
                       onClick={() => handleDecline(req.friendshipId)}
                       disabled={isLoading}
                       className={cn(
-                        'flex h-9 cursor-pointer items-center gap-1.5 rounded-xl px-4 text-xs font-semibold',
+                        'flex h-9 cursor-pointer items-center gap-1.5 rounded-xl px-3 text-xs font-semibold',
                         'border border-border-subtle text-text-secondary transition-all hover:bg-surface-2 disabled:opacity-50',
                         'active:scale-95',
                       )}
                       type="button"
                     >
                       <X className="h-3.5 w-3.5" />
-                      {t('friends.decline') }
+                      <span className="hidden sm:inline">{t('friends.decline')}</span>
                     </button>
                   </div>
                 </div>

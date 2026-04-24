@@ -120,11 +120,11 @@ export function NotificationsPage() {
         {unreadCount > 0 && (
           <button
             onClick={markAllRead}
-            className="flex items-center gap-1.5 rounded-xl border border-border-subtle px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-2"
+            className="flex shrink-0 items-center gap-1.5 rounded-xl border border-border-subtle px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-2"
             type="button"
           >
             <CheckCheck className="h-3.5 w-3.5" />
-            {t('notif.mark_all_read')}
+            <span className="hidden sm:inline">{t('notif.mark_all_read')}</span>
           </button>
         )}
       </div>
