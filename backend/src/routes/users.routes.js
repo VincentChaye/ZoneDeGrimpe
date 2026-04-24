@@ -149,7 +149,7 @@ export function usersRouter(db) {
       }
 
       $set["security.updatedAt"] = new Date();
-      const result = await users.updateOne({ _id: uid }, { $set });
+      const result = await users.updateOne({ _id: uid }, { $set }, { bypassDocumentValidation: true });
       if (result.matchedCount === 0) return res.status(404).json({ error: "not_found" });
 
       const user = await users.findOne({ _id: uid }, { projection: SAFE_PROJECTION });
