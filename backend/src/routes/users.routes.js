@@ -17,7 +17,6 @@ export function usersRouter(db) {
 
   // Index
   users.createIndex({ email: 1 }, { unique: true }).catch((e) => console.warn('[cleanup]', e.message));
-  users.createIndex({ displayName: "text", email: "text" }).catch((e) => console.warn('[cleanup]', e.message));
 
   // Constantes
   const LEVELS = ["debutant", "intermediaire", "avance"];
@@ -271,12 +270,14 @@ export function usersRouter(db) {
 
       if (q) {
         const looksLikeEmail = q.includes("@");
+        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         if (looksLikeEmail) {
-          filter = { email: { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } };
+          filter = { email: { $regex: escaped, $options: "i" } };
         } else {
-          filter = { $text: { $search: q } };
-          projection = { ...SAFE_PROJECTION, score: { $meta: "textScore" } };
-          sort = { score: { $meta: "textScore" } };
+          filter = { $or: [
+            { displayName: { $regex: escaped, $options: "i" } },
+            { username:    { $regex: escaped, $options: "i" } },
+          ]};
         }
       }
 
