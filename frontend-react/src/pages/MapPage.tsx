@@ -435,8 +435,139 @@ export function MapPage() {
 
   const hasActiveFilters = filterGradeMin || filterDistance > 0 || filterOrientation || filterRock;
 
+  const resetFilters = useCallback(() => {
+    setFilterType('');
+    setFilterGradeMin('');
+    setFilterOrientation('');
+    setFilterRock('');
+    setFilterDistance(0);
+  }, []);
+
   return (
-    <div className="relative h-full">
+    <div className="flex h-full">
+
+      {/* ── Desktop filter sidebar ── */}
+      <aside className="hidden lg:flex lg:w-[264px] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-r lg:border-border-subtle lg:bg-surface">
+        <div className="flex flex-col gap-5 p-4">
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary/60" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('common.search') + '...'}
+              className="w-full rounded-xl border border-border-subtle bg-bg py-2.5 pl-9 pr-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-secondary/50 focus:border-sage focus:ring-1 focus:ring-sage/30"
+            />
+            {searchQuery && searchResults.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-xl border border-border-subtle bg-surface shadow-elevated">
+                {searchResults.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => { setSelectedSpot(s); setFlyTarget(s); setSearchQuery(''); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-sage-muted/50"
+                  >
+                    <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-sage" />
+                    <span className="truncate font-medium text-text-primary">{s.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Type de spot */}
+          <div>
+            <h3 className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-text-secondary">{t('filter.spot_type')}</h3>
+            <div className="flex flex-col gap-2">
+              {FILTER_CHIPS.map(({ type, icon: Icon, key }) => {
+                const active = filterType === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setFilterType(active ? '' : type)}
+                    className={cn(
+                      'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
+                      active ? 'bg-sage/10 text-sage' : 'text-text-secondary hover:bg-surface-2',
+                    )}
+                  >
+                    <span className={cn(
+                      'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                      active ? 'border-sage bg-sage' : 'border-border-subtle bg-transparent',
+                    )}>
+                      {active && <span className="h-2 w-2 rounded-sm bg-white" />}
+                    </span>
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: TYPE_COLORS[type] }} />
+                    <span className="flex-1 text-left">{t(key)}</span>
+                    <span className="text-[11px] text-text-secondary/60">{typeCounts[type] ?? 0}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Cotation min */}
+          <div>
+            <h3 className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-text-secondary">{t('filter.grade_min')}</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {['3','4','5','6a','6b','6c','7a','7b','7c','8a','8b+'].map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setFilterGradeMin(filterGradeMin === g ? '' : g)}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer',
+                    filterGradeMin === g
+                      ? 'bg-sage text-white'
+                      : 'border border-border-subtle text-text-secondary hover:border-sage/40 hover:text-sage',
+                  )}
+                >{g}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Orientation */}
+          <div>
+            <h3 className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-text-secondary">{t('filter.orientation')}</h3>
+            <div className="grid grid-cols-4 gap-1.5">
+              {(['N','NE','E','SE','S','SO','O','NO'] as const).map((o) => (
+                <button
+                  key={o}
+                  type="button"
+                  onClick={() => setFilterOrientation(filterOrientation === o ? '' : o)}
+                  className={cn(
+                    'rounded-lg py-1.5 text-[11px] font-semibold transition-colors cursor-pointer',
+                    filterOrientation === o
+                      ? 'bg-sage/12 text-sage'
+                      : 'border border-border-subtle text-text-secondary hover:border-sage/30 hover:text-text-primary',
+                  )}
+                >{o}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Reset */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="w-full rounded-xl border border-border-subtle py-2 text-xs font-semibold text-text-secondary transition-colors hover:border-sage/40 hover:text-sage cursor-pointer"
+            >
+              {t('filter.reset')}
+            </button>
+          )}
+
+          {/* Spot count */}
+          <p className="text-center text-xs text-text-secondary/60">
+            {filteredSpots.length.toLocaleString()} {t('filter.spots_visible')}
+          </p>
+        </div>
+      </aside>
+
+      {/* ── Map area ── */}
+      <div className="relative flex-1 min-w-0">
       {/* Map */}
       <MapContainer
         center={[46.5, 2.5]}
@@ -462,10 +593,11 @@ export function MapPage() {
 
         {/* Right-side controls */}
         <div className="absolute right-3 top-3 z-[1000] flex flex-col gap-2">
+          {/* Search — mobile only */}
           <button
             onClick={() => setSearchOpen(!searchOpen)}
             className={cn(
-              'flex h-10 w-10 cursor-pointer items-center justify-center',
+              'flex lg:hidden h-10 w-10 cursor-pointer items-center justify-center',
               'rounded-xl bg-surface/95 backdrop-blur-md shadow-card',
               'border border-border-subtle/50',
               'text-text-secondary transition-all duration-200',
@@ -499,11 +631,11 @@ export function MapPage() {
             <Layers className="h-[18px] w-[18px]" />
           </button>
 
-          {/* Filter toggle */}
+          {/* Filter toggle — mobile only */}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={cn(
-              'flex h-10 w-10 cursor-pointer items-center justify-center',
+              'lg:hidden flex h-10 w-10 cursor-pointer items-center justify-center',
               'rounded-xl bg-surface/95 backdrop-blur-md shadow-card',
               'border border-border-subtle/50',
               'text-text-secondary transition-all duration-200',
@@ -519,9 +651,9 @@ export function MapPage() {
         </div>
       </MapContainer>
 
-      {/* Search overlay */}
+      {/* Search overlay — mobile only */}
       {searchOpen && (
-        <div className="absolute left-3 right-16 top-3 z-[1001] animate-[fadeSlideDown_0.2s_ease-out]">
+        <div className="lg:hidden absolute left-3 right-16 top-3 z-[1001] animate-[fadeSlideDown_0.2s_ease-out]">
           <div className="overflow-hidden rounded-xl border border-border-subtle/50 bg-surface/95 shadow-elevated backdrop-blur-md">
             <div className="flex items-center gap-2 px-4">
               <Search className="h-4 w-4 shrink-0 text-text-secondary/60" />
@@ -586,9 +718,9 @@ export function MapPage() {
         </div>
       )}
 
-      {/* Advanced filters panel */}
+      {/* Advanced filters panel — mobile only */}
       {showFilters && (
-        <div className="absolute right-3 top-[208px] z-[1001] w-64 animate-[fadeSlideDown_0.2s_ease-out]">
+        <div className="lg:hidden absolute right-3 top-[208px] z-[1001] w-64 animate-[fadeSlideDown_0.2s_ease-out]">
           <div className="rounded-xl border border-border-subtle/50 bg-surface/95 p-4 shadow-elevated backdrop-blur-md">
             <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-text-secondary">
               {t('filter.advanced')}
@@ -708,9 +840,9 @@ export function MapPage() {
         </div>
       )}
 
-      {/* Filter chips — bottom of map */}
+      {/* Filter chips — bottom of map (mobile/tablet only) */}
       <div
-        className="absolute left-3 right-3 z-[1000] flex items-center gap-2 overflow-x-auto scrollbar-none"
+        className="lg:hidden absolute left-3 right-3 z-[1000] flex items-center gap-2 overflow-x-auto scrollbar-none"
         style={{ bottom: 'calc(0.75rem + var(--spacing-tabbar) + env(safe-area-inset-bottom))' }}
       >
         {/* Propose button (authenticated) */}
@@ -826,6 +958,7 @@ export function MapPage() {
           />
         </Suspense>
       )}
+      </div>{/* end map area */}
     </div>
   );
 }

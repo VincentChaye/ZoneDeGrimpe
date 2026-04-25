@@ -400,6 +400,8 @@
   "filter.rock_type": "Rock type",
   "filter.all_rocks": "All rocks",
   "filter.geo_required": "Enable geolocation to filter by distance",
+  "filter.spot_type": "Spot type",
+  "filter.spots_visible": "spots visible",
   "common.add": "Add",
   "common.apply": "Apply",
   "common.submit": "Submit",

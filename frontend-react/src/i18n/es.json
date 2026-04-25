@@ -400,6 +400,8 @@
   "filter.rock_type": "Tipo de roca",
   "filter.all_rocks": "Todas las rocas",
   "filter.geo_required": "Activa la geolocalizacion para filtrar por distancia",
+  "filter.spot_type": "Tipo de spot",
+  "filter.spots_visible": "spots visibles",
   "common.add": "Anadir",
   "common.apply": "Aplicar",
   "common.submit": "Enviar",
