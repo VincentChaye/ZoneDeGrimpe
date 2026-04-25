@@ -12,6 +12,12 @@
   "common.in_progress": "In progress",
   "profile.tab_gear": "Gear",
   "gear.title": "My Gear",
+  "gear.my_equipment": "My Equipment",
+  "gear.epi_tracking": "EPI tracking",
+  "gear.items_count": "items",
+  "gear.alert_retire": "{{count}} item(s) to retire",
+  "gear.alert_watch": "{{count}} item(s) to watch",
+  "gear.all_ok": "All your equipment is in good condition",
   "gear.add": "Add gear",
   "gear.empty": "No gear registered",
   "gear.empty_category": "No gear in this category",
@@ -77,33 +83,27 @@
   "admin.gear.description": "Description",
   "nav.open_menu": "Open menu",
   "nav.close_menu": "Close menu",
-
   "theme.toggle": "Theme",
   "theme.light": "Light",
   "theme.dark": "Dark",
-
   "lang.fr": "Francais",
   "lang.en": "English",
   "lang.es": "Espanol",
   "lang.select": "Language",
-
   "hero.badge": "Outdoor & indoor climbing",
   "hero.title_1": "Find your",
   "hero.title_2": "next route",
   "hero.subtitle": "Explore climbing spots, discover new crags and share your best boulders with the community.",
   "hero.cta_map": "Explore the map",
   "hero.cta_register": "Create an account",
-
   "stats.spots": "Listed spots",
   "stats.climbers": "Climbers",
   "stats.coverage": "Coverage",
   "stats.france": "France",
-
   "home.your_space": "Your space",
   "home.logbook_desc": "Browse your climbing logbook",
   "home.feed_desc": "See your friends' activity",
   "home.myspots_desc": "Saved spots and proposals",
-
   "features.title": "Features",
   "features.map_title": "Interactive map",
   "features.map_desc": "Explore over a thousand climbing spots on a map filterable by type, grade and distance.",
@@ -111,12 +111,9 @@
   "features.details_desc": "Each spot has grades, orientation, description and a link to GPS directions.",
   "features.community_title": "Community",
   "features.community_desc": "Suggest new spots, edit existing ones and contribute to enriching the database.",
-
   "announcement.title": "App in development",
   "announcement.text": "Features are being implemented. Thank you for your understanding.",
-
   "footer.rights": "All rights reserved",
-
   "auth.login": "Log in",
   "auth.register": "Create an account",
   "auth.logout": "Log out",
@@ -166,7 +163,6 @@
   "auth.request_new_link": "Request a new link",
   "auth.level_label": "Climbing level (optional)",
   "auth.level_optional": "Choose a level...",
-
   "spot.type.crag": "Crag",
   "spot.type.boulder": "Boulder",
   "spot.type.indoor": "Gym",
@@ -188,7 +184,6 @@
   "spot.propose": "Suggest a spot",
   "spot.bookmark": "Save",
   "spot.unbookmark": "Remove",
-
   "review.title": "Reviews",
   "review.write": "Write a review",
   "review.add": "Add a review",
@@ -202,7 +197,6 @@
   "review.stars": "{{count}} star(s)",
   "review.avg": "{{avg}}/5",
   "review.count": "{{count}} reviews",
-
   "logbook.title": "Logbook",
   "logbook.log_climb": "Log this climb",
   "logbook.date": "Date",
@@ -218,14 +212,12 @@
   "logbook.grade_pyramid": "Grade pyramid",
   "logbook.progression": "Progression",
   "logbook.no_entries": "No ascents logged yet.",
-
   "social.follow": "Follow",
   "social.unfollow": "Unfollow",
   "social.followers": "Followers",
   "social.following": "Following",
   "social.feed": "Activity feed",
   "social.no_activity": "No recent activity.",
-
   "friends.title": "Friends",
   "friends.add": "Add friend",
   "friends.pending": "Pending",
@@ -238,7 +230,6 @@
   "friends.status.friends": "Friends",
   "friends.status.pending_sent": "Request sent",
   "friends.status.pending_received": "Accept request?",
-
   "notif.title": "Notifications",
   "notif.unread": "unread",
   "notif.mark_read": "Mark as read",
@@ -251,7 +242,6 @@
   "notif.spot_rejected": "Your spot \"{{spot}}\" has been rejected",
   "notif.new_follower": "{{user}} is now following you",
   "notif.enable_push": "Enable push notifications",
-
   "profile.public": "Public profile",
   "profile.level": "Level",
   "profile.member_since": "Member since",
@@ -264,14 +254,12 @@
   "profile.following": "Following",
   "friends.pending_sent": "Request sent",
   "friends.request_accepted": "Request accepted",
-
   "settings.title": "Settings",
   "settings.display_name": "Display name",
   "settings.username": "Username",
   "settings.language": "Language",
   "settings.save": "Save",
   "settings.notifications": "Notifications",
-
   "common.loading": "Loading...",
   "common.error": "An error occurred.",
   "common.save": "Save",
@@ -285,7 +273,6 @@
   "common.search": "Search",
   "common.no_results": "No results.",
   "common.load_more": "Load more",
-
   "spot.enter": "Enter the spot",
   "spot.share": "Share",
   "spot.sheet": "Details",
@@ -310,7 +297,6 @@
   "spot.login_to_add_routes": "Log in to add routes.",
   "spot.type.unknown": "Unknown",
   "spot.contributor": "Contributor",
-
   "orient.N": "North",
   "orient.NE": "North-East",
   "orient.E": "East",
@@ -319,25 +305,20 @@
   "orient.SO": "South-West",
   "orient.O": "West",
   "orient.NO": "North-West",
-
   "equip.spit": "Bolt / Resin",
   "equip.piton": "Piton",
   "equip.mixte": "Mixed",
   "equip.non_equipe": "Unequipped",
-
   "style.sport": "Sport",
   "style.trad": "Trad",
   "style.boulder": "Boulder",
   "style.multi": "Multi-pitch",
   "style.other": "Other",
-
   "geo.https_required": "Geolocation requires HTTPS.",
   "geo.you_are_here": "You are here",
   "geo.denied": "Geolocation is blocked. Allow it in your browser settings.",
   "geo.activate": "Enable location to see spots near you.",
-
   "search.no_spots": "No spots found",
-
   "toast.spot_saved": "Spot saved!",
   "toast.spot_removed": "Spot removed from favorites",
   "toast.save_error": "Error while saving.",
@@ -357,15 +338,13 @@
   "toast.upload_error": "Upload error",
   "toast.max_photos": "Maximum 5 photos per upload.",
   "toast.login_required": "You must be logged in.",
-
   "share.text": "Check out this climbing spot: {{name}}",
   "share.copied": "Link copied to clipboard!",
   "share.link": "Spot link",
-
-  "wizard.next": "Next \u2192",
+  "wizard.next": "Next →",
   "wizard.send_request": "Send request",
   "wizard.send_edit": "Send modification",
-  "wizard.sending": "Sending\u2026",
+  "wizard.sending": "Sending…",
   "wizard.retry": "Retry",
   "wizard.close": "Close",
   "wizard.err_name_required": "Spot name is required.",
@@ -376,20 +355,19 @@
   "wizard.err_not_logged_edit": "You are not logged in. Please log in again.",
   "wizard.err_no_changes": "No changes detected.",
   "wizard.position_undefined": "Position not set",
-  "wizard.locating": "Locating\u2026",
-  "wizard.position_found": "Position found \u2713",
+  "wizard.locating": "Locating…",
+  "wizard.position_found": "Position found ✓",
   "wizard.use_position": "Use my position",
   "wizard.spot_added": "Spot added!",
   "wizard.request_sent": "Request sent!",
   "wizard.spot_visible": "The spot is now visible on the map.",
-  "wizard.request_pending": "An admin will review your request. Track its status in Settings \u2192 My requests.",
+  "wizard.request_pending": "An admin will review your request. Track its status in Settings → My requests.",
   "wizard.edit_applied": "Changes applied!",
   "wizard.edit_applied_desc": "The spot has been updated on the map.",
-  "wizard.edit_pending_desc": "An admin will review your modification. Track its status in Settings \u2192 My requests.",
-  "wizard.admin_immediate": "\u2705 Applied immediately",
-  "wizard.admin_pending": "\u23f3 Submitted for admin review",
-  "wizard.admin_approve_immediate": "\u2705 Will be approved immediately",
-
+  "wizard.edit_pending_desc": "An admin will review your modification. Track its status in Settings → My requests.",
+  "wizard.admin_immediate": "✅ Applied immediately",
+  "wizard.admin_pending": "⏳ Submitted for admin review",
+  "wizard.admin_approve_immediate": "✅ Will be approved immediately",
   "recap.name": "Name",
   "recap.type": "Type",
   "recap.style": "Style",
@@ -407,11 +385,9 @@
   "recap.photos_deleted": "Photos deleted",
   "recap.photos_added": "Photos added",
   "recap.photo_count": "{{count}} photo(s)",
-
   "map.layer.osm": "Standard map",
   "map.layer.satellite": "Satellite view",
   "map.layer.topo": "Topographic map",
-
   "filter.all_distances": "All",
   "filter.advanced": "Advanced filters",
   "filter.grade_min": "Minimum grade",
@@ -424,11 +400,9 @@
   "filter.rock_type": "Rock type",
   "filter.all_rocks": "All rocks",
   "filter.geo_required": "Enable geolocation to filter by distance",
-
   "common.add": "Add",
   "common.apply": "Apply",
   "common.submit": "Submit",
-
   "spot.website": "Website",
   "spot.climbing_routes": "Routes",
   "spot.subtype": "Sub-type",
@@ -436,7 +410,6 @@
   "spot.subtype_route": "Route",
   "spot.subtype_boulder": "Boulder",
   "spot.deleted": "Spot deleted",
-
   "toast.route_deleted": "Route deleted",
   "toast.spot_deleted": "Spot deleted",
   "toast.position_found": "Position found",
@@ -445,7 +418,6 @@
   "toast.review_saved": "Review saved!",
   "toast.review_deleted": "Review deleted",
   "toast.log_saved": "Ascent logged!",
-
   "propose.title": "Suggest a spot",
   "propose.button": "Suggest",
   "propose.step1": "Name & Type",
@@ -483,7 +455,6 @@
   "propose.address_not_found": "Address not found",
   "propose.address_found": "Address found",
   "propose.or_manual": "or enter coordinates manually",
-
   "edit.title": "Edit spot",
   "edit.step1": "Name & Type",
   "edit.step2": "Climbing details",
@@ -496,7 +467,6 @@
   "edit.admin_notice": "Your changes will be submitted for admin review.",
   "edit.apply": "Apply",
   "edit.submit": "Submit",
-
   "rock.calcaire": "Limestone",
   "rock.granite": "Granite",
   "rock.gres": "Sandstone",
@@ -506,7 +476,6 @@
   "rock.conglomerat": "Conglomerate",
   "rock.quartzite": "Quartzite",
   "rock.autre": "Other",
-
   "admin.access_denied": "Access restricted to administrators",
   "admin.back_home": "Back to home",
   "admin.spots_title": "Spot Management",
@@ -542,7 +511,6 @@
   "admin.unban": "Unban",
   "admin.ban": "Ban",
   "admin.delete_user_confirm": "Permanently delete {{name}}?",
-
   "feed.title": "Activity feed",
   "feed.subtitle": "Recent activity from your friends and subscriptions",
   "feed.no_activity": "No recent activity",
@@ -557,14 +525,17 @@
   "feed.filter_reviews": "Reviews",
   "feed.filter_logbook": "Ascents",
   "feed.filter_spots": "Spots",
-
+  "feed.circles": "Your circles",
+  "feed.trending": "Trending",
+  "feed.suggestions": "Suggested",
+  "feed.share": "Share",
+  "feed.composer_placeholder": "A session to share, {{name}}?",
   "time.just_now": "just now",
   "time.minutes_ago": "{{count}} min ago",
   "time.hours_ago": "{{count}}h ago",
   "time.yesterday": "yesterday",
   "time.days_ago": "{{count}}d ago",
   "time.weeks_ago": "{{count}} wk ago",
-
   "logbook.subtitle": "Your ascents and progression",
   "logbook.timeline": "History",
   "logbook.ascents": "Ascents",
@@ -601,14 +572,11 @@
   "profile.recent_reviews": "Recent reviews",
   "profile.no_ascents": "No ascents logged yet",
   "profile.no_reviews": "No reviews published yet",
-
   "level.debutant": "Beginner",
   "level.intermediaire": "Intermediate",
   "level.avance": "Advanced",
-
   "profile.id_missing": "ID missing",
   "profile.not_found": "Profile not found",
-
   "settings.login_prompt": "Log in to access your settings.",
   "settings.personal_info": "Personal information",
   "settings.name_label": "Name",
@@ -639,9 +607,6 @@
   "settings.pw_wrong_current": "Current password is incorrect",
   "settings.preferences": "Appearance & Language",
   "settings.theme": "Theme",
-  "settings.language": "Language",
-  "settings.title": "Settings",
-  "settings.save": "Save",
   "settings.section_profile": "My Profile",
   "settings.profile_public_info": "Information visible on your public profile",
   "settings.avatar_url_placeholder": "Your avatar URL (https://...)",
@@ -672,7 +637,6 @@
   "settings.notif_quiet_to": "to",
   "settings.pw_hint": "Minimum 12 characters",
   "settings.delete_account_warning": "This action is irreversible. All your data will be deleted.",
-
   "myspots.login_prompt": "Log in to save your favorite spots.",
   "myspots.subtitle": "Your saved and proposed spots",
   "myspots.tab_bookmarks": "Bookmarks",
@@ -687,7 +651,6 @@
   "myspots.sort_date": "By date",
   "myspots.sort_name": "By name",
   "myspots.no_results": "No matching spots",
-
   "friends.subtitle": "Find your climbing partners",
   "friends.search_placeholder": "Search by username...",
   "friends.already_friends": "Friends",
@@ -698,7 +661,6 @@
   "friends.search_to_add": "Use the search above to add climbers",
   "friends.since": "Friends since",
   "friends.login_prompt": "Log in to access your friends",
-
   "messages.new": "New message",
   "messages.empty": "No conversations yet",
   "messages.start_first": "Start a conversation",
@@ -711,5 +673,16 @@
   "messages.search_user": "Search a user...",
   "messages.no_users_found": "No users found",
   "messages.select_conversation": "Select a conversation",
-  "messages.opening": "Opening conversation..."
+  "messages.opening": "Opening conversation...",
+  "logbook.max_grade": "Max grade",
+  "logbook.this_year": "This year",
+  "profile.about": "About",
+  "profile.stats_title": "Statistics",
+  "profile.tab_activity": "Activity",
+  "profile.tab_spots": "Spots",
+  "profile.tab_reviews": "Reviews",
+  "profile.action_ascent": "sent",
+  "profile.action_review": "reviewed",
+  "profile.no_spots": "No spots added yet",
+  "profile.edit_profile": "Edit profile"
 }

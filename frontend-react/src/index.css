@@ -24,12 +24,23 @@
   --color-text-secondary: #6A645A;
   --color-border-subtle: oklch(0.48 0.02 70 / 0.18);
 
-  /* --- Grade difficulty colors --- */
+  /* --- Grade difficulty colors (semantic) --- */
   --color-grade-easy: #16a34a;
   --color-grade-medium: #ca8a04;
   --color-grade-hard: #ea580c;
   --color-grade-expert: #dc2626;
   --color-grade-elite: #7c3aed;
+
+  /* --- Grade difficulty colors (climbing-gym scale: yellow < green < blue < red < black < purple) --- */
+  --color-grade-yellow: #eab308;
+  --color-grade-green: #16a34a;
+  --color-grade-blue: #2563eb;
+  --color-grade-red: #dc2626;
+  --color-grade-black: #1a1a1a;
+  --color-grade-purple: #7c3aed;
+
+  /* --- Radius --- */
+  --radius-xl: 1.75rem;
 
   /* --- Spot type colors --- */
   --color-type-crag: #5D7052;
@@ -50,6 +61,7 @@
   --radius-sm: 0.5rem;
   --radius-md: 0.875rem;
   --radius-lg: 1.375rem;
+  --radius-full: 9999px;
 
   /* --- Layout --- */
   --spacing-header: 58px;

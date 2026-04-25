@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Package, Plus, Settings, Loader2 } from 'lucide-react';
+import { Package, Plus, Settings, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useGearStore } from '@/stores/gear.store';
 import { GearCard } from '@/components/gear/GearCard';
@@ -65,99 +65,153 @@ export function GearPage() {
     counts[item.category] = (counts[item.category] ?? 0) + 1;
   }
 
+  // EPI alerts
+  const retireItems = items.filter((i) => i.epiStatus === 'retire');
+  const watchItems  = items.filter((i) => i.epiStatus === 'watch');
+  const alertCount  = retireItems.length + watchItems.length;
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="font-heading text-xl font-bold text-text-primary">{t('gear.title')}</h1>
-        <div className="flex items-center gap-2">
-          {/* Visibility badge */}
-          <Link
-            to="/settings"
-            className="flex items-center gap-1 rounded-full border border-border-subtle bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-text-secondary no-underline transition-colors hover:border-sage hover:text-sage"
-          >
-            <Settings className="h-3 w-3" />
-            {t(`settings.visibility_${gearVisibility}`)}
-          </Link>
-          <button
-            type="button"
-            onClick={() => setShowWizard(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-sage px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover"
-          >
-            <Plus className="h-4 w-4" />
-            {t('gear.add')}
-          </button>
-        </div>
-      </div>
+    <div className="px-4 py-6 pb-24 md:pb-8">
+      <div className="mx-auto max-w-5xl">
 
-      {/* Category filter tabs */}
-      {items.length > 0 && (
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setActiveCategory('all')}
-            className={cn(
-              'shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all',
-              activeCategory === 'all'
-                ? 'bg-sage text-white shadow-soft'
-                : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+        {/* ── Header ── */}
+        <div className="mb-5 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">{t('gear.title')}</p>
+            <h1 className="font-heading text-3xl font-bold leading-tight text-text-primary">{t('gear.my_equipment')}</h1>
+            {items.length > 0 && (
+              <p className="mt-1 text-sm text-text-secondary">
+                {t('gear.epi_tracking')} · {items.length} {t('gear.items_count')}
+              </p>
             )}
-          >
-            {t('gear.all_categories')} ({items.length})
-          </button>
-          {CATEGORIES.filter((c) => counts[c]).map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setActiveCategory(c)}
-              className={cn(
-                'shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all',
-                activeCategory === c
-                  ? 'bg-sage text-white shadow-soft'
-                  : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
-              )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              to="/settings"
+              className="flex items-center gap-1 rounded-full border border-border-subtle bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-text-secondary no-underline transition-colors hover:border-sage hover:text-sage"
             >
-              {t(`gear.category.${c}`)} ({counts[c]})
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Content */}
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-sage" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-16 text-center">
-          <Package className="mb-3 h-10 w-10 text-text-secondary/30" />
-          <p className="text-sm font-medium text-text-secondary">
-            {activeCategory === 'all' ? t('gear.empty') : t('gear.empty_category')}
-          </p>
-          {activeCategory === 'all' && (
+              <Settings className="h-3 w-3" />
+              {t(`settings.visibility_${gearVisibility}`)}
+            </Link>
             <button
               type="button"
               onClick={() => setShowWizard(true)}
-              className="mt-4 flex items-center gap-1.5 rounded-xl bg-sage/10 px-4 py-2 text-sm font-semibold text-sage transition-colors hover:bg-sage/20"
+              className="flex items-center gap-1.5 rounded-[var(--radius-md)] bg-sage px-4 py-2 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-sage-hover hover:shadow-card"
             >
               <Plus className="h-4 w-4" />
               {t('gear.add')}
             </button>
-          )}
+          </div>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((item) => (
-            <div key={item._id} className={cn(deletingId === item._id && 'opacity-50 pointer-events-none')}>
-              <GearCard
-                item={item}
-                onEdit={setEditItem}
-                onDelete={handleDelete}
-              />
+
+        {/* ── EPI alert banner ── */}
+        {alertCount > 0 && (
+          <div className={cn(
+            'mb-4 flex items-start gap-3 rounded-[var(--radius-md)] border p-4',
+            retireItems.length > 0
+              ? 'border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20'
+              : 'border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20',
+          )}>
+            <div className={cn(
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)]',
+              retireItems.length > 0
+                ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+            )}>
+              <ShieldAlert className="h-5 w-5" />
             </div>
-          ))}
-        </div>
-      )}
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-text-primary">
+                {retireItems.length > 0
+                  ? t('gear.alert_retire', { count: retireItems.length })
+                  : t('gear.alert_watch', { count: watchItems.length })}
+              </p>
+              <p className="mt-0.5 text-xs text-text-secondary">
+                {retireItems.length > 0
+                  ? retireItems.map((i) => i.customName || [i.brand, i.model].filter(Boolean).join(' ')).join(', ')
+                  : watchItems.map((i) => i.customName || [i.brand, i.model].filter(Boolean).join(' ')).join(', ')}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── EPI all-ok banner ── */}
+        {!loading && items.length > 0 && alertCount === 0 && (
+          <div className="mb-4 flex items-center gap-3 rounded-[var(--radius-md)] border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{t('gear.all_ok')}</p>
+          </div>
+        )}
+
+        {/* ── Category filter chips ── */}
+        {items.length > 0 && (
+          <div className="mb-5 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setActiveCategory('all')}
+              className={cn(
+                'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all',
+                activeCategory === 'all'
+                  ? 'bg-sage text-white shadow-soft'
+                  : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+              )}
+            >
+              {t('gear.all_categories')} <span className="ml-1 opacity-70">{items.length}</span>
+            </button>
+            {CATEGORIES.filter((c) => counts[c]).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setActiveCategory(c)}
+                className={cn(
+                  'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all',
+                  activeCategory === c
+                    ? 'bg-sage text-white shadow-soft'
+                    : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+                )}
+              >
+                {t(`gear.category.${c}`)} <span className="ml-1 opacity-70">{counts[c]}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Content ── */}
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-sage" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-border-subtle py-16 text-center">
+            <Package className="mb-3 h-10 w-10 text-text-secondary/30" />
+            <p className="text-sm font-medium text-text-secondary">
+              {activeCategory === 'all' ? t('gear.empty') : t('gear.empty_category')}
+            </p>
+            {activeCategory === 'all' && (
+              <button
+                type="button"
+                onClick={() => setShowWizard(true)}
+                className="mt-4 flex items-center gap-1.5 rounded-[var(--radius-md)] bg-sage/10 px-4 py-2 text-sm font-semibold text-sage transition-colors hover:bg-sage/20"
+              >
+                <Plus className="h-4 w-4" />
+                {t('gear.add')}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {filtered.map((item) => (
+              <div key={item._id} className={cn(deletingId === item._id && 'pointer-events-none opacity-50')}>
+                <GearCard
+                  item={item}
+                  onEdit={setEditItem}
+                  onDelete={handleDelete}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modals */}
       {showWizard && (

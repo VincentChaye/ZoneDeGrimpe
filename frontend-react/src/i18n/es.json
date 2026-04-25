@@ -12,6 +12,12 @@
   "common.in_progress": "En construcción",
   "profile.tab_gear": "Material",
   "gear.title": "Mi material",
+  "gear.my_equipment": "Mi equipo",
+  "gear.epi_tracking": "Seguimiento EPI",
+  "gear.items_count": "equipos",
+  "gear.alert_retire": "{{count}} equipo(s) a retirar",
+  "gear.alert_watch": "{{count}} equipo(s) a vigilar",
+  "gear.all_ok": "Todo su equipo está en buen estado",
   "gear.add": "Añadir material",
   "gear.empty": "Ningún material registrado",
   "gear.empty_category": "Ningún material en esta categoría",
@@ -77,33 +83,27 @@
   "admin.gear.description": "Descripción",
   "nav.open_menu": "Abrir menu",
   "nav.close_menu": "Cerrar menu",
-
   "theme.toggle": "Tema",
   "theme.light": "Claro",
   "theme.dark": "Oscuro",
-
   "lang.fr": "Francais",
   "lang.en": "English",
   "lang.es": "Espanol",
   "lang.select": "Idioma",
-
   "hero.badge": "Escalada outdoor e indoor",
   "hero.title_1": "Encuentra tu",
   "hero.title_2": "proxima via",
   "hero.subtitle": "Explora spots de escalada, descubre nuevas paredes y comparte tus mejores bloques con la comunidad.",
   "hero.cta_map": "Explorar el mapa",
   "hero.cta_register": "Crear una cuenta",
-
   "stats.spots": "Spots registrados",
   "stats.climbers": "Escaladores",
   "stats.coverage": "Cobertura",
   "stats.france": "Francia",
-
   "home.your_space": "Tu espacio",
   "home.logbook_desc": "Consulta tu cuaderno de ascensiones",
   "home.feed_desc": "Ve la actividad de tus amigos",
   "home.myspots_desc": "Spots favoritos y propuestas",
-
   "features.title": "Funcionalidades",
   "features.map_title": "Mapa interactivo",
   "features.map_desc": "Explora mas de mil spots de escalada en un mapa filtrable por tipo, grado y distancia.",
@@ -111,12 +111,9 @@
   "features.details_desc": "Cada spot tiene grados, orientacion, descripcion y enlace a las indicaciones GPS.",
   "features.community_title": "Comunidad",
   "features.community_desc": "Propone nuevos spots, edita los existentes y contribuye a enriquecer la base de datos.",
-
   "announcement.title": "Aplicacion en desarrollo",
   "announcement.text": "Las funcionalidades estan siendo implementadas. Gracias por su comprension.",
-
   "footer.rights": "Todos los derechos reservados",
-
   "auth.login": "Iniciar sesion",
   "auth.register": "Crear una cuenta",
   "auth.logout": "Cerrar sesion",
@@ -166,7 +163,6 @@
   "auth.request_new_link": "Solicitar un nuevo enlace",
   "auth.level_label": "Nivel de escalada (opcional)",
   "auth.level_optional": "Elige un nivel...",
-
   "spot.type.crag": "Pared",
   "spot.type.boulder": "Bloque",
   "spot.type.indoor": "Rocodromo",
@@ -188,7 +184,6 @@
   "spot.propose": "Proponer un spot",
   "spot.bookmark": "Guardar",
   "spot.unbookmark": "Quitar",
-
   "review.title": "Opiniones",
   "review.write": "Escribir una opinion",
   "review.add": "Dar una opinion",
@@ -202,7 +197,6 @@
   "review.stars": "{{count}} estrella(s)",
   "review.avg": "{{avg}}/5",
   "review.count": "{{count}} opiniones",
-
   "logbook.title": "Libreta de escalada",
   "logbook.log_climb": "Registrar esta escalada",
   "logbook.date": "Fecha",
@@ -218,14 +212,12 @@
   "logbook.grade_pyramid": "Piramide de grados",
   "logbook.progression": "Progresion",
   "logbook.no_entries": "Ninguna ascension registrada.",
-
   "social.follow": "Seguir",
   "social.unfollow": "Dejar de seguir",
   "social.followers": "Seguidores",
   "social.following": "Siguiendo",
   "social.feed": "Actividad reciente",
   "social.no_activity": "Sin actividad reciente.",
-
   "friends.title": "Amigos",
   "friends.add": "Agregar amigo",
   "friends.pending": "Pendiente",
@@ -238,7 +230,6 @@
   "friends.status.friends": "Amigos",
   "friends.status.pending_sent": "Solicitud enviada",
   "friends.status.pending_received": "Aceptar solicitud?",
-
   "notif.title": "Notificaciones",
   "notif.unread": "sin leer",
   "notif.mark_read": "Marcar como leido",
@@ -251,7 +242,6 @@
   "notif.spot_rejected": "Tu spot \"{{spot}}\" ha sido rechazado",
   "notif.new_follower": "{{user}} te sigue ahora",
   "notif.enable_push": "Activar notificaciones push",
-
   "profile.public": "Perfil publico",
   "profile.level": "Nivel",
   "profile.member_since": "Miembro desde",
@@ -264,14 +254,12 @@
   "profile.following": "Siguiendo",
   "friends.pending_sent": "Solicitud enviada",
   "friends.request_accepted": "Solicitud aceptada",
-
-  "settings.title": "Ajustes",
+  "settings.title": "Configuracion",
   "settings.display_name": "Nombre visible",
   "settings.username": "Nombre de usuario",
   "settings.language": "Idioma",
   "settings.save": "Guardar",
   "settings.notifications": "Notificaciones",
-
   "common.loading": "Cargando...",
   "common.error": "Ha ocurrido un error.",
   "common.save": "Guardar",
@@ -285,7 +273,6 @@
   "common.search": "Buscar",
   "common.no_results": "Sin resultados.",
   "common.load_more": "Cargar mas",
-
   "spot.enter": "Entrar al spot",
   "spot.share": "Compartir",
   "spot.sheet": "Ficha",
@@ -310,7 +297,6 @@
   "spot.login_to_add_routes": "Inicia sesion para anadir vias.",
   "spot.type.unknown": "Desconocido",
   "spot.contributor": "Contribuidor",
-
   "orient.N": "Norte",
   "orient.NE": "Noreste",
   "orient.E": "Este",
@@ -319,25 +305,20 @@
   "orient.SO": "Suroeste",
   "orient.O": "Oeste",
   "orient.NO": "Noroeste",
-
   "equip.spit": "Spit / Resina",
   "equip.piton": "Piton",
   "equip.mixte": "Mixto",
   "equip.non_equipe": "Sin equipar",
-
   "style.sport": "Deportiva",
   "style.trad": "Tradicional",
   "style.boulder": "Bloque",
   "style.multi": "Largo",
   "style.other": "Otro",
-
   "geo.https_required": "La geolocalizacion requiere HTTPS.",
   "geo.you_are_here": "Estas aqui",
   "geo.denied": "La geolocalizacion esta bloqueada. Permitela en los ajustes de tu navegador.",
   "geo.activate": "Activa la localizacion para ver spots cerca de ti.",
-
   "search.no_spots": "Ningun spot encontrado",
-
   "toast.spot_saved": "Spot guardado!",
   "toast.spot_removed": "Spot eliminado de favoritos",
   "toast.save_error": "Error al guardar.",
@@ -357,15 +338,13 @@
   "toast.upload_error": "Error al subir",
   "toast.max_photos": "Maximo 5 fotos por subida.",
   "toast.login_required": "Debes estar conectado.",
-
   "share.text": "Descubre este spot de escalada: {{name}}",
   "share.copied": "Enlace copiado al portapapeles!",
   "share.link": "Enlace del spot",
-
-  "wizard.next": "Siguiente \u2192",
+  "wizard.next": "Siguiente →",
   "wizard.send_request": "Enviar solicitud",
   "wizard.send_edit": "Enviar modificacion",
-  "wizard.sending": "Enviando\u2026",
+  "wizard.sending": "Enviando…",
   "wizard.retry": "Reintentar",
   "wizard.close": "Cerrar",
   "wizard.err_name_required": "El nombre del spot es obligatorio.",
@@ -376,20 +355,19 @@
   "wizard.err_not_logged_edit": "No estas conectado. Inicia sesion de nuevo.",
   "wizard.err_no_changes": "Ninguna modificacion detectada.",
   "wizard.position_undefined": "Posicion no definida",
-  "wizard.locating": "Localizando\u2026",
-  "wizard.position_found": "Posicion encontrada \u2713",
+  "wizard.locating": "Localizando…",
+  "wizard.position_found": "Posicion encontrada ✓",
   "wizard.use_position": "Usar mi posicion",
   "wizard.spot_added": "Spot anadido!",
   "wizard.request_sent": "Solicitud enviada!",
   "wizard.spot_visible": "El spot ahora es visible en el mapa.",
-  "wizard.request_pending": "Un admin revisara tu solicitud. Sigue su estado en Ajustes \u2192 Mis solicitudes.",
+  "wizard.request_pending": "Un admin revisara tu solicitud. Sigue su estado en Ajustes → Mis solicitudes.",
   "wizard.edit_applied": "Modificaciones aplicadas!",
   "wizard.edit_applied_desc": "El spot ha sido actualizado en el mapa.",
-  "wizard.edit_pending_desc": "Un admin revisara tu modificacion. Sigue su estado en Ajustes \u2192 Mis solicitudes.",
-  "wizard.admin_immediate": "\u2705 Aplicado inmediatamente",
-  "wizard.admin_pending": "\u23f3 Enviado para revision admin",
-  "wizard.admin_approve_immediate": "\u2705 Sera aprobado inmediatamente",
-
+  "wizard.edit_pending_desc": "Un admin revisara tu modificacion. Sigue su estado en Ajustes → Mis solicitudes.",
+  "wizard.admin_immediate": "✅ Aplicado inmediatamente",
+  "wizard.admin_pending": "⏳ Enviado para revision admin",
+  "wizard.admin_approve_immediate": "✅ Sera aprobado inmediatamente",
   "recap.name": "Nombre",
   "recap.type": "Tipo",
   "recap.style": "Estilo",
@@ -407,11 +385,9 @@
   "recap.photos_deleted": "Fotos eliminadas",
   "recap.photos_added": "Fotos anadidas",
   "recap.photo_count": "{{count}} foto(s)",
-
   "map.layer.osm": "Mapa estándar",
   "map.layer.satellite": "Vista satélite",
   "map.layer.topo": "Mapa topográfico",
-
   "filter.all_distances": "Todas",
   "filter.advanced": "Filtros avanzados",
   "filter.grade_min": "Grado minimo",
@@ -424,11 +400,9 @@
   "filter.rock_type": "Tipo de roca",
   "filter.all_rocks": "Todas las rocas",
   "filter.geo_required": "Activa la geolocalizacion para filtrar por distancia",
-
   "common.add": "Anadir",
   "common.apply": "Aplicar",
   "common.submit": "Enviar",
-
   "spot.website": "Sitio web",
   "spot.climbing_routes": "Vias",
   "spot.subtype": "Subtipo",
@@ -436,7 +410,6 @@
   "spot.subtype_route": "Via",
   "spot.subtype_boulder": "Bloque",
   "spot.deleted": "Spot eliminado",
-
   "toast.route_deleted": "Via eliminada",
   "toast.spot_deleted": "Spot eliminado",
   "toast.position_found": "Posicion encontrada",
@@ -445,7 +418,6 @@
   "toast.review_saved": "Opinion guardada!",
   "toast.review_deleted": "Opinion eliminada",
   "toast.log_saved": "Ascension registrada!",
-
   "propose.title": "Proponer un spot",
   "propose.button": "Proponer",
   "propose.step1": "Nombre y Tipo",
@@ -483,7 +455,6 @@
   "propose.address_not_found": "Direccion no encontrada",
   "propose.address_found": "Direccion encontrada",
   "propose.or_manual": "o introduce las coordenadas",
-
   "edit.title": "Editar spot",
   "edit.step1": "Nombre y Tipo",
   "edit.step2": "Detalles escalada",
@@ -496,7 +467,6 @@
   "edit.admin_notice": "Tus modificaciones seran enviadas para revision por un administrador.",
   "edit.apply": "Aplicar",
   "edit.submit": "Enviar",
-
   "rock.calcaire": "Caliza",
   "rock.granite": "Granito",
   "rock.gres": "Arenisca",
@@ -506,7 +476,6 @@
   "rock.conglomerat": "Conglomerado",
   "rock.quartzite": "Cuarcita",
   "rock.autre": "Otro",
-
   "admin.access_denied": "Acceso reservado a administradores",
   "admin.back_home": "Volver al inicio",
   "admin.spots_title": "Gestion de Spots",
@@ -542,7 +511,6 @@
   "admin.unban": "Desbanear",
   "admin.ban": "Banear",
   "admin.delete_user_confirm": "Eliminar definitivamente a {{name}}?",
-
   "feed.title": "Actividad reciente",
   "feed.subtitle": "Actividad reciente de tus amigos y suscripciones",
   "feed.no_activity": "Sin actividad reciente",
@@ -557,14 +525,17 @@
   "feed.filter_reviews": "Opiniones",
   "feed.filter_logbook": "Ascensiones",
   "feed.filter_spots": "Spots",
-
+  "feed.circles": "Tus círculos",
+  "feed.trending": "Tendencias",
+  "feed.suggestions": "Sugerencias",
+  "feed.share": "Compartir",
+  "feed.composer_placeholder": "¿Una sesión que contar, {{name}}?",
   "time.just_now": "ahora mismo",
   "time.minutes_ago": "hace {{count}} min",
   "time.hours_ago": "hace {{count}}h",
   "time.yesterday": "ayer",
   "time.days_ago": "hace {{count}}d",
   "time.weeks_ago": "hace {{count}} sem.",
-
   "logbook.subtitle": "Tus ascensiones y progresion",
   "logbook.timeline": "Historial",
   "logbook.ascents": "Ascensiones",
@@ -601,14 +572,11 @@
   "profile.recent_reviews": "Opiniones recientes",
   "profile.no_ascents": "Sin ascensiones registradas",
   "profile.no_reviews": "Sin opiniones publicadas",
-
   "level.debutant": "Principiante",
   "level.intermediaire": "Intermedio",
   "level.avance": "Avanzado",
-
   "profile.id_missing": "ID faltante",
   "profile.not_found": "Perfil no encontrado",
-
   "settings.login_prompt": "Inicia sesion para acceder a tus ajustes.",
   "settings.personal_info": "Informacion personal",
   "settings.name_label": "Nombre",
@@ -639,9 +607,6 @@
   "settings.pw_wrong_current": "La contrasena actual es incorrecta",
   "settings.preferences": "Apariencia e Idioma",
   "settings.theme": "Tema",
-  "settings.language": "Idioma",
-  "settings.title": "Configuracion",
-  "settings.save": "Guardar",
   "settings.section_profile": "Mi Perfil",
   "settings.profile_public_info": "Informacion visible en tu perfil publico",
   "settings.avatar_url_placeholder": "URL de tu avatar (https://...)",
@@ -672,7 +637,6 @@
   "settings.notif_quiet_to": "a",
   "settings.pw_hint": "Minimo 12 caracteres",
   "settings.delete_account_warning": "Esta accion es irreversible. Todos tus datos seran eliminados.",
-
   "myspots.login_prompt": "Inicia sesion para guardar tus spots favoritos.",
   "myspots.subtitle": "Tus spots guardados y propuestos",
   "myspots.tab_bookmarks": "Favoritos",
@@ -687,7 +651,6 @@
   "myspots.sort_date": "Por fecha",
   "myspots.sort_name": "Por nombre",
   "myspots.no_results": "Ningun spot coincide",
-
   "friends.subtitle": "Encuentra a tus companeros de escalada",
   "friends.search_placeholder": "Buscar por usuario...",
   "friends.already_friends": "Amigos",
@@ -698,7 +661,6 @@
   "friends.search_to_add": "Usa la busqueda de arriba para agregar escaladores",
   "friends.since": "Amigos desde",
   "friends.login_prompt": "Inicia sesion para acceder a tus amigos",
-
   "messages.new": "Nuevo mensaje",
   "messages.empty": "Sin conversaciones aun",
   "messages.start_first": "Iniciar una conversacion",
@@ -711,5 +673,16 @@
   "messages.search_user": "Buscar un usuario...",
   "messages.no_users_found": "Ningun usuario encontrado",
   "messages.select_conversation": "Selecciona una conversacion",
-  "messages.opening": "Abriendo conversacion..."
+  "messages.opening": "Abriendo conversacion...",
+  "logbook.max_grade": "Grado máximo",
+  "logbook.this_year": "Este año",
+  "profile.about": "Acerca de",
+  "profile.stats_title": "Estadísticas",
+  "profile.tab_activity": "Actividad",
+  "profile.tab_spots": "Spots",
+  "profile.tab_reviews": "Reseñas",
+  "profile.action_ascent": "encadenó",
+  "profile.action_review": "valoró",
+  "profile.no_spots": "Sin spots añadidos",
+  "profile.edit_profile": "Editar perfil"
 }

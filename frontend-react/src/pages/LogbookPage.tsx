@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  BookOpen, MapPin, TrendingUp, Loader2, Zap, Trash2, Pencil, X, BarChart2,
+  BookOpen, MapPin, TrendingUp, Loader2, Flame, Trash2, Pencil, X, Activity, Check,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
-import { cn, parseGradeToNumber } from '@/lib/utils';
+import { cn, parseGradeToNumber, gradeColor } from '@/lib/utils';
 
 interface LogbookEntry {
   _id: string;
@@ -77,6 +77,7 @@ export function LogbookPage() {
   // Filters
   const [filterStyle, setFilterStyle] = useState('');
   const [filterPeriod, setFilterPeriod] = useState<Period>('all');
+  const [mobileTab, setMobileTab] = useState<'recent' | 'pyramid'>('recent');
 
   const LIMIT = 50;
 
@@ -177,226 +178,287 @@ export function LogbookPage() {
     );
   }
 
-  const gradePyramid = stats?.gradePyramid ? sortGrades(stats.gradePyramid) : [];
-  const maxGradeCount = gradePyramid.length > 0 ? Math.max(...gradePyramid.map((g) => g.count)) : 0;
-  const monthly = stats?.monthly ?? [];
-  const maxMonthCount = monthly.length > 0 ? Math.max(...monthly.map((m) => m.count)) : 0;
+  // Sorted hardest → easiest for pyramid display (top = hardest)
+  const gradePyramid = stats?.gradePyramid ? sortGrades(stats.gradePyramid).reverse() : [];
+  const pyramidMax = gradePyramid.length > 0 ? Math.max(...gradePyramid.map((g) => g.count)) : 0;
+
+  // Derived stats
+  const maxGrade = stats?.gradePyramid && stats.gradePyramid.length > 0
+    ? sortGrades(stats.gradePyramid).at(-1)?.grade ?? '—'
+    : '—';
+  const currentYear = new Date().getFullYear();
+  const daysThisYear = (stats?.monthly ?? [])
+    .filter((m) => m.year === currentYear)
+    .reduce((sum, m) => sum + m.count, 0);
 
   const PERIODS: Period[] = ['all', 'month', '3months', 'year'];
   const filteredEntries = filterByPeriod(entries, filterPeriod).filter((e) => !filterStyle || e.style === filterStyle);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
+    <div className="px-4 py-6 pb-24 md:pb-8">
+      <div className="mx-auto max-w-5xl">
 
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold text-text-primary">{t('logbook.title')}</h1>
-        <p className="mt-1 text-sm text-text-secondary">{t('logbook.subtitle')}</p>
-      </div>
-
-      {/* Stats */}
-      {stats && (
-        <div className="mb-6 grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-border-subtle bg-surface p-4 shadow-soft">
-            <div className="flex items-center gap-2 text-sage">
-              <TrendingUp className="h-5 w-5" />
-              <span className="font-heading text-2xl font-bold">{stats.total}</span>
-            </div>
-            <p className="mt-1 text-xs font-medium text-text-secondary">{t('logbook.ascents')}</p>
-          </div>
-          <div className="rounded-xl border border-border-subtle bg-surface p-4 shadow-soft">
-            <div className="flex items-center gap-2 text-amber-brand">
-              <MapPin className="h-5 w-5" />
-              <span className="font-heading text-2xl font-bold">{stats.uniqueSpots}</span>
-            </div>
-            <p className="mt-1 text-xs font-medium text-text-secondary">{t('logbook.unique_spots')}</p>
+        {/* ── Header ── */}
+        <div className="mb-5 flex items-end justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">{t('logbook.title')}</p>
+            <h1 className="font-heading text-3xl font-bold leading-tight text-text-primary">{t('logbook.subtitle')}</h1>
           </div>
         </div>
-      )}
 
-      {/* Grade pyramid */}
-      {gradePyramid.length > 0 && (
-        <section className="mb-6">
-          <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-bold text-text-primary">
-            <Zap className="h-4 w-4 text-sage" />
-            {t('logbook.grade_pyramid')}
-          </h2>
-          <div className="space-y-1.5 rounded-xl border border-border-subtle bg-surface p-4 shadow-soft">
-            {gradePyramid.map(({ grade, count }) => (
-              <div key={grade} className="flex items-center gap-3">
-                <span className="w-10 text-right text-xs font-bold text-text-primary">{grade}</span>
-                <div className="flex-1">
-                  <div
-                    className="h-5 rounded bg-sage/20 transition-all duration-500"
-                    style={{ width: `${Math.max(4, (count / maxGradeCount) * 100)}%` }}
-                  >
-                    <div className="h-full rounded bg-sage" style={{ width: '100%' }} />
-                  </div>
-                </div>
-                <span className="w-8 text-xs font-medium text-text-secondary">{count}</span>
+        {/* ── Stats grid — 4 cards ── */}
+        {stats && (
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { icon: <Check className="h-[18px] w-[18px]" />, value: stats.total, label: t('logbook.ascents'), color: 'text-sage' },
+              { icon: <Flame className="h-[18px] w-[18px]" />, value: maxGrade, label: t('logbook.max_grade'), color: 'text-amber-brand' },
+              { icon: <MapPin className="h-[18px] w-[18px]" />, value: stats.uniqueSpots, label: t('logbook.unique_spots'), color: 'text-stone-brand' },
+              { icon: <Activity className="h-[18px] w-[18px]" />, value: daysThisYear, label: t('logbook.this_year'), color: 'text-sage' },
+            ].map(({ icon, value, label, color }) => (
+              <div key={label} className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-soft">
+                <div className={cn('mb-1.5', color)}>{icon}</div>
+                <div className="font-heading text-2xl font-bold leading-none text-text-primary">{value}</div>
+                <div className="mt-1 text-xs text-text-secondary">{label}</div>
               </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
 
-      {/* Monthly chart */}
-      {monthly.length > 1 && (
-        <section className="mb-8">
-          <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-bold text-text-primary">
-            <BarChart2 className="h-4 w-4 text-sage" />
-            {t('logbook.monthly_chart')}
-          </h2>
-          <div className="rounded-xl border border-border-subtle bg-surface p-4 shadow-soft">
-            <div className="flex items-end gap-1" style={{ height: 80 }}>
-              {monthly.map((m) => {
-                const pct = maxMonthCount > 0 ? (m.count / maxMonthCount) * 100 : 0;
-                const label = new Date(m.year, m.month - 1).toLocaleDateString(undefined, { month: 'short' });
-                return (
-                  <div key={`${m.year}-${m.month}`} className="group relative flex flex-1 flex-col items-center gap-1">
-                    <div className="absolute -top-6 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-text-primary px-1.5 py-0.5 text-[10px] text-surface group-hover:block">
-                      {m.count}
-                    </div>
-                    <div
-                      className="w-full rounded-t bg-sage/60 transition-all duration-300 group-hover:bg-sage"
-                      style={{ height: `${Math.max(4, pct)}%` }}
-                    />
-                    <span className="text-[9px] text-text-secondary/60">{label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Timeline */}
-      <section>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <h2 className="font-heading text-lg font-bold text-text-primary">{t('logbook.timeline')}</h2>
-          <div className="ml-auto flex flex-wrap gap-1.5">
-            {PERIODS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setFilterPeriod(p)}
-                className={cn(
-                  'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
-                  filterPeriod === p
-                    ? 'bg-amber-brand text-white'
-                    : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
-                )}
-              >
-                {t(`logbook.period.${p}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {(['', ...STYLES] as const).map((s) => (
+        {/* ── Mobile tabs ── */}
+        <div className="mb-4 flex gap-2 md:hidden">
+          {(['recent', 'pyramid'] as const).map((tab) => (
             <button
-              key={s}
+              key={tab}
               type="button"
-              onClick={() => setFilterStyle(s)}
+              onClick={() => setMobileTab(tab)}
               className={cn(
-                'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
-                filterStyle === s
+                'rounded-full px-4 py-1.5 text-xs font-semibold transition-all',
+                mobileTab === tab
                   ? 'bg-sage text-white'
-                  : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+                  : 'border border-border-subtle bg-surface text-text-secondary',
               )}
             >
-              {s ? t(`logbook.style.${s}`) : t('myspots.filter_all')}
+              {tab === 'recent' ? t('logbook.timeline') : t('logbook.grade_pyramid')}
             </button>
           ))}
         </div>
 
-        {filteredEntries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle py-12 text-center">
-            <BookOpen className="mb-3 h-10 w-10 text-text-secondary/20" />
-            <p className="text-sm font-medium text-text-secondary">{t('logbook.no_entries')}</p>
-            <p className="mt-1 text-xs text-text-secondary/60">{t('logbook.start_logging')}</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredEntries.map((entry) => {
-              const date = new Date(entry.date || entry.createdAt);
-              return (
-                <div key={entry._id} className="rounded-xl border border-border-subtle bg-surface p-4 shadow-soft transition-shadow hover:shadow-card">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sage-muted text-sage">
-                      <MapPin className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        to={`/map?spot=${entry.spotId}`}
-                        className="truncate text-sm font-semibold text-text-primary no-underline hover:text-sage"
-                      >
-                        {entry.spotName || t('logbook.unknown_spot')}
-                      </Link>
-                      {entry.routeName && (
-                        <p className="text-xs text-text-secondary">{entry.routeName}</p>
-                      )}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        {entry.grade && (
-                          <span className="rounded-lg border border-border-subtle bg-surface-2/60 px-2 py-0.5 text-xs font-bold text-text-primary">
-                            {entry.grade}
-                          </span>
+        {/* ── Desktop 2-col / Mobile single-col ── */}
+        <div className="grid gap-5 md:grid-cols-[1fr_300px]">
+
+          {/* ── LEFT: Entry list ── */}
+          <section className={cn(mobileTab !== 'recent' && 'hidden md:block')}>
+            {/* Filters */}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap gap-1.5">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setFilterPeriod(p)}
+                    className={cn(
+                      'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
+                      filterPeriod === p
+                        ? 'bg-amber-brand text-white'
+                        : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+                    )}
+                  >
+                    {t(`logbook.period.${p}`)}
+                  </button>
+                ))}
+              </div>
+              <div className="ml-auto flex flex-wrap gap-1.5">
+                {(['', ...STYLES] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFilterStyle(s)}
+                    className={cn(
+                      'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
+                      filterStyle === s
+                        ? 'bg-sage text-white'
+                        : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
+                    )}
+                  >
+                    {s ? t(`logbook.style.${s}`) : t('myspots.filter_all')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {filteredEntries.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-border-subtle py-12 text-center">
+                <BookOpen className="mb-3 h-10 w-10 text-text-secondary/20" />
+                <p className="text-sm font-medium text-text-secondary">{t('logbook.no_entries')}</p>
+                <p className="mt-1 text-xs text-text-secondary/60">{t('logbook.start_logging')}</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop table-like list */}
+                <div className="hidden overflow-hidden rounded-[var(--radius-md)] border border-border-subtle bg-surface shadow-soft md:block">
+                  {filteredEntries.map((entry, i) => {
+                    const date = new Date(entry.date || entry.createdAt);
+                    const gc = entry.grade ? gradeColor(entry.grade) : '#6A645A';
+                    return (
+                      <div
+                        key={entry._id}
+                        className={cn(
+                          'grid items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-2',
+                          'grid-cols-[44px_1fr_100px_80px_60px]',
+                          i > 0 && 'border-t border-border-subtle',
                         )}
+                      >
+                        {/* Grade badge */}
+                        <span
+                          className="rounded-md px-2 py-1 text-center text-xs font-bold text-white"
+                          style={{ fontFamily: 'ui-monospace, monospace', background: gc }}
+                        >
+                          {entry.grade || '—'}
+                        </span>
+                        {/* Name + spot */}
+                        <div className="min-w-0">
+                          <Link
+                            to={`/map?spot=${entry.spotId}`}
+                            className="block truncate text-sm font-semibold text-text-primary no-underline hover:text-sage"
+                          >
+                            {entry.routeName || entry.spotName || t('logbook.unknown_spot')}
+                          </Link>
+                          {entry.routeName && (
+                            <p className="truncate text-xs text-text-secondary">{entry.spotName}</p>
+                          )}
+                        </div>
+                        {/* Style pill */}
                         <span className={cn(
-                          'rounded-lg border px-2 py-0.5 text-xs font-semibold',
+                          'rounded-full px-2.5 py-0.5 text-center text-[10px] font-bold uppercase tracking-wide',
                           STYLE_CLS[entry.style] || STYLE_CLS.repeat,
                         )}>
                           {t(`logbook.style.${entry.style}`)}
                         </span>
-                        <span className="text-[11px] text-text-secondary/60">
-                          {date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {/* Date */}
+                        <span className="text-xs text-text-secondary">
+                          {date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
                         </span>
+                        {/* Actions */}
+                        <div className="flex justify-end gap-1">
+                          <button
+                            onClick={() => openEdit(entry)}
+                            type="button"
+                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 transition-colors hover:bg-surface-2 hover:text-text-secondary"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => deleteEntry(entry._id)}
+                            disabled={deleting === entry._id}
+                            type="button"
+                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50 dark:hover:bg-red-900/20"
+                          >
+                            {deleting === entry._id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                          </button>
+                        </div>
                       </div>
-                      {entry.notes && (
-                        <p className="mt-1.5 text-xs leading-relaxed text-text-secondary/80">{entry.notes}</p>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <button
-                        onClick={() => openEdit(entry)}
-                        type="button"
-                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 transition-colors hover:bg-surface-2 hover:text-text-secondary"
-                        title={t('logbook.edit_entry')}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => deleteEntry(entry._id)}
-                        disabled={deleting === entry._id}
-                        type="button"
-                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50 dark:hover:bg-red-900/20"
-                        title={t('logbook.delete_entry')}
-                      >
-                        {deleting === entry._id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                      </button>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-        )}
-        {/* Load more */}
-        {entries.length < total && (
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              onClick={loadMore}
-              disabled={loadingMore}
-              className="flex cursor-pointer items-center gap-2 rounded-xl border border-border-subtle bg-surface px-5 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2 disabled:opacity-50"
-            >
-              {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {t('logbook.load_more')} ({entries.length}/{total})
-            </button>
-          </div>
-        )}
-      </section>
+
+                {/* Mobile card list */}
+                <div className="space-y-2 md:hidden">
+                  {filteredEntries.map((entry) => {
+                    const date = new Date(entry.date || entry.createdAt);
+                    const gc = entry.grade ? gradeColor(entry.grade) : '#6A645A';
+                    return (
+                      <div key={entry._id} className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-3 shadow-soft">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="shrink-0 rounded-md px-2.5 py-1.5 text-xs font-bold text-white"
+                            style={{ fontFamily: 'ui-monospace, monospace', background: gc, minWidth: 38, textAlign: 'center' }}
+                          >
+                            {entry.grade || '—'}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <Link
+                              to={`/map?spot=${entry.spotId}`}
+                              className="block truncate text-sm font-semibold text-text-primary no-underline hover:text-sage"
+                            >
+                              {entry.routeName || entry.spotName || t('logbook.unknown_spot')}
+                            </Link>
+                            <div className="flex items-center gap-1.5 text-[11px] text-text-secondary">
+                              <span>{entry.spotName}</span>
+                              <span>·</span>
+                              <span>{date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+                            </div>
+                          </div>
+                          <span className={cn(
+                            'shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide',
+                            STYLE_CLS[entry.style] || STYLE_CLS.repeat,
+                          )}>
+                            {t(`logbook.style.${entry.style}`)}
+                          </span>
+                          <div className="flex shrink-0 gap-1">
+                            <button onClick={() => openEdit(entry)} type="button" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 hover:bg-surface-2 hover:text-text-secondary">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => deleteEntry(entry._id)} disabled={deleting === entry._id} type="button" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 dark:hover:bg-red-900/20">
+                              {deleting === entry._id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {entry.notes && (
+                          <p className="mt-1.5 text-xs leading-relaxed text-text-secondary/80">{entry.notes}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Load more */}
+            {entries.length < total && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border border-border-subtle bg-surface px-5 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2 disabled:opacity-50"
+                >
+                  {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {t('logbook.load_more')} ({entries.length}/{total})
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* ── RIGHT: Pyramid ── */}
+          {gradePyramid.length > 0 && (
+            <aside className={cn(mobileTab !== 'pyramid' && 'hidden md:block')}>
+              <h2 className="mb-3 font-heading text-base font-bold text-text-primary">{t('logbook.grade_pyramid')}</h2>
+              <div className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-soft">
+                <div className="space-y-1.5">
+                  {gradePyramid.map(({ grade, count }) => {
+                    const pct = pyramidMax > 0 ? (count / pyramidMax) * 100 : 0;
+                    const color = gradeColor(grade);
+                    return (
+                      <div key={grade} className="flex items-center gap-2.5">
+                        <span className="w-8 text-right text-xs font-bold text-text-primary" style={{ fontFamily: 'ui-monospace, monospace' }}>
+                          {grade}
+                        </span>
+                        <div className="h-4 flex-1 overflow-hidden rounded bg-surface-2">
+                          <div
+                            className="h-full rounded transition-all duration-700 ease-out"
+                            style={{ width: `${Math.max(4, pct)}%`, background: color, opacity: 0.9 }}
+                          />
+                        </div>
+                        <span className="w-6 text-right text-xs text-text-secondary">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </aside>
+          )}
+        </div>
+      </div>
 
       {/* Edit modal */}
       {editEntry && (

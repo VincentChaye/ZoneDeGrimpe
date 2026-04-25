@@ -384,13 +384,42 @@ export function SpotSheet({ spot, onClose, onEdit }: SpotSheetProps) {
               'ring-1 ring-border-subtle/50',
             )}
           >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1 md:hidden">
-              <Drawer.Handle className="h-1.5 w-12 rounded-full bg-text-secondary/20" />
-            </div>
+            {/* Hero gradient (visible quand pas de photos) */}
+            {!hasPhotos && (
+              <div
+                className="relative h-32 shrink-0 overflow-hidden md:rounded-t-2xl"
+                style={{
+                  background: ({
+                    crag:    'linear-gradient(135deg, #5D7052 0%, #4A5A41 55%, #C18845 100%)',
+                    boulder: 'linear-gradient(135deg, #C18845 0%, #8a5d2e 100%)',
+                    indoor:  'linear-gradient(135deg, #4A90D9 0%, #2563eb 100%)',
+                    shop:    'linear-gradient(135deg, #8B5CF6 0%, #6d28d9 100%)',
+                  } as Record<string, string>)[spot.type]
+                    ?? 'linear-gradient(135deg, #5D7052 0%, #4A5A41 55%, #C18845 100%)',
+                }}
+              >
+                <svg viewBox="0 0 400 128" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+                  <path d="M 0 128 L 0 78 L 80 40 L 160 65 L 240 30 L 320 58 L 400 38 L 400 128 Z" fill="rgba(0,0,0,0.28)" />
+                  <path d="M 0 128 L 0 100 L 60 72 L 130 88 L 200 60 L 280 80 L 360 68 L 400 80 L 400 128 Z" fill="rgba(0,0,0,0.18)" />
+                </svg>
+                <div className="absolute bottom-3 left-4 flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
+                    <MapPin className="h-3 w-3" />
+                    {t(typeInfo.key)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Drag handle (only when no hero) */}
+            {hasPhotos && (
+              <div className="flex justify-center pt-3 pb-1 md:hidden">
+                <Drawer.Handle className="h-1.5 w-12 rounded-full bg-text-secondary/20" />
+              </div>
+            )}
 
             {/* Type banner with gradient */}
-            <div className={cn('bg-gradient-to-b to-transparent px-5 pt-4 pb-3', typeCls.gradient)}>
+            <div className={cn('bg-gradient-to-b to-transparent px-5 pt-4 pb-3', hasPhotos ? typeCls.gradient : '')}>
               <div className="flex items-start gap-3.5">
                 <div className={cn(
                   'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-soft',

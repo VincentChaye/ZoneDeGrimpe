@@ -29,6 +29,20 @@ export function getGradeLevel(maxGrade: string | null): string {
   return 'elite';
 }
 
+/**
+ * Returns the hex color for a climbing grade based on the ZdG gym-scale convention.
+ * yellow (≤5a) < green (5b–6b) < blue (6c–7a) < red (7b–7c) < black (8a) < purple (≥8b)
+ */
+export function gradeColor(grade: string): string {
+  const n = parseGradeToNumber(grade);
+  if (n <= 5.0)  return '#eab308'; // yellow ≤ 5a
+  if (n <= 6.33) return '#16a34a'; // green  5b–6b
+  if (n <= 7.0)  return '#2563eb'; // blue   6c–7a
+  if (n <= 7.66) return '#dc2626'; // red    7b–7c
+  if (n <= 8.0)  return '#1a1a1a'; // black  8a
+  return '#7c3aed';                 // purple ≥ 8b
+}
+
 /** Orientation degrees for compass display */
 export const ORIENT_DEG: Record<string, number> = {
   N: 0, NE: 45, E: 90, SE: 135, S: 180, SO: 225, O: 270, NO: 315,

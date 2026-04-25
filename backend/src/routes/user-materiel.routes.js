@@ -13,13 +13,17 @@ export function userMaterielRouter(db) {
   const users       = db.collection("users");
   const friendships = db.collection("friendships");
 
-  /** Enrichit un item avec epiStatus calculé à la volée */
+  /** Enrichit un item avec epiStatus calculé à la volée + specImageUrl depuis le catalogue */
   async function enrichWithEpi(item) {
     let spec = null;
     if (item.specId) {
       spec = await specs.findOne({ _id: new ObjectId(item.specId.toString()) });
     }
-    return { ...item, epiStatus: computeEpiStatus(item, spec) };
+    return {
+      ...item,
+      epiStatus: computeEpiStatus(item, spec),
+      specImageUrl: spec?.imageUrl ?? null,
+    };
   }
 
   /** Déclenche les notifs EPI si le statut a changé (fire-and-forget) */

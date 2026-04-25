@@ -50,6 +50,7 @@ export interface UserMateriel {
   model?: string | null;
   customName?: string | null;
   photoUrl?: string | null;
+  specImageUrl?: string | null;
   purchaseDate?: string | null;
   firstUseDate?: string | null;
   notes?: string | null;

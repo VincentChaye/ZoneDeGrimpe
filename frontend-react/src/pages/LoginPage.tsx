@@ -69,9 +69,16 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center px-4 py-8 sm:py-12">
-      <div className="w-full max-w-sm">
-        <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-6 shadow-card sm:p-8">
+    <div className="relative flex min-h-full items-center justify-center overflow-hidden px-4 py-8 sm:py-12">
+      {/* Decorative blobs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-sage/8 blur-3xl" />
+        <div className="absolute -right-20 top-1/3 h-72 w-72 rounded-full bg-gold/12 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-amber-brand/6 blur-3xl" />
+      </div>
+
+      <div className="relative w-full max-w-[420px]">
+        <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface p-6 shadow-elevated sm:p-9">
           {/* Logo */}
           <div className="mb-6 text-center">
             <img src={logo} alt="" className="mx-auto mb-3 h-10 w-10" />
@@ -163,3 +170,4 @@ export function LoginPage() {
     </div>
   );
 }
+
