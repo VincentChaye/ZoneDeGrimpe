@@ -8,10 +8,12 @@ function isLocalHost(hostname: string): boolean {
   return /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/i.test(hostname);
 }
 
+// En dev (localhost), on utilise '' pour passer par le proxy Vite (/api → localhost:3000).
+// En prod ou avec VITE_API_BASE_URL explicite, on utilise l'URL complète.
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   (typeof window !== 'undefined' && isLocalHost(window.location.hostname)
-    ? 'http://localhost:3000'
+    ? ''
     : PROD_API);
 
 /* ---------- Auth helpers ---------- */
