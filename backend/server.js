@@ -61,6 +61,8 @@ function isAllowedOrigin(origin) {
   if (allowedList.includes(origin)) return true;
   try {
     const u = new URL(origin);
+    // Autoriser tout port localhost en dev (Vite choisit 5173/5174/5175…)
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return true;
     // Autoriser HTTPS Render et GitHub
     if (
       u.protocol === "https:" &&
