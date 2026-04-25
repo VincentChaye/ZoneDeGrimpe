@@ -1,8 +1,16 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { requireAuth } from "../auth.js";
 import { createNotification } from "../notifications.js";
 import { getDisplayName } from "../helpers.js";
 import { ObjectId } from "mongodb";
+
+const friendRequestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1h
+  max: 30,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "too_many_requests" },
+});
 
 export function friendsRouter(db) {
   const r = Router();
@@ -10,14 +18,14 @@ export function friendsRouter(db) {
   const users = db.collection("users");
 
   // Indexes
-  friendships.createIndex({ requesterId: 1, addresseeId: 1 }, { unique: true }).catch(() => {});
-  friendships.createIndex({ addresseeId: 1, status: 1 }).catch(() => {});
-  friendships.createIndex({ requesterId: 1, status: 1 }).catch(() => {});
+  friendships.createIndex({ requesterId: 1, addresseeId: 1 }, { unique: true }).catch((e) => console.warn('[friends] createIndex:', e.message));
+  friendships.createIndex({ addresseeId: 1, status: 1 }).catch((e) => console.warn('[friends] createIndex:', e.message));
+  friendships.createIndex({ requesterId: 1, status: 1 }).catch((e) => console.warn('[friends] createIndex:', e.message));
 
   const userProjection = { displayName: 1, username: 1, avatarUrl: 1 };
 
   // POST /api/friends/request/:userId — send friend request
-  r.post("/request/:userId", requireAuth, async (req, res) => {
+  r.post("/request/:userId", friendRequestLimiter, requireAuth, async (req, res) => {
     const { userId } = req.params;
     if (userId === req.auth.uid) {
       return res.status(400).json({ error: "cannot_befriend_self" });

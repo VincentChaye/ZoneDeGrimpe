@@ -24,6 +24,7 @@ export function GearPage() {
   const [showWizard, setShowWizard] = useState(false);
   const [editItem, setEditItem] = useState<UserMateriel | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) fetchMyGear();
@@ -44,7 +45,13 @@ export function GearPage() {
     );
   }
 
+  const VISIBILITY_LABELS: Record<string, string> = {
+    public: 'settings.visibility_public',
+    friends: 'settings.visibility_friends',
+    private: 'settings.visibility_private',
+  };
   const gearVisibility = user?.privacy?.gearVisibility ?? 'private';
+  const visibilityKey = VISIBILITY_LABELS[gearVisibility] ?? 'settings.visibility_private';
 
   const filtered = activeCategory === 'all'
     ? items
@@ -53,9 +60,12 @@ export function GearPage() {
   async function handleDelete(item: UserMateriel) {
     if (!confirm(t('gear.delete_confirm'))) return;
     setDeletingId(item._id);
+    setDeleteError(null);
     try {
       await deleteGear(item._id);
-    } catch { /* silent */ }
+    } catch {
+      setDeleteError(t('gear.delete_error'));
+    }
     setDeletingId(null);
   }
 
@@ -91,7 +101,7 @@ export function GearPage() {
               className="flex items-center gap-1 rounded-full border border-border-subtle bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-text-secondary no-underline transition-colors hover:border-sage hover:text-sage"
             >
               <Settings className="h-3 w-3" />
-              {t(`settings.visibility_${gearVisibility}`)}
+              {t(visibilityKey)}
             </Link>
             <button
               type="button"
@@ -212,6 +222,13 @@ export function GearPage() {
           </div>
         )}
       </div>
+
+      {/* Delete error toast */}
+      {deleteError && (
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-elevated md:bottom-8">
+          {deleteError}
+        </div>
+      )}
 
       {/* Modals */}
       {showWizard && (

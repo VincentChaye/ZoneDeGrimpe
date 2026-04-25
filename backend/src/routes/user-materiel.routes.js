@@ -13,17 +13,29 @@ export function userMaterielRouter(db) {
   const users       = db.collection("users");
   const friendships = db.collection("friendships");
 
-  /** Enrichit un item avec epiStatus calculé à la volée + specImageUrl depuis le catalogue */
+  /** Enrichit un seul item (utilisé lors de POST/PATCH où un seul spec est nécessaire) */
   async function enrichWithEpi(item) {
     let spec = null;
     if (item.specId) {
       spec = await specs.findOne({ _id: new ObjectId(item.specId.toString()) });
     }
-    return {
-      ...item,
-      epiStatus: computeEpiStatus(item, spec),
-      specImageUrl: spec?.imageUrl ?? null,
-    };
+    return { ...item, epiStatus: computeEpiStatus(item, spec), specImageUrl: spec?.imageUrl ?? null };
+  }
+
+  /** Enrichit une liste d'items en batch (1 seule requête DB pour tous les specs) */
+  async function enrichManyWithEpi(items) {
+    const specIds = [...new Set(
+      items.filter((i) => i.specId).map((i) => i.specId.toString())
+    )];
+    const specMap = new Map();
+    if (specIds.length > 0) {
+      const specDocs = await specs.find({ _id: { $in: specIds.map((id) => new ObjectId(id)) } }).toArray();
+      for (const s of specDocs) specMap.set(s._id.toString(), s);
+    }
+    return items.map((item) => {
+      const spec = item.specId ? (specMap.get(item.specId.toString()) ?? null) : null;
+      return { ...item, epiStatus: computeEpiStatus(item, spec), specImageUrl: spec?.imageUrl ?? null };
+    });
   }
 
   /** Déclenche les notifs EPI si le statut a changé (fire-and-forget) */
@@ -38,9 +50,9 @@ export function userMaterielRouter(db) {
         : `${name} approche de sa date de réforme`;
 
       createNotification(db, { userId, type, data: { itemId: item._id.toString(), name }, message: msg })
-        .catch(() => {});
+        .catch((e) => console.warn('[epi]', e.message));
       materiel.updateOne({ _id: item._id }, { $set: { lastEpiNotifiedStatus: item.epiStatus } })
-        .catch(() => {});
+        .catch((e) => console.warn('[epi]', e.message));
     }
   }
 
@@ -52,7 +64,7 @@ export function userMaterielRouter(db) {
       if (req.query.category) filter.category = req.query.category;
 
       const items    = await materiel.find(filter).sort({ createdAt: -1 }).toArray();
-      const enriched = await Promise.all(items.map(enrichWithEpi));
+      const enriched = await enrichManyWithEpi(items);
 
       checkEpiNotifs(userId, enriched);
 
@@ -101,7 +113,7 @@ export function userMaterielRouter(db) {
       if (req.query.category) filter.category = req.query.category;
 
       const items    = await materiel.find(filter).sort({ createdAt: -1 }).toArray();
-      const enriched = await Promise.all(items.map(enrichWithEpi));
+      const enriched = await enrichManyWithEpi(items);
       return res.json({ items: enriched });
     } catch (e) {
       console.error(e);

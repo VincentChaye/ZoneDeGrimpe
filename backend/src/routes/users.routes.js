@@ -1,15 +1,23 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
+import rateLimit from "express-rate-limit";
 import { requireAuth, requireAdmin } from "../auth.js";
 import { uploadAvatar, cloudinary } from "../upload.js";
+
+const checkUsernameLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 min
+  max: 20,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "too_many_requests" },
+});
 
 export function usersRouter(db) {
   const r = Router();
   const users = db.collection("users");
 
   // Index
-  users.createIndex({ email: 1 }, { unique: true }).catch(() => {});
-  users.createIndex({ displayName: "text", email: "text" }).catch(() => {});
+  users.createIndex({ email: 1 }, { unique: true }).catch((e) => console.warn('[cleanup]', e.message));
+  users.createIndex({ displayName: "text", email: "text" }).catch((e) => console.warn('[cleanup]', e.message));
 
   // Constantes
   const LEVELS = ["debutant", "intermediaire", "avance"];
@@ -22,7 +30,7 @@ export function usersRouter(db) {
   }
 
   // --- GET /api/users/check-username/:username (public) ---
-  r.get("/check-username/:username", async (req, res) => {
+  r.get("/check-username/:username", checkUsernameLimiter, async (req, res) => {
     try {
       const username = String(req.params.username).trim().toLowerCase();
       if (!/^[a-z0-9_]{3,30}$/.test(username)) {
@@ -179,7 +187,7 @@ export function usersRouter(db) {
 
       // Supprimer l'ancienne si elle existe dans Cloudinary
       if (current?.avatarPublicId) {
-        await cloudinary.uploader.destroy(current.avatarPublicId).catch(() => {});
+        await cloudinary.uploader.destroy(current.avatarPublicId).catch((e) => console.warn('[cleanup]', e.message));
       }
 
       await users.updateOne(
@@ -202,7 +210,7 @@ export function usersRouter(db) {
       const current = await users.findOne({ _id: uid }, { projection: { avatarPublicId: 1 } });
 
       if (current?.avatarPublicId) {
-        await cloudinary.uploader.destroy(current.avatarPublicId).catch(() => {});
+        await cloudinary.uploader.destroy(current.avatarPublicId).catch((e) => console.warn('[cleanup]', e.message));
       }
 
       await users.updateOne(

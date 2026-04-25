@@ -112,7 +112,7 @@ export function climbingRoutesRouter(db) {
 
       // Supprimer l'ancienne image si elle existe
       if (route.imagePublicId) {
-        await cloudinary.uploader.destroy(route.imagePublicId).catch(() => {});
+        await cloudinary.uploader.destroy(route.imagePublicId).catch((e) => console.warn('[cleanup]', e.message));
       }
 
       const updated = await routes.findOneAndUpdate(
@@ -185,7 +185,7 @@ export function climbingRoutesRouter(db) {
 
       // Supprimer l'image si elle existe
       if (doc.imagePublicId) {
-        await cloudinary.uploader.destroy(doc.imagePublicId).catch(() => {});
+        await cloudinary.uploader.destroy(doc.imagePublicId).catch((e) => console.warn('[cleanup]', e.message));
       }
 
       await routes.deleteOne({ _id: new ObjectId(req.params.id) });

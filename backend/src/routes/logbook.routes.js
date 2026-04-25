@@ -42,46 +42,37 @@ const VALID_STYLES = ["onsight", "flash", "redpoint", "repeat"];
     try {
       const uid = req.auth.uid;
 
-      // Total + unique spots
-      const [totalResult] = await logbook.aggregate([
+      const [result] = await logbook.aggregate([
         { $match: { userId: uid } },
-        { $group: { _id: null, total: { $sum: 1 }, spots: { $addToSet: "$spotId" } } },
+        { $facet: {
+          totals: [
+            { $group: { _id: null, total: { $sum: 1 }, spots: { $addToSet: "$spotId" } } },
+          ],
+          gradePyramid: [
+            { $match: { grade: { $exists: true, $ne: null } } },
+            { $group: { _id: "$grade", count: { $sum: 1 } } },
+            { $sort: { _id: 1 } },
+          ],
+          monthly: [
+            { $group: {
+              _id: { year: { $year: "$date" }, month: { $month: "$date" } },
+              count: { $sum: 1 },
+            }},
+            { $sort: { "_id.year": 1, "_id.month": 1 } },
+          ],
+          styles: [
+            { $group: { _id: "$style", count: { $sum: 1 } } },
+          ],
+        }},
       ]).toArray();
 
-      const total = totalResult?.total || 0;
-      const uniqueSpots = totalResult?.spots?.length || 0;
-
-      // Grade pyramid
-      const gradePyramid = await logbook.aggregate([
-        { $match: { userId: uid, grade: { $exists: true, $ne: null } } },
-        { $group: { _id: "$grade", count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-      ]).toArray();
-
-      // Monthly progression
-      const monthly = await logbook.aggregate([
-        { $match: { userId: uid } },
-        {
-          $group: {
-            _id: { year: { $year: "$date" }, month: { $month: "$date" } },
-            count: { $sum: 1 },
-          },
-        },
-        { $sort: { "_id.year": 1, "_id.month": 1 } },
-      ]).toArray();
-
-      // Style distribution
-      const styles = await logbook.aggregate([
-        { $match: { userId: uid } },
-        { $group: { _id: "$style", count: { $sum: 1 } } },
-      ]).toArray();
-
+      const totalsDoc = result?.totals?.[0];
       return res.json({
-        total,
-        uniqueSpots,
-        gradePyramid: gradePyramid.map((g) => ({ grade: g._id, count: g.count })),
-        monthly: monthly.map((m) => ({ year: m._id.year, month: m._id.month, count: m.count })),
-        styles: Object.fromEntries(styles.map((s) => [s._id || "unknown", s.count])),
+        total:        totalsDoc?.total ?? 0,
+        uniqueSpots:  totalsDoc?.spots?.length ?? 0,
+        gradePyramid: (result?.gradePyramid ?? []).map((g) => ({ grade: g._id, count: g.count })),
+        monthly:      (result?.monthly ?? []).map((m) => ({ year: m._id.year, month: m._id.month, count: m.count })),
+        styles:       Object.fromEntries((result?.styles ?? []).map((s) => [s._id || "unknown", s.count])),
       });
     } catch (e) {
       console.error(e);

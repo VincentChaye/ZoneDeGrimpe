@@ -1,25 +1,30 @@
 import jwt from "jsonwebtoken";
 
-export function requireAuth(req, res, next) {
+function decodeToken(req) {
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token || !process.env.JWT_SECRET) return null;
   try {
-    const auth = req.headers.authorization || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-    if (!token) return res.status(401).json({ error: "unauthorized" });
-
-    if (!process.env.JWT_SECRET) {
-      console.error("FATAL: JWT_SECRET is not set");
-      return res.status(500).json({ error: "server_misconfigured" });
-    }
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-
-    const uid = payload?.uid;
-    if (!uid) return res.status(401).json({ error: "unauthorized" });
-
-    req.auth = { uid, roles: Array.isArray(payload.roles) ? payload.roles : ["user"] };
-    next();
-  } catch (e) {
-    return res.status(401).json({ error: "unauthorized" });
+    if (!payload?.uid) return null;
+    return { uid: payload.uid, roles: Array.isArray(payload.roles) ? payload.roles : ["user"] };
+  } catch {
+    return null;
   }
+}
+
+export function requireAuth(req, res, next) {
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "unauthorized" });
+  if (!process.env.JWT_SECRET) {
+    console.error("FATAL: JWT_SECRET is not set");
+    return res.status(500).json({ error: "server_misconfigured" });
+  }
+  const decoded = decodeToken(req);
+  if (!decoded) return res.status(401).json({ error: "unauthorized" });
+  req.auth = decoded;
+  next();
 }
 
 export function requireAdmin(req, res, next) {
@@ -33,15 +38,7 @@ export function requireAdmin(req, res, next) {
 
 /** Middleware optionnel : tente de décoder le JWT sans bloquer si absent/invalide */
 export function optionalAuth(req, res, next) {
-  try {
-    const auth = req.headers.authorization || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-    if (token && process.env.JWT_SECRET) {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
-      if (payload?.uid) {
-        req.auth = { uid: payload.uid, roles: Array.isArray(payload.roles) ? payload.roles : ["user"] };
-      }
-    }
-  } catch { /* token invalide, on ignore */ }
+  const decoded = decodeToken(req);
+  if (decoded) req.auth = decoded;
   next();
 }

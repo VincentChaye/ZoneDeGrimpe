@@ -55,7 +55,10 @@ function filterByPeriod(entries: LogbookEntry[], period: Period): LogbookEntry[]
   if (period === 'month') cutoff.setMonth(now.getMonth() - 1);
   else if (period === '3months') cutoff.setMonth(now.getMonth() - 3);
   else if (period === 'year') cutoff.setFullYear(now.getFullYear() - 1);
-  return entries.filter((e) => new Date(e.date || e.createdAt) >= cutoff);
+  return entries.filter((e) => {
+    const d = new Date(e.date || e.createdAt);
+    return !isNaN(d.getTime()) && d >= cutoff;
+  });
 }
 
 export function LogbookPage() {
@@ -67,6 +70,8 @@ export function LogbookPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [stats, setStats] = useState<LogbookStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   // Edit form
@@ -94,9 +99,9 @@ export function LogbookPage() {
         setTotal(tot);
         setStats(rawStats);
       })
-      .catch((err) => console.error('[logbook]', err))
+      .catch((err) => { console.error('[logbook]', err); setLoadError(true); })
       .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, retryCount]);
 
   async function loadMore() {
     setLoadingMore(true);
@@ -174,6 +179,22 @@ export function LogbookPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-sage" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
+        <BookOpen className="h-10 w-10 text-text-secondary/30" />
+        <p className="text-sm font-medium text-text-secondary">{t('common.error')}</p>
+        <button
+          type="button"
+          onClick={() => { setLoadError(false); setLoading(true); setRetryCount((c) => c + 1); }}
+          className="rounded-xl bg-sage px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sage-hover"
+        >
+          {t('common.retry')}
+        </button>
       </div>
     );
   }

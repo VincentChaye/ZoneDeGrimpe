@@ -1,10 +1,18 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
+import rateLimit from "express-rate-limit";
 import { createSpotSchema, updateSpotSchema } from "../validators.js";
 import { requireAuth, requireAdmin } from "../auth.js";
 import { createNotification } from "../notifications.js";
 import { getDisplayName } from "../helpers.js";
 import { upload, cloudinary } from "../upload.js";
+
+const spotSubmitLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1h
+  max: 10,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "too_many_requests" },
+});
 
 export function spotsRouter(db) {
   const r = Router();
@@ -44,7 +52,7 @@ export function spotsRouter(db) {
   // POST / — Soumettre un spot (tout utilisateur connecté)
   // Admin → approved directement ; User → pending
   // ================================================================
-  r.post("/", requireAuth, async (req, res) => {
+  r.post("/", spotSubmitLimiter, requireAuth, async (req, res) => {
     try {
       const parsed = createSpotSchema.parse(req.body);
       const isAdmin = req.auth.roles?.includes("admin");
@@ -108,6 +116,8 @@ export function spotsRouter(db) {
             { "submittedBy.uid": req.auth.uid },
             { "createdBy.uid": req.auth.uid },
           ],
+        }, {
+          projection: { name: 1, type: 1, status: 1, location: 1, createdAt: 1, updatedAt: 1, createdBy: 1, submittedBy: 1 },
         })
         .sort({ createdAt: -1 })
         .limit(100)
@@ -264,7 +274,7 @@ export function spotsRouter(db) {
           fromUsername: displayName,
           data: { spotId: result._id.toString(), spotName: result.name },
           message: `Votre spot "${result.name}" a été approuvé !`,
-        }).catch(() => {});
+        }).catch((e) => console.warn('[cleanup]', e.message));
       }
       res.json({ ok: true, spot: result });
     } catch (e) {
@@ -306,7 +316,7 @@ export function spotsRouter(db) {
           fromUsername: displayName,
           data: { spotId: result._id.toString(), spotName: result.name, reason: reason || null },
           message: `Votre spot "${result.name}" a été refusé.${reason ? ` Raison : ${reason}` : ""}`,
-        }).catch(() => {});
+        }).catch((e) => console.warn('[cleanup]', e.message));
       }
       res.json({ ok: true, spot: result });
     } catch (e) {
@@ -366,7 +376,7 @@ export function spotsRouter(db) {
     });
   }, async (req, res) => {
     if (!ObjectId.isValid(req.params.id)) {
-      if (req.file) await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
+      if (req.file) await cloudinary.uploader.destroy(req.file.filename).catch((e) => console.warn('[cleanup]', e.message));
       return res.status(400).json({ error: "bad_id" });
     }
     if (!req.file) return res.status(400).json({ error: "no_file" });
@@ -374,7 +384,7 @@ export function spotsRouter(db) {
     try {
       const spot = await spots.findOne({ _id: new ObjectId(req.params.id), ...PUBLIC_FILTER });
       if (!spot) {
-        await cloudinary.uploader.destroy(req.file.filename).catch(() => {});
+        await cloudinary.uploader.destroy(req.file.filename).catch((e) => console.warn('[cleanup]', e.message));
         return res.status(404).json({ error: "not_found" });
       }
 
@@ -406,7 +416,7 @@ export function spotsRouter(db) {
             fromUsername: displayName,
             data: { spotId: spot._id.toString(), spotName: spot.name },
             message: `Nouvelle photo en attente pour "${spot.name}"`,
-          }).catch(() => {});
+          }).catch((e) => console.warn('[cleanup]', e.message));
         }
       }
 
@@ -443,7 +453,7 @@ export function spotsRouter(db) {
           fromUsername: await getDisplayName(users, req.auth.uid),
           data: { spotId: result._id.toString(), spotName: result.name },
           message: `Votre photo pour "${result.name}" a été approuvée !`,
-        }).catch(() => {});
+        }).catch((e) => console.warn('[cleanup]', e.message));
       }
 
       res.json({ ok: true });
@@ -471,7 +481,7 @@ export function spotsRouter(db) {
       if (!photo) return res.status(404).json({ error: "photo_not_found" });
 
       // Cleanup Cloudinary
-      if (photo.publicId) await cloudinary.uploader.destroy(photo.publicId).catch(() => {});
+      if (photo.publicId) await cloudinary.uploader.destroy(photo.publicId).catch((e) => console.warn('[cleanup]', e.message));
 
       await spots.updateOne(
         { _id: new ObjectId(req.params.id) },
@@ -486,7 +496,7 @@ export function spotsRouter(db) {
           fromUsername: await getDisplayName(users, req.auth.uid),
           data: { spotId: spot._id.toString(), spotName: spot.name, reason: reason || null },
           message: `Votre photo pour "${spot.name}" a été refusée.${reason ? ` Raison : ${reason}` : ""}`,
-        }).catch(() => {});
+        }).catch((e) => console.warn('[cleanup]', e.message));
       }
 
       res.json({ ok: true });
@@ -516,7 +526,7 @@ export function spotsRouter(db) {
         return res.status(403).json({ error: "forbidden" });
       }
 
-      if (photo.publicId) await cloudinary.uploader.destroy(photo.publicId).catch(() => {});
+      if (photo.publicId) await cloudinary.uploader.destroy(photo.publicId).catch((e) => console.warn('[cleanup]', e.message));
 
       await spots.updateOne(
         { _id: new ObjectId(req.params.id) },

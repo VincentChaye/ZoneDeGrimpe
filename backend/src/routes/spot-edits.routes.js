@@ -140,7 +140,7 @@ export function spotEditsRouter(db) {
           fromUsername: displayName,
           data: { spotId: edit.spotId.toString(), spotName: spot?.name },
           message: `Votre modification du spot "${spot?.name || edit.spotId}" a été approuvée !`,
-        }).catch(() => {});
+        }).catch((e) => console.warn('[spot-edits approve]', e.message));
       }
       res.json({ status: "approved" });
     } catch (e) {
@@ -181,7 +181,7 @@ export function spotEditsRouter(db) {
           fromUsername: displayName,
           data: { spotId: edit.spotId.toString(), spotName: spot?.name, reason },
           message: `Votre modification du spot "${spot?.name || edit.spotId}" a été refusée.${reason ? ` Raison : ${reason}` : ""}`,
-        }).catch(() => {});
+        }).catch((e) => console.warn('[spot-edits reject]', e.message));
       }
       res.json({ status: "rejected" });
     } catch (e) {
