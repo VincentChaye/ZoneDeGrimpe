@@ -225,7 +225,7 @@ export function LogbookPage() {
         )}
 
         {/* ── Mobile tabs ── */}
-        <div className="mb-4 flex gap-2 md:hidden">
+        <div className="mb-4 flex gap-2 lg:hidden">
           {(['recent', 'pyramid'] as const).map((tab) => (
             <button
               key={tab}
@@ -244,10 +244,10 @@ export function LogbookPage() {
         </div>
 
         {/* ── Desktop 2-col / Mobile single-col ── */}
-        <div className="grid gap-5 md:grid-cols-[1fr_300px]">
+        <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
 
           {/* ── LEFT: Entry list ── */}
-          <section className={cn(mobileTab !== 'recent' && 'hidden md:block')}>
+          <section className={cn(mobileTab !== 'recent' && 'hidden lg:block')}>
             {/* Filters */}
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <div className="flex flex-wrap gap-1.5">
@@ -295,7 +295,7 @@ export function LogbookPage() {
             ) : (
               <>
                 {/* Desktop table-like list */}
-                <div className="hidden overflow-hidden rounded-[var(--radius-md)] border border-border-subtle bg-surface shadow-soft md:block">
+                <div className="hidden overflow-hidden rounded-[var(--radius-md)] border border-border-subtle bg-surface shadow-soft lg:block">
                   {filteredEntries.map((entry, i) => {
                     const date = new Date(entry.date || entry.createdAt);
                     const gc = entry.grade ? gradeColor(entry.grade) : '#6A645A';
@@ -362,7 +362,7 @@ export function LogbookPage() {
                 </div>
 
                 {/* Mobile card list */}
-                <div className="space-y-2 md:hidden">
+                <div className="space-y-2 lg:hidden">
                   {filteredEntries.map((entry) => {
                     const date = new Date(entry.date || entry.createdAt);
                     const gc = entry.grade ? gradeColor(entry.grade) : '#6A645A';
@@ -431,7 +431,7 @@ export function LogbookPage() {
 
           {/* ── RIGHT: Pyramid ── */}
           {gradePyramid.length > 0 && (
-            <aside className={cn(mobileTab !== 'pyramid' && 'hidden md:block')}>
+            <aside className={cn(mobileTab !== 'pyramid' && 'hidden lg:block')}>
               <h2 className="mb-3 font-heading text-base font-bold text-text-primary">{t('logbook.grade_pyramid')}</h2>
               <div className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-soft">
                 <div className="space-y-1.5">

@@ -272,10 +272,10 @@ export function ProfilePage() {
           </div>
 
           {/* ── Desktop 2-col / Mobile single-col ── */}
-          <div className="mt-6 grid gap-6 md:grid-cols-[280px_1fr]">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
 
             {/* LEFT: info panel (desktop only) */}
-            <aside className="hidden md:flex md:flex-col md:gap-4">
+            <aside className="hidden lg:flex lg:flex-col lg:gap-4">
               <div className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-soft">
                 <h3 className="mb-2 font-heading text-sm font-bold text-text-primary">{t('profile.about')}</h3>
                 <p className="text-sm leading-relaxed text-text-secondary">
