@@ -160,9 +160,9 @@ function FeedCard({ item, relDate }: { item: FeedItem; relDate: (s: string) => s
             </span>
           )}
           {d.spotName && (
-            <span className="ml-auto flex items-center gap-1 text-xs text-text-secondary">
-              <MapPin className="h-3 w-3" />
-              {String(d.spotName)}
+            <span className="ml-auto flex min-w-0 items-center gap-1 text-xs text-text-secondary">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{String(d.spotName)}</span>
             </span>
           )}
         </div>
@@ -299,7 +299,7 @@ export function FeedPage() {
               <div className="rounded-[var(--radius-sm)] border border-border-subtle bg-bg px-3 py-2 text-sm text-text-secondary/60">
                 {t('feed.composer_placeholder', { name: user?.displayName?.split(' ')[0] || '' })}
               </div>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => setFilter('logbook')}

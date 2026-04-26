@@ -476,7 +476,7 @@ function FollowButton({ following, loading, onClick, t }: {
       )}
     >
       <Users className="h-3.5 w-3.5" />
-      {following ? t('profile.following') : t('profile.follow')}
+      <span className="hidden sm:inline">{following ? t('profile.following') : t('profile.follow')}</span>
     </button>
   );
 }
@@ -499,7 +499,7 @@ function FriendButton({ status, loading, onClick, t }: {
       className={cn('flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-50', cls)}
     >
       {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
-      {label}
+      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 }
