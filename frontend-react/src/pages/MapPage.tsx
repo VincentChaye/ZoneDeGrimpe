@@ -22,9 +22,6 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 const ProposeSpotWizard = lazy(() =>
   import('@/components/spots/ProposeSpotWizard').then((m) => ({ default: m.ProposeSpotWizard })),
 );
-const EditSpotWizard = lazy(() =>
-  import('@/components/spots/EditSpotWizard').then((m) => ({ default: m.EditSpotWizard })),
-);
 
 /* ---------- Fix Leaflet default icon path ---------- */
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -305,7 +302,6 @@ export function MapPage() {
 
   // Wizards
   const [showPropose, setShowPropose] = useState(false);
-  const [editSpot, setEditSpot] = useState<Spot | null>(null);
 
   // Fetch spots
   const loadSpots = useCallback(async () => {
@@ -931,10 +927,6 @@ export function MapPage() {
         <SpotSheet
           spot={selectedSpot}
           onClose={() => setSelectedSpot(null)}
-          onEdit={(spot) => {
-            setSelectedSpot(null);
-            setEditSpot(spot);
-          }}
         />
       )}
 
@@ -948,16 +940,6 @@ export function MapPage() {
         </Suspense>
       )}
 
-      {/* Edit wizard (lazy-loaded) */}
-      {editSpot && (
-        <Suspense fallback={null}>
-          <EditSpotWizard
-            spot={editSpot}
-            onClose={() => setEditSpot(null)}
-            onSuccess={handleSpotCreated}
-          />
-        </Suspense>
-      )}
       </div>{/* end map area */}
     </div>
   );

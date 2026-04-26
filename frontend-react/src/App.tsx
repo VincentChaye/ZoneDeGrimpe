@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { Layout } from '@/components/layout/Layout';
 import { HomePage } from '@/pages/HomePage';
@@ -22,6 +22,10 @@ import { MessagesPage } from '@/pages/MessagesPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { useAuthStore } from '@/stores/auth.store';
+
+const SpotPage = lazy(() =>
+  import('@/pages/SpotPage').then((m) => ({ default: m.SpotPage })),
+);
 import { useThemeStore } from '@/stores/theme.store';
 import { useMessagesStore } from '@/stores/messages.store';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
@@ -85,6 +89,7 @@ function App() {
           <Route path="/admin/gear" element={<AdminGearPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/spot/:id" element={<Suspense fallback={null}><SpotPage /></Suspense>} />
         </Route>
       </Routes>
     </BrowserRouter>
