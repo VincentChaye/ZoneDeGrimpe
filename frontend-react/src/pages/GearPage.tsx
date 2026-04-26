@@ -81,14 +81,14 @@ export function GearPage() {
   const alertCount  = retireItems.length + watchItems.length;
 
   return (
-    <div className="px-4 py-6 pb-24 md:pb-8">
+    <div className="px-4 py-6 md:pb-8">
       <div className="mx-auto max-w-5xl">
 
         {/* ── Header ── */}
         <div className="mb-5 flex items-end justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">{t('gear.title')}</p>
-            <h1 className="font-heading text-3xl font-bold leading-tight text-text-primary">{t('gear.my_equipment')}</h1>
+            <h1 className="font-heading text-2xl sm:text-3xl font-bold leading-tight text-text-primary">{t('gear.my_equipment')}</h1>
             {items.length > 0 && (
               <p className="mt-1 text-sm text-text-secondary">
                 {t('gear.epi_tracking')} · {items.length} {t('gear.items_count')}

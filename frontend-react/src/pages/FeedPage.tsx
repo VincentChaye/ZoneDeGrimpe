@@ -279,7 +279,7 @@ export function FeedPage() {
       </aside>
 
       {/* ── Main feed ── */}
-      <main className="min-w-0 flex-1 px-4 py-5 pb-24 md:pb-6">
+      <main className="min-w-0 flex-1 px-4 py-5 md:pb-6">
         <div className="mx-auto max-w-[580px]">
           {/* Page title (mobile only) */}
           <div className="mb-4 xl:hidden">

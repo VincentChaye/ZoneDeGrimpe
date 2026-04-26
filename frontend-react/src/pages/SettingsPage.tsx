@@ -318,7 +318,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 pb-24 md:pb-8">
+    <div className="mx-auto max-w-2xl px-4 py-8 md:pb-8">
       <h1 className="mb-6 font-heading text-2xl font-bold text-text-primary">
         {t('settings.title')}
       </h1>

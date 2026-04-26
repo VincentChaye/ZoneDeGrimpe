@@ -41,7 +41,7 @@ export function MyProfilePage() {
   const isAdmin = user.roles?.includes('admin');
 
   return (
-    <div className="pb-24 md:pb-8">
+    <div>
 
       {/* ── Cover ── */}
       <div

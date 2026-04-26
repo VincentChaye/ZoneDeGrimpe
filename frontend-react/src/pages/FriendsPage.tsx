@@ -150,7 +150,7 @@ export function FriendsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
+    <div className="mx-auto max-w-2xl px-4 py-6 md:pb-6">
       {/* Page header */}
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold text-text-primary">

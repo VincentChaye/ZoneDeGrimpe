@@ -116,6 +116,7 @@
   "announcement.text": "Features are being implemented. Thank you for your understanding.",
   "footer.rights": "All rights reserved",
   "auth.login": "Log in",
+  "auth.login_required": "Log in to access this section.",
   "auth.register": "Create an account",
   "auth.logout": "Log out",
   "auth.email": "Email",

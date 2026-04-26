@@ -130,7 +130,7 @@ export function AdminGearPage() {
   const inputCls = 'w-full rounded-xl border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary focus:border-sage focus:outline-none focus:ring-1 focus:ring-sage';
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 pb-24">
+    <div className="mx-auto max-w-3xl px-4 py-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between gap-3">
         <h1 className="font-heading text-xl font-bold text-text-primary">{t('admin.gear.title')}</h1>

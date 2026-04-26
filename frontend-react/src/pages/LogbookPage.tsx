@@ -216,7 +216,7 @@ export function LogbookPage() {
   const filteredEntries = filterByPeriod(entries, filterPeriod).filter((e) => !filterStyle || e.style === filterStyle);
 
   return (
-    <div className="px-4 py-6 pb-24 md:pb-8">
+    <div className="px-4 py-6 md:pb-8">
       <div className="mx-auto max-w-5xl">
 
         {/* ── Header ── */}
@@ -270,7 +270,7 @@ export function LogbookPage() {
           {/* ── LEFT: Entry list ── */}
           <section className={cn(mobileTab !== 'recent' && 'hidden lg:block')}>
             {/* Filters */}
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="mb-3 flex flex-col gap-2">
               <div className="flex flex-wrap gap-1.5">
                 {PERIODS.map((p) => (
                   <button
@@ -288,7 +288,7 @@ export function LogbookPage() {
                   </button>
                 ))}
               </div>
-              <div className="ml-auto flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 {(['', ...STYLES] as const).map((s) => (
                   <button
                     key={s}

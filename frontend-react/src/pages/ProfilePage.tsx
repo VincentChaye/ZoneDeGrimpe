@@ -173,7 +173,7 @@ export function ProfilePage() {
   const initial = (profile.displayName || '?')[0].toUpperCase();
 
   return (
-    <div className="pb-24 md:pb-8">
+    <div className="md:pb-8">
 
       {/* ── Cover ── */}
       <div className="relative h-24 md:h-40" style={{ background: 'linear-gradient(135deg, #5D7052 0%, #4A5A41 50%, #C18845 100%)' }}>

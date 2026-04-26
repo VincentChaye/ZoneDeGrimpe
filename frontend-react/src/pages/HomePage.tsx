@@ -82,7 +82,7 @@ export function HomePage() {
 
       {/* Stats */}
       <section className="border-y border-border-subtle bg-surface/50 py-10">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-8 px-4 sm:gap-16">
+        <div className="mx-auto grid max-w-4xl grid-cols-3 items-center justify-items-center gap-4 px-4 sm:gap-16">
           <StatItem
             icon={<MapPin className="h-6 w-6" />}
             value={spotCount !== null ? spotCount.toLocaleString() : '--'}

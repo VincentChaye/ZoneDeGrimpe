@@ -116,6 +116,7 @@
   "announcement.text": "Las funcionalidades estan siendo implementadas. Gracias por su comprension.",
   "footer.rights": "Todos los derechos reservados",
   "auth.login": "Iniciar sesion",
+  "auth.login_required": "Inicia sesion para acceder a esta seccion.",
   "auth.register": "Crear una cuenta",
   "auth.logout": "Cerrar sesion",
   "auth.email": "Correo",

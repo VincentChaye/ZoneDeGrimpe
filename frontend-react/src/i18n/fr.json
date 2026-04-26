@@ -116,6 +116,7 @@
   "announcement.text": "Les fonctionnalites sont en cours d'implementation. Merci de votre comprehension.",
   "footer.rights": "Tous droits reserves",
   "auth.login": "Se connecter",
+  "auth.login_required": "Connecte-toi pour accéder à cette section.",
   "auth.register": "Creer un compte",
   "auth.logout": "Se deconnecter",
   "auth.email": "Email",

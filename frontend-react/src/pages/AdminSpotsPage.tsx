@@ -273,7 +273,7 @@ export function AdminSpotsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 pb-24 md:pb-6">
+    <div className="mx-auto max-w-3xl px-4 py-6 md:pb-6">
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage text-white">
