@@ -477,7 +477,7 @@ export function MapPage() {
           <div>
             <h3 className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-text-secondary">{t('filter.spot_type')}</h3>
             <div className="flex flex-col gap-2">
-              {FILTER_CHIPS.map(({ type, icon: Icon, key }) => {
+              {FILTER_CHIPS.map(({ type, key }) => {
                 const active = filterType === type;
                 return (
                   <button

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  BookOpen, MapPin, TrendingUp, Loader2, Flame, Trash2, Pencil, X, Activity, Check,
+  BookOpen, MapPin, Loader2, Flame, Trash2, Pencil, X, Activity, Check,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';

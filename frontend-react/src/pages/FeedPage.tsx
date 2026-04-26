@@ -88,7 +88,7 @@ function gradeColor(grade: string): string {
 /* ── FeedCard ────────────────────────────────────────────── */
 function FeedCard({ item, relDate }: { item: FeedItem; relDate: (s: string) => string }) {
   const { t } = useTranslation();
-  const d = item.data;
+  const d = item.data as { spotId?: string; spotName?: string; routeName?: string; grade?: string; style?: string; rating?: number; comment?: string; spotType?: string };
   const name = item.displayName || item.username || '?';
   const username = item.username || item.displayName || '?';
   const Icon = TYPE_ICON[item.type] || Activity;
@@ -245,12 +245,12 @@ export function FeedPage() {
   const myName = user?.displayName || user?.username || 'Moi';
   const myColor = avatarColor(myName);
 
-  const filterTabs = [
+  const filterTabs: { key: 'all' | 'logbook' | 'review' | 'spot'; label: string; icon?: typeof BookOpen }[] = [
     { key: 'all',     label: t('feed.filter_all') },
     { key: 'logbook', label: t('feed.filter_logbook'), icon: BookOpen },
     { key: 'review',  label: t('feed.filter_reviews'), icon: Star },
     { key: 'spot',    label: t('feed.filter_spots'),   icon: MapPin },
-  ] as const;
+  ];
 
   return (
     <div className="flex min-h-full">

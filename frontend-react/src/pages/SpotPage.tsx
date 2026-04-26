@@ -103,9 +103,6 @@ const TYPE_GRADIENT: Record<string, string> = {
   shop: 'linear-gradient(135deg, #8B5CF6 0%, #6d28d9 100%)',
 };
 
-const TYPE_BG: Record<string, string> = {
-  crag: 'bg-type-crag', boulder: 'bg-type-boulder', indoor: 'bg-type-indoor', shop: 'bg-type-shop',
-};
 
 const STYLE_KEYS: Record<ClimbingStyle, string> = {
   sport: 'style.sport', trad: 'style.trad', boulder: 'style.boulder', multi: 'style.multi', other: 'style.other',

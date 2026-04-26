@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
   MapPin, Crown, Calendar, Loader2, ArrowLeft,
-  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star, Heart, Package, Edit2,
+  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star, Package, Edit2,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
