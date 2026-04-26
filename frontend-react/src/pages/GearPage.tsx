@@ -101,7 +101,7 @@ export function GearPage() {
               className="flex items-center gap-1 rounded-full border border-border-subtle bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-text-secondary no-underline transition-colors hover:border-sage hover:text-sage"
             >
               <Settings className="h-3 w-3" />
-              {t(visibilityKey)}
+              <span className="hidden sm:inline">{t(visibilityKey)}</span>
             </Link>
             <button
               type="button"
@@ -109,7 +109,7 @@ export function GearPage() {
               className="flex items-center gap-1.5 rounded-[var(--radius-md)] bg-sage px-4 py-2 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-sage-hover hover:shadow-card"
             >
               <Plus className="h-4 w-4" />
-              {t('gear.add')}
+              <span className="hidden sm:inline">{t('gear.add')}</span>
             </button>
           </div>
         </div>

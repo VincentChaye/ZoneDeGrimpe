@@ -249,7 +249,7 @@ function SpotCard({ spot, t, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface p-4 shadow-soft transition-shadow hover:shadow-card">
+    <div className="min-w-0 flex items-center gap-3 rounded-xl border border-border-subtle bg-surface p-4 shadow-soft transition-shadow hover:shadow-card">
       <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white', TYPE_BG[spot.type] || 'bg-type-crag')}>
         <MapPin className="h-5 w-5" />
       </div>
