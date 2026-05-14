@@ -2,7 +2,7 @@ import { Router } from "express";
 import { ObjectId } from "mongodb";
 import rateLimit from "express-rate-limit";
 import { requireAuth, requireAdmin } from "../auth.js";
-import { uploadAvatar, cloudinary } from "../upload.js";
+import { uploadAvatar, uploadCover, cloudinary } from "../upload.js";
 
 const checkUsernameLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 min
@@ -220,6 +220,38 @@ export function usersRouter(db) {
       return res.json({ ok: true });
     } catch (e) {
       console.error("[DELETE /users/me/avatar]", e);
+      return res.status(500).json({ error: "server_error" });
+    }
+  });
+
+  // --- POST /api/users/me/cover --- Upload bannière via Cloudinary
+  r.post("/me/cover", requireAuth, (req, res, next) => {
+    uploadCover.single("cover")(req, res, (err) => {
+      if (err) {
+        console.error("[multer/cloudinary cover error]", JSON.stringify(err), err);
+        return res.status(500).json({ error: "upload_failed", detail: err.message ?? JSON.stringify(err) });
+      }
+      next();
+    });
+  }, async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "no_file" });
+    try {
+      const uid = new ObjectId(req.auth.uid);
+      const current = await users.findOne({ _id: uid }, { projection: { coverPublicId: 1 } });
+
+      if (current?.coverPublicId) {
+        await cloudinary.uploader.destroy(current.coverPublicId).catch((e) => console.warn('[cleanup]', e.message));
+      }
+
+      await users.updateOne(
+        { _id: uid },
+        { $set: { coverUrl: req.file.path, coverPublicId: req.file.filename, "security.updatedAt": new Date() } }
+      );
+
+      const updated = await users.findOne({ _id: uid }, { projection: { passwordHash: 0 } });
+      return res.json(updated);
+    } catch (e) {
+      console.error("[POST /users/me/cover]", e);
       return res.status(500).json({ error: "server_error" });
     }
   });

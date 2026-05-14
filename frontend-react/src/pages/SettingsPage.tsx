@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   User, LogOut, Trash2, Shield, Pencil, Check, X,
   Sun, Moon, Globe, Eye, Loader2, Lock, Bell, Crown,
-  EyeOff, BookOpen, Bookmark, Clock, ChevronRight, Package,
+  EyeOff, BookOpen, Bookmark, Clock, ChevronRight, Package, ArrowLeft,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -128,7 +128,6 @@ export function SettingsPage() {
     level: '',
   });
   const [savingProfile, setSavingProfile] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // ── Section 5: Sécurité ──
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
@@ -217,33 +216,6 @@ export function SettingsPage() {
     setSavingProfile(false);
   }
 
-  async function handleAvatarUpload(file: File) {
-    setUploadingAvatar(true);
-    try {
-      const form = new FormData();
-      form.append('avatar', file);
-      const data = await apiFetch<Record<string, unknown>>('/api/users/me/avatar', {
-        method: 'POST', auth: true, body: form,
-      });
-      updateUser({ avatarUrl: (data.avatarUrl as string | undefined) ?? undefined });
-      toast.success(t('settings.saved'));
-    } catch {
-      toast.error(t('common.error'));
-    }
-    setUploadingAvatar(false);
-  }
-
-  async function handleAvatarDelete() {
-    setUploadingAvatar(true);
-    try {
-      await apiFetch('/api/users/me/avatar', { method: 'DELETE', auth: true });
-      updateUser({ avatarUrl: undefined });
-      toast.success(t('settings.saved'));
-    } catch {
-      toast.error(t('common.error'));
-    }
-    setUploadingAvatar(false);
-  }
 
   async function togglePrivate(v: boolean) {
     updateUser({ privacy: { ...user!.privacy, isPrivate: v } });
@@ -319,6 +291,14 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 md:pb-8">
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 flex items-center gap-1.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+        type="button"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {t('common.back')}
+      </button>
       <h1 className="mb-6 font-heading text-2xl font-bold text-text-primary">
         {t('settings.title')}
       </h1>
@@ -357,46 +337,6 @@ export function SettingsPage() {
           )}
         </div>
 
-        {/* Avatar preview */}
-        {/* Avatar — toujours visible, upload via Cloudinary */}
-        <div className="mb-4 flex items-center gap-3">
-          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border-subtle bg-surface-2">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.displayName} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-sage">
-                {(user.displayName || '?')[0].toUpperCase()}
-              </div>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <label className={cn(
-              'flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-2',
-              uploadingAvatar && 'pointer-events-none opacity-50',
-            )}>
-              {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
-              {t('settings.change_avatar')}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); e.target.value = ''; }}
-                disabled={uploadingAvatar}
-              />
-            </label>
-            {user.avatarUrl && (
-              <button
-                type="button"
-                onClick={handleAvatarDelete}
-                disabled={uploadingAvatar}
-                className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-800/40 dark:hover:bg-red-900/20"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                {t('common.delete')}
-              </button>
-            )}
-          </div>
-        </div>
 
         <div className="space-y-3">
           {editingProfile ? (

@@ -60,10 +60,34 @@ export function initSocketIO(httpServer, db) {
     });
 
     // --- Send message ---
-    socket.on("message", async ({ convId, content }, ack) => {
-      if (!convId || !content || typeof content !== "string") return;
-      const trimmed = content.trim().slice(0, 2000);
-      if (!trimmed) return;
+    socket.on("message", async ({ convId, content, attachments, sharedObject }, ack) => {
+      if (!convId) return;
+      const trimmed = (content || "").trim().slice(0, 2000);
+
+      // Validate attachments (max 5, must have url + type)
+      const validAttachments = Array.isArray(attachments)
+        ? attachments.slice(0, 5).filter(
+            (a) => a && typeof a.url === "string" && ["image", "video"].includes(a.type)
+          )
+        : [];
+
+      // Validate sharedObject
+      const validShared =
+        sharedObject &&
+        typeof sharedObject.id === "string" &&
+        typeof sharedObject.type === "string"
+          ? {
+              type: sharedObject.type,
+              id: sharedObject.id,
+              name: sharedObject.name ?? "?",
+              subtitle: sharedObject.subtitle ?? null,
+              imageUrl: sharedObject.imageUrl ?? null,
+              spotType: sharedObject.spotType ?? null,
+              grade: sharedObject.grade ?? null,
+            }
+          : null;
+
+      if (!trimmed && validAttachments.length === 0 && !validShared) return;
 
       let convObjId;
       try {
@@ -79,11 +103,23 @@ export function initSocketIO(httpServer, db) {
       });
       if (!conv) return;
 
+      // Build lastMessage preview content
+      let lastContent = trimmed;
+      if (!lastContent) {
+        if (validAttachments.length > 0) {
+          lastContent = validAttachments[0].type === "video" ? "🎥 Vidéo" : "📷 Photo";
+        } else if (validShared) {
+          lastContent = validShared.type === "spot" ? "📍 Spot partagé" : "🧗 Voie partagée";
+        }
+      }
+
       // Insert message
       const msg = {
         conversationId: convObjId,
         senderUid: uid,
         content: trimmed,
+        ...(validAttachments.length > 0 && { attachments: validAttachments }),
+        ...(validShared && { sharedObject: validShared }),
         status: "sent",
         createdAt: new Date(),
       };
@@ -100,7 +136,7 @@ export function initSocketIO(httpServer, db) {
         { _id: convObjId },
         {
           $set: {
-            lastMessage: { content: trimmed, senderUid: uid, createdAt: msg.createdAt },
+            lastMessage: { content: lastContent, senderUid: uid, createdAt: msg.createdAt },
             updatedAt: msg.createdAt,
           },
           $inc: unreadInc,
@@ -115,7 +151,7 @@ export function initSocketIO(httpServer, db) {
         if (p !== uid) {
           io.to(`user:${p}`).emit("conversation_updated", {
             _id: convId,
-            lastMessage: fullMsg,
+            lastMessage: { content: lastContent, senderUid: uid, createdAt: msg.createdAt },
           });
         }
       }

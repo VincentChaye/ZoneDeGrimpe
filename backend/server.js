@@ -17,8 +17,10 @@ import { followsRouter } from "./src/routes/follows.routes.js";
 import { friendsRouter } from "./src/routes/friends.routes.js";
 import { notificationsRouter } from "./src/routes/notifications.routes.js";
 import { messagesRouter } from "./src/routes/messages.routes.js";
+import { outingsRouter } from "./src/routes/outings.routes.js";
 import { materielSpecsRouter } from "./src/routes/materiel-specs.routes.js";
 import { userMaterielRouter } from "./src/routes/user-materiel.routes.js";
+import { feedRouter } from "./src/routes/feed.routes.js";
 import { initWebPush } from "./src/notifications.js";
 import { initSocketIO } from "./src/socket.js";
 
@@ -128,15 +130,17 @@ if (hasUri) {
   app.use("/api/follows", followsRouter(db));
   app.use("/api/friends", friendsRouter(db));
   app.use("/api/notifications", notificationsRouter(db));
-  app.use("/api/messages", messagesRouter(db));
+  // Init Socket.io avant les routes pour que io soit disponible
+  const io = initSocketIO(httpServer, db);
+
+  app.use("/api/messages", messagesRouter(db, io));
+  app.use("/api/outings", outingsRouter(db, io));
   app.use("/api/materiel-specs", materielSpecsRouter(db));
   app.use("/api/user-materiel", userMaterielRouter(db));
+  app.use("/api/feed", feedRouter(db));
 
   // Init Web Push (si VAPID configure)
   initWebPush();
-
-  // Init Socket.io
-  initSocketIO(httpServer, db);
 
   console.log("MongoDB mode activé");
 } else {

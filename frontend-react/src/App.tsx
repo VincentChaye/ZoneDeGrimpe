@@ -17,6 +17,7 @@ import { AdminSpotsPage } from '@/pages/AdminSpotsPage';
 import { AdminUsersPage } from '@/pages/AdminUsersPage';
 import { AdminGearPage } from '@/pages/AdminGearPage';
 import { GearPage } from '@/pages/GearPage';
+import { GearCataloguePage } from '@/pages/GearCataloguePage';
 import { MyProfilePage } from '@/pages/MyProfilePage';
 import { MessagesPage } from '@/pages/MessagesPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
@@ -28,14 +29,23 @@ const SpotPage = lazy(() =>
 );
 import { useThemeStore } from '@/stores/theme.store';
 import { useMessagesStore } from '@/stores/messages.store';
+import { useOutingStore } from '@/stores/outing.store';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
 
 function App() {
   const hydrateAuth = useAuthStore((s) => s.hydrate);
   const hydrateTheme = useThemeStore((s) => s.hydrate);
   const { token, isAuthenticated } = useAuthStore();
-  const { loadConversations, _onNewMessage, _onConversationUpdated, _onUserStatus, _onTyping } =
-    useMessagesStore();
+  const {
+    loadConversations,
+    _onNewMessage, _onConversationUpdated, _onUserStatus, _onTyping,
+    _onGroupUpdated, _onConversationAdded, _onConversationRemoved,
+  } = useMessagesStore();
+  const {
+    _onOutingCreated, _onOutingUpdated,
+    _onOutingClaimAdded, _onOutingClaimRemoved,
+    _onOutingCompleted, _onOutingDeleted,
+  } = useOutingStore();
 
   useEffect(() => {
     hydrateAuth();
@@ -55,12 +65,30 @@ function App() {
     socket.on('conversation_updated', _onConversationUpdated);
     socket.on('user_status', _onUserStatus);
     socket.on('typing', _onTyping);
+    socket.on('group_updated', _onGroupUpdated);
+    socket.on('conversation_added', _onConversationAdded);
+    socket.on('conversation_removed', _onConversationRemoved);
+    socket.on('outing_created', _onOutingCreated);
+    socket.on('outing_updated', _onOutingUpdated);
+    socket.on('outing_claim_added', _onOutingClaimAdded);
+    socket.on('outing_claim_removed', _onOutingClaimRemoved);
+    socket.on('outing_completed', _onOutingCompleted);
+    socket.on('outing_deleted', _onOutingDeleted);
 
     return () => {
       socket.off('new_message', _onNewMessage);
       socket.off('conversation_updated', _onConversationUpdated);
       socket.off('user_status', _onUserStatus);
       socket.off('typing', _onTyping);
+      socket.off('group_updated', _onGroupUpdated);
+      socket.off('conversation_added', _onConversationAdded);
+      socket.off('conversation_removed', _onConversationRemoved);
+      socket.off('outing_created', _onOutingCreated);
+      socket.off('outing_updated', _onOutingUpdated);
+      socket.off('outing_claim_added', _onOutingClaimAdded);
+      socket.off('outing_claim_removed', _onOutingClaimRemoved);
+      socket.off('outing_completed', _onOutingCompleted);
+      socket.off('outing_deleted', _onOutingDeleted);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token]);
@@ -86,6 +114,7 @@ function App() {
           <Route path="/admin/spots" element={<AdminSpotsPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/gear" element={<GearPage />} />
+          <Route path="/gear/catalogue" element={<GearCataloguePage />} />
           <Route path="/admin/gear" element={<AdminGearPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

@@ -58,7 +58,7 @@ export const idParamSchema = z.object({
 });
 
 /** Catégories de matériel */
-const GEAR_CATEGORIES = ["rope", "quickdraw", "belay_auto", "belay_tube", "harness", "shoes", "carabiner", "machard", "crashpad", "quicklink"];
+export const GEAR_CATEGORIES = ["rope", "quickdraw", "belay_auto", "belay_tube", "harness", "shoes", "carabiner", "machard", "crashpad", "quicklink"];
 
 /** Création d'une entrée catalogue (admin) */
 export const createMaterielSpecSchema = z.object({

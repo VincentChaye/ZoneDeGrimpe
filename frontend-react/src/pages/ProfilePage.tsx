@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  MapPin, Crown, Calendar, Loader2, ArrowLeft,
-  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star, Package, Edit2,
+  Crown, Loader2, ArrowLeft,
+  UserPlus, UserCheck, Clock, UserMinus, Users, BookOpen, Star, Package, Edit2, X, Search,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -79,7 +79,34 @@ export function ProfilePage() {
   const [recentAscents, setRecentAscents] = useState<RecentAscent[]>([]);
   const [recentReviews, setRecentReviews] = useState<RecentReview[]>([]);
   const [publicGear, setPublicGear] = useState<UserMateriel[] | null>(null); // null = not accessible
-  const [activeTab, setActiveTab] = useState<'activity' | 'spots' | 'reviews'>('activity');
+  const [activeTab, setActiveTab] = useState<'activity' | 'reviews'>('activity');
+
+  // Social list modal
+  type SocialUser = { _id: string; displayName?: string; username?: string; avatarUrl?: string };
+  const [socialModal, setSocialModal] = useState<{ type: 'followers' | 'friends'; list: SocialUser[] } | null>(null);
+  const [socialModalLoading, setSocialModalLoading] = useState(false);
+  const [socialSearch, setSocialSearch] = useState('');
+
+  const canSeeSocialLists = isSelf || friendship.status === 'accepted';
+
+  const openSocialModal = useCallback(async (type: 'followers' | 'friends') => {
+    if (!userId || !canSeeSocialLists) return;
+    setSocialModalLoading(true);
+    setSocialModal({ type, list: [] });
+    try {
+      const endpoint = type === 'followers'
+        ? `/api/follows/followers/${userId}`
+        : `/api/friends/user/${userId}`;
+      const list = await apiFetch<SocialUser[]>(endpoint, { auth: true });
+      setSocialModal({ type, list: Array.isArray(list) ? list : [] });
+      setSocialSearch('');
+    } catch {
+      toast.error(t('common.error'));
+      setSocialModal(null);
+    } finally {
+      setSocialModalLoading(false);
+    }
+  }, [userId, canSeeSocialLists, t]);
 
   useEffect(() => {
     if (!userId) { setError(t('profile.id_missing')); setLoading(false); return; }
@@ -187,89 +214,94 @@ export function ProfilePage() {
       <div className="px-4 md:px-12">
         <div className="mx-auto max-w-5xl">
 
-          {/* Avatar row — overlaps cover */}
-          <div className="relative z-10 flex items-start gap-4 md:gap-6" style={{ marginTop: -42 }}>
+          {/* Avatar + infos + stats */}
+          <div className="relative z-10 flex items-start justify-between gap-3" style={{ marginTop: -42 }}>
 
-            {/* Avatar */}
-            {profile.avatarUrl ? (
-              <img
-                src={profile.avatarUrl}
-                alt={profile.displayName}
-                className="h-[86px] w-[86px] shrink-0 rounded-full border-4 object-cover shadow-card md:h-[110px] md:w-[110px]"
-                style={{ borderColor: 'var(--color-bg)' }}
-              />
-            ) : (
-              <div
-                className="flex h-[86px] w-[86px] shrink-0 items-center justify-center rounded-full border-4 font-heading text-3xl font-bold text-white shadow-card md:h-[110px] md:w-[110px] md:text-4xl"
-                style={{ background: 'linear-gradient(135deg, #5D7052, #C18845)', borderColor: 'var(--color-bg)' }}
-              >
-                {initial}
-              </div>
-            )}
+            {/* Gauche : avatar puis infos dessous */}
+            <div className="flex min-w-0 flex-col">
+              {/* Avatar */}
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.displayName}
+                  className="h-[80px] w-[80px] shrink-0 rounded-full border-4 object-cover shadow-card md:h-[110px] md:w-[110px]"
+                  style={{ borderColor: 'var(--color-bg)' }}
+                />
+              ) : (
+                <div
+                  className="flex h-[80px] w-[80px] shrink-0 items-center justify-center rounded-full border-4 font-heading text-3xl font-bold text-white shadow-card md:h-[110px] md:w-[110px] md:text-4xl"
+                  style={{ background: 'linear-gradient(135deg, #5D7052, #C18845)', borderColor: 'var(--color-bg)' }}
+                >
+                  {initial}
+                </div>
+              )}
 
-            {/* Name + actions — push down on desktop to clear cover */}
-            <div className="flex flex-1 items-end justify-between" style={{ paddingTop: 48 }}>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="font-heading text-xl font-bold leading-tight text-text-primary md:text-2xl">{profile.displayName}</h1>
+              {/* Infos sous l'avatar */}
+              <div className="mt-3 min-w-0">
+                <h1 className="truncate font-heading text-lg font-bold leading-tight text-text-primary md:text-2xl">{profile.displayName}</h1>
+                {profile.username && (
+                  <p className="truncate text-sm text-text-secondary">@{profile.username}</p>
+                )}
+                <div className="mt-1.5 flex flex-col items-start gap-1">
                   {isAdmin && (
                     <span className="flex items-center gap-0.5 rounded-lg bg-sage/10 px-2 py-0.5 text-[11px] font-bold text-sage">
                       <Crown className="h-3 w-3" /> {t('admin.badge_admin')}
                     </span>
                   )}
+                  {profile.level && (
+                    <span className={cn(
+                      'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                      LEVEL_CLS[profile.level] || 'bg-surface-2 text-text-secondary border-border-subtle',
+                    )}>
+                      {t(`level.${profile.level}`)}
+                    </span>
+                  )}
                 </div>
-                {profile.username && (
-                  <p className="text-sm text-text-secondary">@{profile.username}</p>
-                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {isSelf && (
+                    <Link
+                      to="/settings"
+                      className="flex items-center gap-1.5 rounded-[var(--radius-md)] border border-border-subtle bg-surface px-3 py-1.5 text-xs font-semibold text-text-primary no-underline transition-colors hover:bg-surface-2"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                      {t('profile.edit_profile')}
+                    </Link>
+                  )}
+                  {isAuthenticated && !isSelf && (
+                    <>
+                      <FollowButton following={following} loading={socialLoading} onClick={handleFollowToggle} t={t} />
+                      <FriendButton status={friendship.status} loading={socialLoading} onClick={handleFriendAction} t={t} />
+                    </>
+                  )}
+                </div>
               </div>
+            </div>
 
-              <div className="flex shrink-0 gap-2">
-                {isSelf && (
-                  <Link
-                    to="/settings"
-                    className="flex items-center gap-1.5 rounded-[var(--radius-md)] border border-border-subtle bg-surface px-3 py-2 text-xs font-semibold text-text-primary no-underline transition-colors hover:bg-surface-2"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{t('profile.edit_profile')}</span>
-                  </Link>
-                )}
-                {isAuthenticated && !isSelf && (
-                  <>
-                    <FollowButton following={following} loading={socialLoading} onClick={handleFollowToggle} t={t} />
-                    <FriendButton status={friendship.status} loading={socialLoading} onClick={handleFriendAction} t={t} />
-                  </>
-                )}
-              </div>
+            {/* Droite : abonnés + amis (décalés sous la cover) */}
+            <div className="flex shrink-0 gap-3 text-sm" style={{ paddingTop: 48 }}>
+              <button
+                type="button"
+                onClick={() => openSocialModal('followers')}
+                disabled={!canSeeSocialLists}
+                className={cn('text-right transition-opacity', canSeeSocialLists ? 'cursor-pointer hover:opacity-70' : 'cursor-default')}
+              >
+                <p className="font-heading font-bold text-text-primary">{profile.stats.followersCount}</p>
+                <p className="text-xs text-text-secondary">{t('profile.followers_count')}</p>
+              </button>
+              <div className="w-px self-stretch bg-border-subtle" />
+              <button
+                type="button"
+                onClick={() => openSocialModal('friends')}
+                disabled={!canSeeSocialLists}
+                className={cn('text-right transition-opacity', canSeeSocialLists ? 'cursor-pointer hover:opacity-70' : 'cursor-default')}
+              >
+                <p className="font-heading font-bold text-text-primary">{profile.stats.friendsCount}</p>
+                <p className="text-xs text-text-secondary">{t('profile.friends_count')}</p>
+              </button>
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="mt-4 flex flex-wrap items-center gap-5 border-b border-border-subtle pb-4 text-sm md:gap-8">
-            <div className="flex items-center gap-1">
-              <span className="font-heading font-bold text-text-primary">{profile.stats.spotsContributed}</span>
-              <span className="text-text-secondary">{t('profile.spots_contributed')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="font-heading font-bold text-text-primary">{profile.stats.followersCount}</span>
-              <span className="text-text-secondary">{t('profile.followers_count')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="font-heading font-bold text-text-primary">{profile.stats.friendsCount}</span>
-              <span className="text-text-secondary">{t('profile.friends_count')}</span>
-            </div>
-            {profile.level && (
-              <span className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold',
-                LEVEL_CLS[profile.level] || 'bg-surface-2 text-text-secondary border-border-subtle',
-              )}>
-                {t(`level.${profile.level}`)}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
-              <Calendar className="h-3 w-3" />
-              {t('profile.member_since')} {new Date(profile.memberSince).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-            </span>
-          </div>
+          <div className="mt-4 border-b border-border-subtle" />
 
           {/* ── Desktop 2-col / Mobile single-col ── */}
           <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -296,7 +328,6 @@ export function ProfilePage() {
               <div className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-soft">
                 <h3 className="mb-3 font-heading text-sm font-bold text-text-primary">{t('profile.stats_title')}</h3>
                 {[
-                  { label: t('profile.spots_contributed'), value: profile.stats.spotsContributed, color: '#5D7052' },
                   { label: t('profile.followers_count'), value: profile.stats.followersCount, color: '#C18845' },
                   { label: t('profile.friends_count'), value: profile.stats.friendsCount, color: '#6A645A' },
                 ].map(({ label, value, color }) => (
@@ -306,7 +337,7 @@ export function ProfilePage() {
                       <span className="font-semibold text-text-primary">{value}</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, (value / Math.max(1, profile.stats.spotsContributed + profile.stats.followersCount + profile.stats.friendsCount)) * 100)}%`, background: color }} />
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, (value / Math.max(1, profile.stats.followersCount + profile.stats.friendsCount)) * 100)}%`, background: color }} />
                     </div>
                   </div>
                 ))}
@@ -319,7 +350,6 @@ export function ProfilePage() {
               <div className="mb-4 flex gap-1 border-b border-border-subtle md:gap-0">
                 {([
                   ['activity', t('profile.tab_activity'), BookOpen],
-                  ['spots', t('profile.tab_spots'), MapPin],
                   ['reviews', t('profile.tab_reviews'), Star],
                 ] as const).map(([key, label, Icon]) => (
                   <button
@@ -369,7 +399,7 @@ export function ProfilePage() {
                                   {a.grade}
                                 </span>
                               )}
-                              <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide', STYLE_CLS[a.style] || STYLE_CLS.repeat)}>
+                              <span className={cn('hidden rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide sm:inline', STYLE_CLS[a.style] || STYLE_CLS.repeat)}>
                                 {t(`logbook.style.${a.style}`)}
                               </span>
                             </div>
@@ -402,13 +432,6 @@ export function ProfilePage() {
                     </>
                   )}
                 </div>
-              )}
-
-              {/* Spots tab */}
-              {activeTab === 'spots' && (
-                <p className="rounded-[var(--radius-md)] border border-dashed border-border-subtle py-10 text-center text-sm text-text-secondary/60">
-                  {t('profile.no_spots')}
-                </p>
               )}
 
               {/* Reviews tab */}
@@ -445,8 +468,8 @@ export function ProfilePage() {
                     <Package className="h-4 w-4 text-sage" />
                     {t('gear.public_profile_title')}
                   </h2>
-                  <div className="space-y-2">
-                    {publicGear.slice(0, 5).map((item) => (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {publicGear.slice(0, 6).map((item) => (
                       <GearCard key={item._id} item={item} readonly />
                     ))}
                   </div>
@@ -456,6 +479,86 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Social list modal */}
+      {socialModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => setSocialModal(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-surface shadow-card overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
+              <h2 className="font-heading text-sm font-bold text-text-primary">
+                {socialModal.type === 'followers' ? t('profile.followers_count') : t('profile.friends_count')}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSocialModal(null)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="px-3 py-2 border-b border-border-subtle">
+              <div className="relative flex items-center">
+                <Search className="absolute left-2.5 h-3.5 w-3.5 text-text-secondary/50 pointer-events-none" />
+                <input
+                  type="text"
+                  value={socialSearch}
+                  onChange={(e) => setSocialSearch(e.target.value)}
+                  placeholder={t('common.search')}
+                  className="w-full rounded-lg border border-border-subtle bg-surface-2 py-1.5 pl-8 pr-3 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-sage"
+                />
+              </div>
+            </div>
+            <div className="max-h-72 overflow-y-auto">
+              {socialModalLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-5 w-5 animate-spin text-sage" />
+                </div>
+              ) : (() => {
+                const q = socialSearch.toLowerCase().trim();
+                const filtered = q
+                  ? socialModal.list.filter(u =>
+                      (u.displayName || '').toLowerCase().includes(q) ||
+                      (u.username || '').toLowerCase().includes(q)
+                    )
+                  : socialModal.list;
+                return filtered.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-text-secondary/60">
+                    {t('common.empty')}
+                  </p>
+                ) : filtered.map((u) => (
+                <Link
+                  key={u._id}
+                  to={`/profile?id=${u._id}`}
+                  onClick={() => setSocialModal(null)}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors no-underline"
+                >
+                  {u.avatarUrl ? (
+                    <img src={u.avatarUrl} alt={u.displayName} className="h-9 w-9 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-white text-sm"
+                      style={{ background: 'linear-gradient(135deg, #5D7052, #C18845)' }}
+                    >
+                      {(u.displayName || '?')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-text-primary">{u.displayName || u.username || '—'}</p>
+                    {u.username && <p className="truncate text-xs text-text-secondary">@{u.username}</p>}
+                  </div>
+                </Link>
+                ));
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

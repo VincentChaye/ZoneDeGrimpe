@@ -237,6 +237,40 @@ export function friendsRouter(db) {
     }
   });
 
+  // GET /api/friends/user/:userId — list friends of a user (self or friend only)
+  r.get("/user/:userId", requireAuth, async (req, res) => {
+    const { userId } = req.params;
+    const isSelf = userId === req.auth.uid;
+    if (!isSelf) {
+      const friendship = await friendships.findOne({
+        status: "accepted",
+        $or: [
+          { requesterId: req.auth.uid, addresseeId: userId },
+          { requesterId: userId, addresseeId: req.auth.uid },
+        ],
+      });
+      if (!friendship) return res.status(403).json({ error: "forbidden" });
+    }
+    try {
+      const docs = await friendships
+        .find({
+          status: "accepted",
+          $or: [{ requesterId: userId }, { addresseeId: userId }],
+        })
+        .sort({ updatedAt: -1 })
+        .toArray();
+      const friendIds = docs.map(d => d.requesterId === userId ? d.addresseeId : d.requesterId);
+      const ids = friendIds.map(id => { try { return new ObjectId(id); } catch { return null; } }).filter(Boolean);
+      const userDocs = ids.length
+        ? await users.find({ _id: { $in: ids } }, { projection: userProjection }).toArray()
+        : [];
+      res.json(userDocs.map(u => ({ ...u, _id: u._id.toString() })));
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
   // GET /api/friends/check/:userId — friendship status with a user
   r.get("/check/:userId", requireAuth, async (req, res) => {
     try {

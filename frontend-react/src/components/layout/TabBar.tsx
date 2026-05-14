@@ -1,18 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Home, MapPin, MessageSquare, Newspaper, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
-  { to: '/', key: 'nav.home', icon: Home },
-  { to: '/map', key: 'nav.map', icon: MapPin },
-  { to: '/messages', key: 'nav.messages', icon: MessageSquare },
-  { to: '/feed', key: 'nav.feed', icon: Newspaper },
-  { to: '/me', key: 'nav.profile', icon: User },
+  { to: '/', icon: Home },
+  { to: '/map', icon: MapPin },
+  { to: '/messages', icon: MessageSquare },
+  { to: '/feed', icon: Newspaper },
+  { to: '/me', icon: User },
 ] as const;
 
 export function TabBar() {
-  const { t } = useTranslation();
   const location = useLocation();
   const activeIndex = TABS.findIndex(({ to }) => location.pathname === to);
 
@@ -37,14 +35,14 @@ export function TabBar() {
       )}
 
       <div className="flex h-[var(--spacing-tabbar)] w-full items-stretch">
-      {TABS.map(({ to, key, icon: Icon }) => {
+      {TABS.map(({ to, icon: Icon }) => {
         const isActive = location.pathname === to;
         return (
           <Link
             key={to}
             to={to}
             className={cn(
-              'flex flex-1 flex-col items-center justify-center gap-0.5 no-underline',
+              'flex flex-1 items-center justify-center no-underline',
               'transition-colors duration-200',
               isActive
                 ? 'text-sage'
@@ -64,12 +62,6 @@ export function TabBar() {
                 strokeWidth={isActive ? 2.25 : 1.75}
               />
             </div>
-            <span className={cn(
-              'text-[10px] leading-tight transition-all duration-200',
-              isActive ? 'font-semibold' : 'font-medium',
-            )}>
-              {t(key)}
-            </span>
           </Link>
         );
       })}

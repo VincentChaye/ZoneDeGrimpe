@@ -64,6 +64,37 @@ export function followsRouter(db) {
     }
   });
 
+  // GET /api/follows/followers/:userId — list followers of a user (self or friend only)
+  r.get("/followers/:userId", requireAuth, async (req, res) => {
+    const { userId } = req.params;
+    const isSelf = userId === req.auth.uid;
+    if (!isSelf) {
+      const friendships = db.collection("friendships");
+      const friendship = await friendships.findOne({
+        status: "accepted",
+        $or: [
+          { requesterId: req.auth.uid, addresseeId: userId },
+          { requesterId: userId, addresseeId: req.auth.uid },
+        ],
+      });
+      if (!friendship) return res.status(403).json({ error: "forbidden" });
+    }
+    try {
+      const docs = await follows
+        .find({ followingId: userId })
+        .sort({ createdAt: -1 })
+        .toArray();
+      const ids = docs.map(d => { try { return new ObjectId(d.followerId); } catch { return null; } }).filter(Boolean);
+      const userDocs = ids.length
+        ? await users.find({ _id: { $in: ids } }, { projection: userProjection }).toArray()
+        : [];
+      res.json(userDocs.map(u => ({ ...u, _id: u._id.toString() })));
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "server_error" });
+    }
+  });
+
   // GET /api/follows/check/:userId — am I following this user?
   r.get("/check/:userId", requireAuth, async (req, res) => {
     try {

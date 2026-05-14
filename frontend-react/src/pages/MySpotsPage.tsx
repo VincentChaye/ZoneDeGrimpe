@@ -97,8 +97,7 @@ export function MySpotsPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 md:pb-8">
       <div className="mb-6 text-center">
-        <h1 className="font-heading text-2xl font-bold text-text-primary">{t('nav.my_spots')}</h1>
-        <p className="mt-1 text-sm text-text-secondary">{t('myspots.subtitle')}</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">{t('nav.my_spots')}</p>
       </div>
 
       {/* Tabs */}

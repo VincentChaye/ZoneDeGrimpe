@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Activity, Star, MapPin, BookOpen, Loader2, Users,
+  Activity, MapPin, BookOpen, Loader2,
   Heart, MessageCircle, Share2, TrendingUp,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
@@ -10,12 +10,18 @@ import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
 
 interface FeedItem {
-  type: 'review' | 'logbook' | 'spot';
+  id: string;
+  type: 'logbook' | 'spot';
   userId: string;
   username?: string;
   displayName?: string;
-  data: Record<string, unknown>;
+  avatarUrl?: string;
   createdAt: string;
+  imageUrl: string | null;
+  spot: { id: string; name: string; type?: string };
+  route?: { id?: string; name?: string } | null;
+  grade?: string;
+  style?: string;
 }
 
 function useRelativeDate() {
@@ -24,7 +30,6 @@ function useRelativeDate() {
     const now = Date.now();
     const then = new Date(dateStr).getTime();
     const diff = Math.floor((now - then) / 1000);
-
     if (diff < 60) return t('time.just_now');
     if (diff < 3600) return t('time.minutes_ago', { count: Math.floor(diff / 60) });
     if (diff < 86400) return t('time.hours_ago', { count: Math.floor(diff / 3600) });
@@ -45,31 +50,6 @@ function initials(name: string): string {
   return name.split(/\s+/).map((w) => w[0] ?? '').slice(0, 2).join('').toUpperCase() || '?';
 }
 
-function StarRating({ rating }: { rating: number }) {
-  const full = Math.floor(rating);
-  const half = rating % 1 >= 0.5;
-  const empty = 5 - full - (half ? 1 : 0);
-  return (
-    <span className="text-amber-brand text-sm">
-      {'★'.repeat(full)}
-      {half && '½'}
-      {'☆'.repeat(empty)}
-    </span>
-  );
-}
-
-const TYPE_ICON = {
-  review: Star,
-  logbook: BookOpen,
-  spot: MapPin,
-} as const;
-
-const TYPE_CLS = {
-  review:  'bg-amber-brand/10 text-amber-brand',
-  logbook: 'bg-sage-muted text-sage',
-  spot:    'bg-blue-50 text-blue-500 dark:bg-blue-900/20',
-} as const;
-
 const GRADE_COLORS: [number, string][] = [
   [5.0,  '#eab308'],
   [6.33, '#16a34a'],
@@ -77,123 +57,137 @@ const GRADE_COLORS: [number, string][] = [
   [7.66, '#dc2626'],
   [8.0,  '#1a1a1a'],
 ];
-function gradeColor(grade: string): string {
+function gradeColor(grade?: string): string {
+  if (!grade) return '#5D7052';
   const m = grade.match(/^(\d+)([abc+]?)$/i);
   if (!m) return '#6A645A';
-  const n = parseInt(m[1]) + (['a','','+',' '].indexOf(m[2].toLowerCase()) >= 0 ? 0 : m[2] === 'b' ? 0.33 : 0.66);
+  const n = parseInt(m[1]) + (['a', '', '+', ' '].indexOf(m[2].toLowerCase()) >= 0 ? 0 : m[2] === 'b' ? 0.33 : 0.66);
   for (const [max, col] of GRADE_COLORS) if (n <= max) return col;
   return '#7c3aed';
 }
 
+const SPOT_TYPE_ICON: Record<string, string> = {
+  crag: '🧗', boulder: '🪨', indoor: '🏛️', shop: '🏪',
+};
+
 /* ── FeedCard ────────────────────────────────────────────── */
 function FeedCard({ item, relDate }: { item: FeedItem; relDate: (s: string) => string }) {
   const { t } = useTranslation();
-  const d = item.data as { spotId?: string; spotName?: string; routeName?: string; grade?: string; style?: string; rating?: number; comment?: string; spotType?: string };
+  const navigate = useNavigate();
   const name = item.displayName || item.username || '?';
-  const username = item.username || item.displayName || '?';
-  const Icon = TYPE_ICON[item.type] || Activity;
-  const iconCls = TYPE_CLS[item.type] || TYPE_CLS.spot;
   const color = avatarColor(name);
+  const gradientColor = gradeColor(item.grade);
 
   return (
-    <div className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-soft transition-shadow hover:shadow-card">
-      {/* Header row */}
-      <div className="flex items-center gap-3">
-        <Link to={`/profile?id=${item.userId}`} className="shrink-0 no-underline">
+    <div
+      onClick={() => item.spot.id && navigate(`/spot/${item.spot.id}`)}
+      className="block cursor-pointer overflow-hidden rounded-[var(--radius-md)] border border-border-subtle bg-surface shadow-soft transition-shadow hover:shadow-card"
+    >
+      {/* Photo / fallback */}
+      <div className="relative aspect-video w-full overflow-hidden">
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.spot.name}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-full font-heading text-sm font-bold text-white"
-            style={{ background: color }}
+            className="flex h-full w-full items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${gradientColor}33, ${gradientColor}88)` }}
           >
-            {initials(name)}
+            {item.type === 'logbook'
+              ? <BookOpen className="h-12 w-12 opacity-40 text-white" />
+              : <MapPin className="h-12 w-12 opacity-40 text-white" />
+            }
           </div>
-        </Link>
+        )}
 
+        {/* Grade pill overlay */}
+        {item.grade && (
+          <span
+            className="absolute right-2 top-2 rounded px-2 py-0.5 font-mono text-xs font-bold text-white shadow"
+            style={{ background: gradientColor }}
+          >
+            {item.grade}
+          </span>
+        )}
+
+        {/* Spot type badge */}
+        {item.type === 'spot' && item.spot.type && (
+          <span className="absolute left-2 top-2 rounded-full bg-black/50 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+            {SPOT_TYPE_ICON[item.spot.type] ?? '📍'} {item.spot.type}
+          </span>
+        )}
+      </div>
+
+      {/* Header: avatar + user info */}
+      <div className="flex items-start gap-3 px-3 pt-3">
+        <button
+          type="button"
+          className="shrink-0"
+          onClick={(e) => { e.stopPropagation(); navigate(`/profile?id=${item.userId}`); }}
+        >
+          {item.avatarUrl ? (
+            <img src={item.avatarUrl} alt={name} className="h-9 w-9 rounded-full object-cover" />
+          ) : (
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-full font-heading text-sm font-bold text-white"
+              style={{ background: color }}
+            >
+              {initials(name)}
+            </div>
+          )}
+        </button>
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-snug text-text-primary">
-            <Link to={`/profile?id=${item.userId}`} className="font-semibold text-text-primary no-underline hover:text-sage">
+            <button
+              type="button"
+              className="font-semibold text-text-primary hover:text-sage"
+              onClick={(e) => { e.stopPropagation(); navigate(`/profile?id=${item.userId}`); }}
+            >
               {name}
-            </Link>
+            </button>
             <span className="text-text-secondary">
-              {item.type === 'review'  && ` ${t('feed.reviewed')} `}
-              {item.type === 'logbook' && ` ${t('feed.climbed')} `}
-              {item.type === 'spot'    && ` ${t('feed.proposed')} `}
+              {item.type === 'logbook' ? ` ${t('feed.climbed')} ` : ` ${t('feed.proposed')} `}
             </span>
-            {item.type === 'review' && (
-              <Link to={`/map?spot=${d.spotId}`} className="font-semibold text-text-primary no-underline hover:text-sage">
-                {String(d.spotName || t('feed.a_spot'))}
-              </Link>
-            )}
-            {item.type === 'logbook' && d.routeName && (
-              <span className="font-semibold">{String(d.routeName)}</span>
-            )}
-            {item.type === 'spot' && (
-              <Link to={`/map?spot=${d.spotId}`} className="font-semibold text-text-primary no-underline hover:text-sage">
-                {String(d.spotName || t('feed.a_spot'))}
-              </Link>
-            )}
+            <span className="font-semibold text-text-primary">
+              {item.type === 'logbook' && item.route?.name
+                ? item.route.name
+                : item.spot.name || t('feed.a_spot')}
+            </span>
           </p>
           <p className="mt-0.5 text-[11px] text-text-secondary/60">
-            @{username} · {relDate(item.createdAt)}
+            {item.username ? `@${item.username} · ` : ''}{relDate(item.createdAt)}
           </p>
-        </div>
-
-        {/* Type badge */}
-        <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', iconCls)}>
-          <Icon className="h-3.5 w-3.5" />
         </div>
       </div>
 
-      {/* Content block */}
-      {item.type === 'logbook' && (d.grade || d.style) && (
-        <div className="mt-3 flex items-center gap-2 rounded-[var(--radius-sm)] bg-surface-2 px-3 py-2">
-          {d.grade && (
-            <span
-              className="rounded px-2 py-0.5 font-mono text-xs font-bold text-white"
-              style={{ background: gradeColor(String(d.grade)) }}
-            >
-              {String(d.grade)}
-            </span>
-          )}
-          {d.style && (
-            <span className="text-xs font-semibold uppercase tracking-wide text-sage">
-              {t(`logbook.style.${d.style}`)}
-            </span>
-          )}
-          {d.spotName && (
-            <span className="ml-auto flex min-w-0 items-center gap-1 text-xs text-text-secondary">
-              <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{String(d.spotName)}</span>
-            </span>
-          )}
-        </div>
-      )}
-
-      {item.type === 'review' && (
-        <div className="mt-3">
-          {typeof d.rating === 'number' && <StarRating rating={d.rating} />}
-          {d.comment && (
-            <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-text-primary">
-              {String(d.comment)}
-            </p>
-          )}
-        </div>
-      )}
-
-      {item.type === 'spot' && d.spotType && (
-        <div className="mt-2 text-xs text-text-secondary">
-          {String(d.spotType)} {d.spotName ? `· ${String(d.spotName)}` : ''}
-        </div>
-      )}
+      {/* Info bar */}
+      <div className="mt-2 flex flex-wrap items-center gap-2 px-3 pb-1">
+        {item.style && (
+          <span className="rounded-full bg-sage-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sage">
+            {t(`logbook.style.${item.style}`)}
+          </span>
+        )}
+        {item.spot.name && item.type === 'logbook' && (
+          <span className="flex min-w-0 items-center gap-1 text-xs text-text-secondary">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">{item.spot.name}</span>
+          </span>
+        )}
+      </div>
 
       {/* Engagement bar */}
-      <div className="mt-3 flex items-center gap-4 border-t border-border-subtle pt-3 text-xs text-text-secondary">
-        <button type="button" className="flex items-center gap-1 transition-colors hover:text-red-500">
+      <div className="flex items-center gap-4 border-t border-border-subtle px-3 py-2.5 text-xs text-text-secondary">
+        <button type="button" className="flex items-center gap-1 transition-colors hover:text-red-500" onClick={(e) => e.stopPropagation()}>
           <Heart className="h-3.5 w-3.5" />
         </button>
-        <button type="button" className="flex items-center gap-1 transition-colors hover:text-sage">
+        <button type="button" className="flex items-center gap-1 transition-colors hover:text-sage" onClick={(e) => e.stopPropagation()}>
           <MessageCircle className="h-3.5 w-3.5" />
         </button>
-        <button type="button" className="ml-auto flex items-center gap-1 transition-colors hover:text-sage">
+        <button type="button" className="ml-auto flex items-center gap-1 transition-colors hover:text-sage" onClick={(e) => e.stopPropagation()}>
           <Share2 className="h-3.5 w-3.5" />
           <span>{t('feed.share')}</span>
         </button>
@@ -205,32 +199,44 @@ function FeedCard({ item, relDate }: { item: FeedItem; relDate: (s: string) => s
 /* ── FeedPage ─────────────────────────────────────────────── */
 export function FeedPage() {
   const { t } = useTranslation();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const relativeDate = useRelativeDate();
 
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'review' | 'logbook' | 'spot'>('all');
-  const [displayCount, setDisplayCount] = useState(20);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'logbook' | 'spot'>('all');
+
+  const fetchFeed = useCallback(async (cursor?: string) => {
+    const url = cursor ? `/api/feed/global?cursor=${cursor}` : '/api/feed/global';
+    const data = await apiFetch<{ items: FeedItem[]; nextCursor: string | null }>(url);
+    return data;
+  }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) { setLoading(false); return; }
-    apiFetch<FeedItem[]>('/api/follows/feed', { auth: true })
-      .then((data) => setItems(data ?? []))
+    setLoading(true);
+    fetchFeed()
+      .then((data) => {
+        setItems(data?.items ?? []);
+        setNextCursor(data?.nextCursor ?? null);
+      })
       .catch((err) => console.error('[feed]', err))
       .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+  }, [fetchFeed]);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
-        <Activity className="h-12 w-12 text-text-secondary/30" />
-        <p className="text-sm text-text-secondary">{t('feed.login_prompt')}</p>
-        <Link to="/login" className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-sage px-5 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover">
-          {t('auth.login')}
-        </Link>
-      </div>
-    );
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const data = await fetchFeed(nextCursor);
+      setItems((prev) => [...prev, ...(data?.items ?? [])]);
+      setNextCursor(data?.nextCursor ?? null);
+    } catch (err) {
+      console.error('[feed/more]', err);
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
   if (loading) {
@@ -241,16 +247,13 @@ export function FeedPage() {
     );
   }
 
-  const filtered = filter === 'all' ? items : items.filter((i) => i.type === filter);
-  const myName = user?.displayName || user?.username || 'Moi';
-  const myColor = avatarColor(myName);
-
-  const filterTabs: { key: 'all' | 'logbook' | 'review' | 'spot'; label: string; icon?: typeof BookOpen }[] = [
+  const filterTabs: { key: 'all' | 'logbook' | 'spot'; label: string; icon?: typeof BookOpen }[] = [
     { key: 'all',     label: t('feed.filter_all') },
     { key: 'logbook', label: t('feed.filter_logbook'), icon: BookOpen },
-    { key: 'review',  label: t('feed.filter_reviews'), icon: Star },
     { key: 'spot',    label: t('feed.filter_spots'),   icon: MapPin },
   ];
+
+  const filtered = filter === 'all' ? items : items.filter((i) => i.type === filter);
 
   return (
     <div className="flex min-h-full">
@@ -281,49 +284,7 @@ export function FeedPage() {
       {/* ── Main feed ── */}
       <main className="min-w-0 flex-1 px-4 py-5 md:pb-6">
         <div className="mx-auto max-w-[580px]">
-          {/* Page title (mobile only) */}
-          <div className="mb-4 xl:hidden">
-            <h1 className="font-heading text-2xl font-bold text-text-primary">{t('feed.title')}</h1>
-            <p className="mt-0.5 text-sm text-text-secondary">{t('feed.subtitle')}</p>
-          </div>
 
-          {/* Composer */}
-          <div className="mb-4 flex gap-3 rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-soft">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-heading text-sm font-bold text-white"
-              style={{ background: myColor }}
-            >
-              {initials(myName)}
-            </div>
-            <div className="flex-1">
-              <div className="rounded-[var(--radius-sm)] border border-border-subtle bg-bg px-3 py-2 text-sm text-text-secondary/60">
-                {t('feed.composer_placeholder', { name: user?.displayName?.split(' ')[0] || '' })}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFilter('logbook')}
-                  className="flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-2 px-3 py-1 text-[11px] font-semibold text-sage transition-colors hover:bg-sage-muted"
-                >
-                  <BookOpen className="h-3 w-3" />{t('nav.logbook')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter('review')}
-                  className="flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-2 px-3 py-1 text-[11px] font-semibold text-amber-brand transition-colors hover:bg-amber-brand/10"
-                >
-                  <Star className="h-3 w-3" />{t('feed.filter_reviews')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter('spot')}
-                  className="flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-2 px-3 py-1 text-[11px] font-semibold text-text-secondary transition-colors hover:bg-surface-2"
-                >
-                  <MapPin className="h-3 w-3" />{t('nav.map')}
-                </button>
-              </div>
-            </div>
-          </div>
 
           {/* Mobile filter chips */}
           {items.length > 0 && (
@@ -348,32 +309,34 @@ export function FeedPage() {
           )}
 
           {/* Feed content */}
-          {items.length === 0 ? (
+          {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-border-subtle py-16 text-center">
               <Activity className="mb-3 h-10 w-10 text-text-secondary/20" />
               <p className="text-sm font-medium text-text-secondary">{t('feed.no_activity')}</p>
               <p className="mt-1 text-xs text-text-secondary/60">{t('feed.no_activity_help')}</p>
-              <Link
-                to="/friends"
-                className="mt-4 inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-sage px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover"
-              >
-                <Users className="h-4 w-4" />
-                {t('feed.find_climbers')}
-              </Link>
+              {!isAuthenticated && (
+                <Link
+                  to="/login"
+                  className="mt-4 inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-sage px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-sage-hover"
+                >
+                  {t('auth.login')}
+                </Link>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {filtered.slice(0, displayCount).map((item, i) => (
-                <FeedCard key={`${item.type}-${item.userId}-${i}`} item={item} relDate={relativeDate} />
+              {filtered.map((item) => (
+                <FeedCard key={item.id} item={item} relDate={relativeDate} />
               ))}
-              {filtered.length > displayCount && (
+              {nextCursor && (
                 <div className="flex justify-center pt-2">
                   <button
                     type="button"
-                    onClick={() => setDisplayCount((c) => c + 20)}
-                    className="cursor-pointer rounded-[var(--radius-md)] border border-border-subtle bg-surface px-5 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="cursor-pointer rounded-[var(--radius-md)] border border-border-subtle bg-surface px-5 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-2 disabled:opacity-50"
                   >
-                    {t('common.load_more')}
+                    {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : t('common.load_more')}
                   </button>
                 </div>
               )}
@@ -397,23 +360,12 @@ export function FeedPage() {
               <div className="h-2 w-2 shrink-0 rounded-full bg-sage" />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-text-primary">{name}</p>
-                <p className="text-[11px] text-text-secondary">{sub}</p>
+                <p className="text-xs text-text-secondary">{sub}</p>
               </div>
-              <TrendingUp className="h-3.5 w-3.5 text-text-secondary/50" />
+              <TrendingUp className="h-3.5 w-3.5 text-sage" />
             </div>
           ))}
         </div>
-
-        <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-text-secondary/60">
-          {t('feed.suggestions')}
-        </h3>
-        <Link
-          to="/friends"
-          className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-sage/30 bg-sage-muted px-3 py-2 text-xs font-semibold text-sage no-underline transition-colors hover:bg-sage hover:text-white"
-        >
-          <Users className="h-3.5 w-3.5" />
-          {t('feed.find_climbers')}
-        </Link>
       </aside>
     </div>
   );

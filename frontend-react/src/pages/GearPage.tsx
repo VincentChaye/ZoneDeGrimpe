@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Package, Plus, Settings, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Package, Plus, Settings, Loader2, ShieldAlert, ShieldCheck, BookOpen } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useGearStore } from '@/stores/gear.store';
 import { GearCard } from '@/components/gear/GearCard';
@@ -85,10 +85,9 @@ export function GearPage() {
       <div className="mx-auto max-w-5xl">
 
         {/* ── Header ── */}
-        <div className="mb-5 flex items-end justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">{t('gear.title')}</p>
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold leading-tight text-text-primary">{t('gear.my_equipment')}</h1>
             {items.length > 0 && (
               <p className="mt-1 text-sm text-text-secondary">
                 {t('gear.epi_tracking')} · {items.length} {t('gear.items_count')}
@@ -102,6 +101,13 @@ export function GearPage() {
             >
               <Settings className="h-3 w-3" />
               <span className="hidden sm:inline">{t(visibilityKey)}</span>
+            </Link>
+            <Link
+              to="/gear/catalogue"
+              className="flex items-center gap-1.5 rounded-[var(--radius-md)] border border-border-subtle bg-surface-2 px-4 py-2 text-sm font-semibold text-text-secondary no-underline transition-all hover:-translate-y-0.5 hover:border-sage hover:text-sage"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('gear.catalogue')}</span>
             </Link>
             <button
               type="button"
@@ -209,7 +215,7 @@ export function GearPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {filtered.map((item) => (
               <div key={item._id} className={cn(deletingId === item._id && 'pointer-events-none opacity-50')}>
                 <GearCard

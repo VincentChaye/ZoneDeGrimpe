@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  BookOpen, MapPin, Loader2, Flame, Trash2, Pencil, X, Activity, Check,
+  BookOpen, MapPin, Loader2, Flame, Trash2, Pencil, X, Activity, Check, ChevronDown,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -73,6 +73,7 @@ export function LogbookPage() {
   const [loadError, setLoadError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Edit form
   const [editEntry, setEditEntry] = useState<LogbookEntry | null>(null);
@@ -223,23 +224,22 @@ export function LogbookPage() {
         <div className="mb-5 flex items-end justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">{t('logbook.title')}</p>
-            <h1 className="font-heading text-3xl font-bold leading-tight text-text-primary">{t('logbook.subtitle')}</h1>
           </div>
         </div>
 
         {/* ── Stats grid — 4 cards ── */}
         {stats && (
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mb-6 grid grid-cols-4 gap-2">
             {[
-              { icon: <Check className="h-[18px] w-[18px]" />, value: stats.total, label: t('logbook.ascents'), color: 'text-sage' },
-              { icon: <Flame className="h-[18px] w-[18px]" />, value: maxGrade, label: t('logbook.max_grade'), color: 'text-amber-brand' },
-              { icon: <MapPin className="h-[18px] w-[18px]" />, value: stats.uniqueSpots, label: t('logbook.unique_spots'), color: 'text-stone-brand' },
-              { icon: <Activity className="h-[18px] w-[18px]" />, value: daysThisYear, label: t('logbook.this_year'), color: 'text-sage' },
+              { icon: <Check className="h-4 w-4" />, value: stats.total, label: t('logbook.ascents'), color: 'text-sage' },
+              { icon: <Flame className="h-4 w-4" />, value: maxGrade, label: t('logbook.max_grade'), color: 'text-amber-brand' },
+              { icon: <MapPin className="h-4 w-4" />, value: stats.uniqueSpots, label: t('logbook.unique_spots'), color: 'text-stone-brand' },
+              { icon: <Activity className="h-4 w-4" />, value: daysThisYear, label: t('logbook.this_year'), color: 'text-sage' },
             ].map(({ icon, value, label, color }) => (
-              <div key={label} className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-4 shadow-soft">
-                <div className={cn('mb-1.5', color)}>{icon}</div>
-                <div className="font-heading text-2xl font-bold leading-none text-text-primary">{value}</div>
-                <div className="mt-1 text-xs text-text-secondary">{label}</div>
+              <div key={label} className="overflow-hidden rounded-[var(--radius-md)] border border-border-subtle bg-surface p-2.5 shadow-soft sm:p-4">
+                <div className={cn('mb-1', color)}>{icon}</div>
+                <div className="truncate font-heading text-lg font-bold leading-none text-text-primary sm:text-2xl">{value}</div>
+                <div className="mt-1 truncate text-[10px] leading-tight text-text-secondary sm:text-xs">{label}</div>
               </div>
             ))}
           </div>
@@ -268,42 +268,33 @@ export function LogbookPage() {
         <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
 
           {/* ── LEFT: Entry list ── */}
-          <section className={cn(mobileTab !== 'recent' && 'hidden lg:block')}>
+          <section className={cn('min-w-0', mobileTab !== 'recent' && 'hidden lg:block')}>
             {/* Filters */}
-            <div className="mb-3 flex flex-col gap-2">
-              <div className="flex flex-wrap gap-1.5">
-                {PERIODS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setFilterPeriod(p)}
-                    className={cn(
-                      'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
-                      filterPeriod === p
-                        ? 'bg-amber-brand text-white'
-                        : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
-                    )}
-                  >
-                    {t(`logbook.period.${p}`)}
-                  </button>
-                ))}
+            <div className="mb-3 flex gap-2">
+              <div className="relative flex-1">
+                <select
+                  value={filterPeriod}
+                  onChange={(e) => setFilterPeriod(e.target.value as Period)}
+                  className="w-full appearance-none cursor-pointer rounded-xl border border-border-subtle bg-surface py-2 pl-3 pr-8 text-xs font-semibold text-text-primary shadow-soft transition-colors hover:border-amber-brand focus:border-amber-brand focus:outline-none"
+                >
+                  {PERIODS.map((p) => (
+                    <option key={p} value={p}>{t(`logbook.period.${p}`)}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary" />
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {(['', ...STYLES] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setFilterStyle(s)}
-                    className={cn(
-                      'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
-                      filterStyle === s
-                        ? 'bg-sage text-white'
-                        : 'border border-border-subtle bg-surface text-text-secondary hover:bg-surface-2',
-                    )}
-                  >
-                    {s ? t(`logbook.style.${s}`) : t('myspots.filter_all')}
-                  </button>
-                ))}
+              <div className="relative flex-1">
+                <select
+                  value={filterStyle}
+                  onChange={(e) => setFilterStyle(e.target.value)}
+                  className="w-full appearance-none cursor-pointer rounded-xl border border-border-subtle bg-surface py-2 pl-3 pr-8 text-xs font-semibold text-text-primary shadow-soft transition-colors hover:border-sage focus:border-sage focus:outline-none"
+                >
+                  <option value="">{t('myspots.filter_all')}</option>
+                  {STYLES.map((s) => (
+                    <option key={s} value={s}>{t(`logbook.style.${s}`)}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary" />
               </div>
             </div>
 
@@ -382,50 +373,80 @@ export function LogbookPage() {
                   })}
                 </div>
 
-                {/* Mobile card list */}
-                <div className="space-y-2 lg:hidden">
+                {/* Mobile row list */}
+                <div className="divide-y divide-border-subtle overflow-hidden rounded-[var(--radius-md)] border border-border-subtle bg-surface shadow-soft lg:hidden">
                   {filteredEntries.map((entry) => {
                     const date = new Date(entry.date || entry.createdAt);
                     const gc = entry.grade ? gradeColor(entry.grade) : '#6A645A';
+                    const isExpanded = expandedId === entry._id;
                     return (
-                      <div key={entry._id} className="rounded-[var(--radius-md)] border border-border-subtle bg-surface p-3 shadow-soft">
-                        <div className="flex items-center gap-3">
+                      <div key={entry._id}>
+                        {/* Ligne principale — tap pour ouvrir */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedId(isExpanded ? null : entry._id)}
+                          className="grid w-full items-center gap-2 px-3 py-2.5 text-left transition-colors active:bg-surface-2"
+                          style={{ gridTemplateColumns: '36px minmax(0,1fr) 52px 20px' }}
+                        >
                           <span
-                            className="shrink-0 rounded-md px-2.5 py-1.5 text-xs font-bold text-white"
-                            style={{ fontFamily: 'ui-monospace, monospace', background: gc, minWidth: 38, textAlign: 'center' }}
+                            className="rounded-md py-1 text-center text-xs font-bold text-white"
+                            style={{ fontFamily: 'ui-monospace, monospace', background: gc }}
                           >
                             {entry.grade || '—'}
                           </span>
-                          <div className="min-w-0 flex-1">
-                            <Link
-                              to={`/map?spot=${entry.spotId}`}
-                              className="block truncate text-sm font-semibold text-text-primary no-underline hover:text-sage"
-                            >
-                              {entry.routeName || entry.spotName || t('logbook.unknown_spot')}
-                            </Link>
-                            <div className="flex items-center gap-1.5 text-[11px] text-text-secondary">
-                              <span>{entry.spotName}</span>
-                              <span>·</span>
-                              <span>{date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
-                            </div>
-                          </div>
+                          <span className="truncate text-sm font-semibold text-text-primary">
+                            {entry.routeName || entry.spotName || t('logbook.unknown_spot')}
+                          </span>
                           <span className={cn(
-                            'shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide',
+                            'truncate rounded-full px-1.5 py-0.5 text-center text-[9px] font-bold uppercase tracking-wide',
                             STYLE_CLS[entry.style] || STYLE_CLS.repeat,
                           )}>
                             {t(`logbook.style.${entry.style}`)}
                           </span>
-                          <div className="flex shrink-0 gap-1">
-                            <button onClick={() => openEdit(entry)} type="button" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 hover:bg-surface-2 hover:text-text-secondary">
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                            <button onClick={() => deleteEntry(entry._id)} disabled={deleting === entry._id} type="button" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-text-secondary/30 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 dark:hover:bg-red-900/20">
-                              {deleting === entry._id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                            </button>
+                          <ChevronDown className={cn(
+                            'h-3.5 w-3.5 shrink-0 text-text-secondary/40 transition-transform duration-200',
+                            isExpanded && 'rotate-180',
+                          )} />
+                        </button>
+
+                        {/* Détail expansible */}
+                        {isExpanded && (
+                          <div className="border-t border-border-subtle bg-surface-2 px-3 py-3">
+                            <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary">
+                              {entry.spotName && (
+                                <span><span className="font-medium text-text-primary">{t('logbook.spot')}</span> {entry.spotName}</span>
+                              )}
+                              <span><span className="font-medium text-text-primary">{t('logbook.date_label')}</span> {date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                            </div>
+                            {entry.notes && (
+                              <p className="mb-2.5 text-xs leading-relaxed text-text-secondary">{entry.notes}</p>
+                            )}
+                            <div className="flex gap-2">
+                              <Link
+                                to={`/map?spot=${entry.spotId}`}
+                                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-subtle py-1.5 text-xs font-medium text-text-secondary no-underline transition-colors hover:border-sage hover:text-sage"
+                              >
+                                <MapPin className="h-3 w-3" />
+                                {t('logbook.see_spot')}
+                              </Link>
+                              <button
+                                onClick={() => { openEdit(entry); setExpandedId(null); }}
+                                type="button"
+                                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-subtle py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-sage hover:text-sage"
+                              >
+                                <Pencil className="h-3 w-3" />
+                                {t('common.edit')}
+                              </button>
+                              <button
+                                onClick={() => deleteEntry(entry._id)}
+                                disabled={deleting === entry._id}
+                                type="button"
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border-subtle text-text-secondary/40 transition-colors hover:border-red-300 hover:text-red-500 disabled:opacity-50"
+                              >
+                                {deleting === entry._id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        {entry.notes && (
-                          <p className="mt-1.5 text-xs leading-relaxed text-text-secondary/80">{entry.notes}</p>
                         )}
                       </div>
                     );

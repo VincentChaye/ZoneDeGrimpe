@@ -4,7 +4,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --env-file=.env server.js",
     "update-spots": "node scripts/update-spot-data.js",
     "test-extraction": "node scripts/test-extraction.js",
     "import-osm": "node scripts/import-osm.js",
@@ -34,5 +34,8 @@
     "socket.io-client": "^4.8.3",
     "web-push": "^3.6.7",
     "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "playwright": "^1.59.1"
   }
 }

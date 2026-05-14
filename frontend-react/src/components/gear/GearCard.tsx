@@ -1,50 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import {
-  Cable, Shield, Footprints, Anchor, Package,
-  Lock, RotateCw, Square, Link, Link2, Circle,
-  Pencil, Trash2, AlertTriangle, XCircle, CheckCircle,
-} from 'lucide-react';
+import { Package, Pencil, Trash2, AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UserMateriel, GearCategory } from '@/types';
-
-const CATEGORY_ICONS: Record<GearCategory, typeof Package> = {
-  rope:       Cable,
-  quickdraw:  Link,
-  belay_auto: Anchor,
-  belay_tube: Circle,
-  harness:    Shield,
-  shoes:      Footprints,
-  carabiner:  Lock,
-  machard:    RotateCw,
-  crashpad:   Square,
-  quicklink:  Link2,
-};
-
-const CATEGORY_BG: Record<GearCategory, string> = {
-  rope:       'from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/30',
-  quickdraw:  'from-orange-50 to-orange-100 dark:from-orange-950/40 dark:to-orange-900/30',
-  belay_auto: 'from-purple-50 to-purple-100 dark:from-purple-950/40 dark:to-purple-900/30',
-  belay_tube: 'from-cyan-50 to-cyan-100 dark:from-cyan-950/40 dark:to-cyan-900/30',
-  harness:    'from-rose-50 to-rose-100 dark:from-rose-950/40 dark:to-rose-900/30',
-  shoes:      'from-amber-50 to-amber-100 dark:from-amber-950/40 dark:to-amber-900/30',
-  carabiner:  'from-slate-50 to-slate-100 dark:from-slate-950/40 dark:to-slate-900/30',
-  machard:    'from-green-50 to-green-100 dark:from-green-950/40 dark:to-green-900/30',
-  crashpad:   'from-teal-50 to-teal-100 dark:from-teal-950/40 dark:to-teal-900/30',
-  quicklink:  'from-indigo-50 to-indigo-100 dark:from-indigo-950/40 dark:to-indigo-900/30',
-};
-
-const CATEGORY_ICON_COLOR: Record<GearCategory, string> = {
-  rope:       'text-blue-400',
-  quickdraw:  'text-orange-400',
-  belay_auto: 'text-purple-400',
-  belay_tube: 'text-cyan-400',
-  harness:    'text-rose-400',
-  shoes:      'text-amber-400',
-  carabiner:  'text-slate-400',
-  machard:    'text-green-400',
-  crashpad:   'text-teal-400',
-  quicklink:  'text-indigo-400',
-};
+import { CATEGORY_ICONS, CATEGORY_BG, CATEGORY_ICON_COLOR } from './gearCategoryUI';
 
 const EPI_CONFIG = {
   ok:     { label: 'gear.epi.ok',     Icon: CheckCircle,  cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',  bar: 'bg-emerald-500' },
@@ -116,7 +74,8 @@ export function GearCard({ item, onEdit, onDelete, readonly = false }: GearCardP
 
       {/* Product image area */}
       <div className={cn(
-        'relative flex aspect-square w-full items-center justify-center bg-gradient-to-br',
+        'relative flex w-full items-center justify-center bg-gradient-to-br',
+        'aspect-[2/1] min-[400px]:aspect-square',
         bgGradient,
       )}>
         {imageUrl ? (
@@ -175,7 +134,7 @@ export function GearCard({ item, onEdit, onDelete, readonly = false }: GearCardP
       </div>
 
       {/* Product info */}
-      <div className="flex flex-1 flex-col p-3">
+      <div className="flex flex-col p-3">
         {brand && (
           <p className="truncate text-[10px] font-semibold uppercase tracking-widest text-text-secondary/60">
             {brand}
@@ -209,10 +168,10 @@ export function GearCard({ item, onEdit, onDelete, readonly = false }: GearCardP
               <button
                 type="button"
                 onClick={() => onEdit(item)}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border-subtle py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-sage hover:text-sage"
+                className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden rounded-lg border border-border-subtle py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-sage hover:text-sage"
               >
-                <Pencil className="h-3 w-3" />
-                {t('gear.edit_title')}
+                <Pencil className="h-3 w-3 shrink-0" />
+                <span className="truncate">{t('gear.edit_title')}</span>
               </button>
             )}
             {onDelete && (

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: dark: variants respond to .dark on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    ZoneDeGrimpe Design System - Tailwind v4
    Palette "Roche & Lumiere" (Rock & Light)

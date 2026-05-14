@@ -188,6 +188,8 @@ export interface AuthUser {
   username?: string;
   avatarUrl?: string;
   avatarPublicId?: string;
+  coverUrl?: string;
+  coverPublicId?: string;
   phone?: string;
   roles: string[];
   preferences?: { lang?: string };
@@ -267,12 +269,19 @@ export interface ParticipantInfo {
 
 export interface LastMessage {
   content: string;
-  senderUid: string;
+  senderUid: string | null;
   createdAt: string;
 }
 
 export interface Conversation {
   _id: string;
+  type?: 'dm' | 'group';
+  // Group-only fields
+  groupName?: string;
+  groupAvatarUrl?: string | null;
+  createdBy?: string;
+  admins?: string[];
+  // Common
   participants: string[];
   participantInfo: ParticipantInfo[];
   lastMessage: LastMessage | null;
@@ -281,13 +290,69 @@ export interface Conversation {
   updatedAt: string;
 }
 
+export interface MessageAttachment {
+  url: string;
+  publicId?: string;
+  type: 'image' | 'video';
+  mimeType?: string;
+}
+
+export type SharedObjectType = 'spot' | 'route' | 'logbook';
+
+export interface SharedObject {
+  type: SharedObjectType;
+  id: string;
+  name: string;
+  subtitle?: string | null;
+  imageUrl?: string | null;
+  spotType?: SpotType | null;
+  grade?: string | null;
+}
+
 export interface Message {
   _id: string;
   conversationId: string;
-  senderUid: string;
+  senderUid: string | null;
   content: string;
+  attachments?: MessageAttachment[];
+  sharedObject?: SharedObject;
+  systemEvent?: { type: 'outing_created' | 'outing_completed'; outingId: string; actorUid: string };
   status: 'sent' | 'delivered' | 'read';
   createdAt: string;
+}
+
+// ---- Outings ----
+
+export type OutingStatus = 'active' | 'completed';
+
+export interface OutingClaim {
+  claimId: string;
+  uid: string;
+  displayName: string;
+  avatarUrl: string | null;
+  quantity: number;
+  claimedAt: string;
+}
+
+export type OutingItem =
+  | { id: string; kind: 'category'; category: GearCategory; quantityNeeded: number; claims: OutingClaim[] }
+  | { id: string; kind: 'custom'; label: string; quantityNeeded: number; claims: OutingClaim[] };
+
+export interface Outing {
+  _id: string;
+  conversationId: string;
+  createdBy: string;
+  createdByInfo: { uid: string; displayName: string; avatarUrl: string | null };
+  title: string;
+  scheduledAt: string | null;
+  location: string | null;
+  notes: string | null;
+  status: OutingStatus;
+  completedAt: string | null;
+  completedBy: string | null;
+  items: OutingItem[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FeedItem {

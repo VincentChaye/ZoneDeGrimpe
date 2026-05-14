@@ -595,37 +595,39 @@ export function SpotPage() {
           </div>
 
           {/* Action buttons */}
-          <div className="mb-6 flex gap-2">
+          <div className="mb-6 flex flex-col gap-2">
             <a
               href={directionsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-sage px-4 py-3 text-sm font-semibold text-white no-underline shadow-soft transition-all hover:bg-sage-hover hover:shadow-card active:scale-[0.98]"
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-sage px-4 py-3 text-sm font-semibold text-white no-underline shadow-soft transition-all hover:bg-sage-hover hover:shadow-card active:scale-[0.98]"
             >
               <Navigation className="h-4 w-4" />
               {t('spot.directions')}
             </a>
-            <button onClick={toggleBookmark} disabled={bookmarkLoading} className={cn('flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border transition-all active:scale-95', bookmarked ? 'border-sage bg-sage-muted text-sage' : 'border-border-subtle text-text-secondary hover:border-sage/30 hover:bg-sage-muted hover:text-sage', bookmarkLoading && 'opacity-50')} type="button" title={t('spot.bookmark')}>
-              <Bookmark className={cn('h-4 w-4', bookmarked && 'fill-sage')} />
-            </button>
-            <button onClick={handleShare} className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-border-subtle text-text-secondary transition-all hover:border-sage/30 hover:bg-sage-muted hover:text-sage active:scale-95" type="button" title={t('spot.share')}>
-              <Share2 className="h-4 w-4" />
-            </button>
-            {isAuthenticated && spot.type !== 'shop' && (
-              <button onClick={() => setShowLogger((v) => !v)} className={cn('flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border transition-all active:scale-95', showLogger ? 'border-sage bg-sage-muted text-sage' : 'border-border-subtle text-text-secondary hover:border-sage/30 hover:bg-sage-muted hover:text-sage')} type="button" title={t('logbook.log_climb')}>
-                <BookOpen className="h-4 w-4" />
+            <div className="flex gap-2">
+              <button onClick={toggleBookmark} disabled={bookmarkLoading} className={cn('flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border transition-all active:scale-95', bookmarked ? 'border-sage bg-sage-muted text-sage' : 'border-border-subtle text-text-secondary hover:border-sage/30 hover:bg-sage-muted hover:text-sage', bookmarkLoading && 'opacity-50')} type="button" title={t('spot.bookmark')}>
+                <Bookmark className={cn('h-4 w-4', bookmarked && 'fill-sage')} />
               </button>
-            )}
-            {isAuthenticated && (
-              <button onClick={() => setEditSpot(spot)} className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-border-subtle text-text-secondary transition-all hover:border-sage/30 hover:bg-sage-muted hover:text-sage active:scale-95" type="button" title={t('spot.edit')}>
-                <Pencil className="h-4 w-4" />
+              <button onClick={handleShare} className="flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border border-border-subtle text-text-secondary transition-all hover:border-sage/30 hover:bg-sage-muted hover:text-sage active:scale-95" type="button" title={t('spot.share')}>
+                <Share2 className="h-4 w-4" />
               </button>
-            )}
-            {isAdmin && (
-              <button onClick={handleDeleteSpot} className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-red-200 text-red-400 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-500 active:scale-95" type="button" title={t('spot.delete_spot')}>
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
+              {isAuthenticated && spot.type !== 'shop' && (
+                <button onClick={() => setShowLogger((v) => !v)} className={cn('flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border transition-all active:scale-95', showLogger ? 'border-sage bg-sage-muted text-sage' : 'border-border-subtle text-text-secondary hover:border-sage/30 hover:bg-sage-muted hover:text-sage')} type="button" title={t('logbook.log_climb')}>
+                  <BookOpen className="h-4 w-4" />
+                </button>
+              )}
+              {isAuthenticated && (
+                <button onClick={() => setEditSpot(spot)} className="flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border border-border-subtle text-text-secondary transition-all hover:border-sage/30 hover:bg-sage-muted hover:text-sage active:scale-95" type="button" title={t('spot.edit')}>
+                  <Pencil className="h-4 w-4" />
+                </button>
+              )}
+              {isAdmin && (
+                <button onClick={handleDeleteSpot} className="flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border border-red-200 text-red-400 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-500 active:scale-95" type="button" title={t('spot.delete_spot')}>
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Log form */}
