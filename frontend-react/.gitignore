@@ -1,3 +1,14 @@
+# Capacitor platform build artifacts
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/
+icons/
+
 # Logs
 logs
 *.log

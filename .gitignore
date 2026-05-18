@@ -11,5 +11,7 @@ Thumbs.db
 ./ZoneDeGrimpe/
 ZoneDeGrimpe/
 .playwright-mcp/
-test-*.png
+# Screenshots de test
+*.png
+audit/
 ZDG/

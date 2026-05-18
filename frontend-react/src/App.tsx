@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { Layout } from '@/components/layout/Layout';
@@ -31,6 +31,7 @@ import { useThemeStore } from '@/stores/theme.store';
 import { useMessagesStore } from '@/stores/messages.store';
 import { useOutingStore } from '@/stores/outing.store';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
+import { bootstrapNative } from '@/lib/native-bootstrap';
 
 function App() {
   const hydrateAuth = useAuthStore((s) => s.hydrate);
@@ -50,6 +51,7 @@ function App() {
   useEffect(() => {
     hydrateAuth();
     hydrateTheme();
+    bootstrapNative();
   }, [hydrateAuth, hydrateTheme]);
 
   // Connect / disconnect Socket.io with auth
@@ -93,8 +95,12 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token]);
 
+  const isCapacitor = import.meta.env.MODE === 'capacitor';
+  const Router = isCapacitor ? HashRouter : BrowserRouter;
+  const routerProps = isCapacitor ? {} : { basename: '/ZoneDeGrimpe' };
+
   return (
-    <BrowserRouter basename="/ZoneDeGrimpe">
+    <Router {...routerProps}>
       <Toaster position="bottom-center" richColors closeButton />
       <Routes>
         <Route element={<Layout />}>
@@ -121,7 +127,7 @@ function App() {
           <Route path="/spot/:id" element={<Suspense fallback={null}><SpotPage /></Suspense>} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
 

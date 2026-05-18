@@ -6,10 +6,25 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:native": "tsc -b && vite build --mode capacitor",
+    "cap:sync": "npm run build:native && cap sync",
+    "cap:open:android": "cap open android",
+    "cap:open:ios": "cap open ios",
+    "cap:run:android": "npm run build:native && cap sync android && cap run android",
+    "cap:run:android:live": "cap run android -l --external",
+    "cap:run:ios": "npm run build:native && cap sync ios && cap run ios",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/geolocation": "^8.2.0",
+    "@capacitor/ios": "^8.3.4",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "i18next": "^26.0.3",
@@ -28,6 +43,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@eslint/js": "^9.39.4",
     "@tailwindcss/vite": "^4.2.2",
     "@types/leaflet": "^1.9.21",

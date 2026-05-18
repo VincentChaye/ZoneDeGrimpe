@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { getCurrentPosition } from '@/lib/geolocation';
 import { useAuthStore } from '@/stores/auth.store';
 import type { Spot, SpotType, Orientation, Equipment } from '@/types';
 
@@ -138,16 +139,15 @@ export function EditSpotWizard({ spot, onClose, onSuccess }: EditSpotWizardProps
     }
   };
 
-  const handleGeolocate = () => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        set('lat', pos.coords.latitude.toFixed(6));
-        set('lng', pos.coords.longitude.toFixed(6));
-        toast.success(t('toast.position_found'));
-      },
-      () => toast.error(t('toast.position_error')),
-      { enableHighAccuracy: true },
-    );
+  const handleGeolocate = async () => {
+    try {
+      const { latitude, longitude } = await getCurrentPosition({ enableHighAccuracy: true });
+      set('lat', latitude.toFixed(6));
+      set('lng', longitude.toFixed(6));
+      toast.success(t('toast.position_found'));
+    } catch {
+      toast.error(t('toast.position_error'));
+    }
   };
 
   // Compute changes (diff)

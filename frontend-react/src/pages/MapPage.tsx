@@ -9,6 +9,7 @@ import {
   ShoppingBag, Plus, SlidersHorizontal, Layers,
 } from 'lucide-react';
 import { apiFetch, getCachedSpots, setCachedSpots } from '@/lib/api';
+import { getCurrentPosition } from '@/lib/geolocation';
 import { cn, SPOT_TYPES, parseGradeToNumber } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 import { SpotSheet } from '@/components/spots/SpotSheet';
@@ -167,18 +168,14 @@ function LocateButton({ onLocated }: { onLocated: (lat: number, lng: number) => 
   const map = useMap();
   const { t } = useTranslation();
 
-  const handleLocate = useCallback(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        map.flyTo([latitude, longitude], 13, { duration: 0.8 });
-        onLocated(latitude, longitude);
-      },
-      () => {
-        map.locate({ setView: true, maxZoom: 13 });
-      },
-      { enableHighAccuracy: true },
-    );
+  const handleLocate = useCallback(async () => {
+    try {
+      const { latitude, longitude } = await getCurrentPosition({ enableHighAccuracy: true });
+      map.flyTo([latitude, longitude], 13, { duration: 0.8 });
+      onLocated(latitude, longitude);
+    } catch {
+      map.locate({ setView: true, maxZoom: 13 });
+    }
   }, [map, onLocated]);
 
   return (

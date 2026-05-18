@@ -1,0 +1,107 @@
+name: Native Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend-react/src/**'
+      - 'frontend-react/capacitor.config.ts'
+      - 'frontend-react/package.json'
+      - 'frontend-react/vite.config.ts'
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend-react/package-lock.json
+
+      - name: Install JS dependencies
+        working-directory: frontend-react
+        run: npm ci
+
+      - name: Build web (capacitor mode)
+        working-directory: frontend-react
+        run: npm run build:native
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Sync Capacitor → Android
+        working-directory: frontend-react
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: frontend-react/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zdg-android-debug
+          path: frontend-react/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  ios:
+    name: iOS IPA (unsigned)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend-react/package-lock.json
+
+      - name: Install JS dependencies
+        working-directory: frontend-react
+        run: npm ci
+
+      - name: Build web (capacitor mode)
+        working-directory: frontend-react
+        run: npm run build:native
+
+      - name: Sync Capacitor → iOS
+        working-directory: frontend-react
+        run: npx cap sync ios
+
+      - name: Resolve Swift Package dependencies
+        working-directory: frontend-react/ios/App
+        run: xcodebuild -resolvePackageDependencies -workspace App.xcworkspace -scheme App
+
+      - name: Build archive (unsigned)
+        working-directory: frontend-react
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package IPA
+        run: |
+          mkdir -p $RUNNER_TEMP/Payload
+          cp -r "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app" "$RUNNER_TEMP/Payload/"
+          cd $RUNNER_TEMP && zip -r ZoneDeGrimpe.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zdg-ios-unsigned
+          path: ${{ runner.temp }}/ZoneDeGrimpe.ipa
+          retention-days: 14
