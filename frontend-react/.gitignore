@@ -8,6 +8,12 @@ ios/App/build/
 ios/App/Pods/
 ios/DerivedData/
 icons/
+# Générés par @capacitor/assets (recréés en CI)
+assets/
+android/app/src/main/res/drawable*/splash*.png
+android/app/src/main/res/mipmap-*/
+ios/App/App/Assets.xcassets/AppIcon.appiconset/
+ios/App/App/Assets.xcassets/Splash.imageset/
 
 # Logs
 logs

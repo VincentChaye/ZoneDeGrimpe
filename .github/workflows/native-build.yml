@@ -36,6 +36,13 @@ jobs:
         working-directory: frontend-react
         run: npm run build:native
 
+      - name: Generate native assets (icons + splash)
+        working-directory: frontend-react
+        run: |
+          mkdir -p assets
+          cp src/assets/ZoneDeGrimpeIcon.png assets/icon.png
+          npx capacitor-assets generate --iconBackgroundColor '#5D7052' --splashBackgroundColor '#5D7052' --android
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -80,6 +87,13 @@ jobs:
       - name: Build web (capacitor mode)
         working-directory: frontend-react
         run: npm run build:native
+
+      - name: Generate native assets (icons + splash)
+        working-directory: frontend-react
+        run: |
+          mkdir -p assets
+          cp src/assets/ZoneDeGrimpeIcon.png assets/icon.png
+          npx capacitor-assets generate --iconBackgroundColor '#5D7052' --splashBackgroundColor '#5D7052' --ios
 
       - name: Sync Capacitor → iOS
         working-directory: frontend-react
