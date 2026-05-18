@@ -41,6 +41,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Install Android SDK components
+        run: |
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
       - name: Sync Capacitor → Android
         working-directory: frontend-react
         run: npx cap sync android
@@ -80,25 +85,15 @@ jobs:
         working-directory: frontend-react
         run: npx cap sync ios
 
-      - name: Resolve Swift Package dependencies
+      - name: Build app (unsigned, iphoneos)
         working-directory: frontend-react/ios/App
         run: |
           xcodebuild \
-            -resolvePackageDependencies \
             -workspace App.xcworkspace \
-            -scheme App \
-            -clonedSourcePackagesDirPath $RUNNER_TEMP/SourcePackages
-
-      - name: Build app (unsigned, iphoneos)
-        working-directory: frontend-react
-        run: |
-          xcodebuild \
-            -workspace ios/App/App.xcworkspace \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath $RUNNER_TEMP/DerivedData \
-            -clonedSourcePackagesDirPath $RUNNER_TEMP/SourcePackages \
             build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
