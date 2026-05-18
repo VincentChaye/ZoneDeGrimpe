@@ -11,6 +11,9 @@ on:
       - '.github/workflows/native-build.yml'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # ─────────────────────────────────────────────
   android:
@@ -79,9 +82,14 @@ jobs:
 
       - name: Resolve Swift Package dependencies
         working-directory: frontend-react/ios/App
-        run: xcodebuild -resolvePackageDependencies -workspace App.xcworkspace -scheme App
+        run: |
+          xcodebuild \
+            -resolvePackageDependencies \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -clonedSourcePackagesDirPath $RUNNER_TEMP/SourcePackages
 
-      - name: Build archive (unsigned)
+      - name: Build app (unsigned, iphoneos)
         working-directory: frontend-react
         run: |
           xcodebuild \
@@ -89,16 +97,21 @@ jobs:
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
-            -archivePath $RUNNER_TEMP/App.xcarchive \
-            archive \
-            CODE_SIGNING_ALLOWED=NO \
+            -derivedDataPath $RUNNER_TEMP/DerivedData \
+            -clonedSourcePackagesDirPath $RUNNER_TEMP/SourcePackages \
+            build \
+            CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            ENABLE_BITCODE=NO
 
       - name: Package IPA
         run: |
+          APP_PATH=$(find $RUNNER_TEMP/DerivedData -name "*.app" -path "*/Release-iphoneos/*" | head -1)
+          echo "App path: $APP_PATH"
           mkdir -p $RUNNER_TEMP/Payload
-          cp -r "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app" "$RUNNER_TEMP/Payload/"
+          cp -r "$APP_PATH" "$RUNNER_TEMP/Payload/App.app"
           cd $RUNNER_TEMP && zip -r ZoneDeGrimpe.ipa Payload
 
       - uses: actions/upload-artifact@v4
