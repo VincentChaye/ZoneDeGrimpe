@@ -8,6 +8,7 @@ on:
       - 'frontend-react/capacitor.config.ts'
       - 'frontend-react/package.json'
       - 'frontend-react/vite.config.ts'
+      - '.github/workflows/native-build.yml'
   workflow_dispatch:
 
 jobs:
